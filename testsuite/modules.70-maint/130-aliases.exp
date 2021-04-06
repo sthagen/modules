@@ -92,8 +92,8 @@ loc_rc3/test -> loc_rc3/3.0
 loc_rc4/default -> loc_rc4/2.0
 loc_rc6/default -> loc_rc6/1.2
 loc_rc6/new -> loc_rc6/1.2
-loc_rc8/foo -> loc_rc8/.2.0
-loc_rc010/default -> loc_rc010/.1.0
+loc_rc010/bar -> loc_rc010/wrong
+loc_rc010/foo -> loc_rc010/dir
 loc_rcv1/default -> loc_rcv1/1.2
 loc_rcv1/new -> loc_rcv1/1.2
 loc_tr/bar -> loc_tr/3.0
@@ -221,8 +221,8 @@ loc_rc3/test -> loc_rc3/3.0
 loc_rc4/default -> loc_rc4/2.0
 loc_rc6/default -> loc_rc6/1.2
 loc_rc6/new -> loc_rc6/1.2
-loc_rc8/foo -> loc_rc8/.2.0
-loc_rc010/default -> loc_rc010/.1.0
+loc_rc010/bar -> loc_rc010/wrong
+loc_rc010/foo -> loc_rc010/dir
 loc_rcv1/default -> loc_rcv1/1.2
 loc_rcv1/new -> loc_rcv1/1.2
 loc_tr/bar -> loc_tr/3.0
@@ -259,7 +259,7 @@ use/default -> use/1.0"
 testouterr_cmd_re "sh" "aliases" "OK" "$alias_header\n$alias_list\n\n$version_header\n$version_list"
 
 # restore environment
-unset env(MODULERCFILE)
+setenv_var MODULERCFILE $ORIG_MODULERCFILE
 
 
 #
@@ -277,11 +277,4 @@ testouterr_cmd "sh" "aliases" "OK" ""
 #  Cleanup
 #
 
-# restore environment
-setenv_path_var MODULEPATH $modpath
-
-unset modpath1
-unset alias_header
-unset alias_list
-unset version_header
-unset version_list
+reset_test_env

@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.63])
-AC_INIT([Envmodules], [1.0.1], [modules-interest@lists.sourceforge.net], , http://modules.sf.net)
+AC_PREREQ([2.69])
+AC_INIT([Envmodules],[1.3.0],[modules-interest@lists.sourceforge.net],[],[http://modules.sf.net])
 AC_CONFIG_SRCDIR([envmodules.c])
 AC_CONFIG_HEADERS([config.h])
 
@@ -18,12 +18,14 @@ TEA_LOAD_TCLCONFIG
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h unistd.h errno.h limits.h sys/types.h dirent.h])
+AC_CHECK_HEADERS([fcntl.h unistd.h errno.h limits.h sys/types.h pwd.h grp.h stdlib.h stdio.h dirent.h time.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SSIZE_T
 
 # Checks for library functions.
+AC_FUNC_GETGROUPS
+AC_CHECK_FUNC(sysconf, AC_DEFINE(HAVE_SYSCONF, 1, [Define to 1 if you have the sysconf function]))
 
 # TEA-specific setup
 TEA_SETUP_COMPILER

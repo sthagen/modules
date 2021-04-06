@@ -2,7 +2,7 @@
 
 function __fish_module_no_subcommand --description 'Test if modulecmd has yet to be given the subcommand'
    for i in (commandline -opc)
-      if contains -- $i add load rm remove del unload swap switch show display list avail is-loaded is-saved is-used is-avail info-loaded aliases use unuse refresh reload purge source whatis apropos keyword search test save restore saverm saveshow savelist initadd initprepend initrm initswitch initlist initclear path paths append-path prepend-path remove-path clear config
+      if contains -- $i add load rm remove del unload swap switch show display list avail is-loaded is-saved is-used is-avail info-loaded aliases use unuse refresh reload purge source whatis apropos keyword search test save restore saverm saveshow savelist initadd initprepend initrm initswitch initlist initclear path paths append-path prepend-path remove-path clear config sh-to-mod
          return 1
       end
    end
@@ -11,7 +11,7 @@ end
 
 function __fish_module_use_avail --description 'Test if module command should have available packages as potential completion'
    for i in (commandline -opc)
-      if contains -- $i help add load swap switch show display list avail is-loaded is-avail info-loaded source whatis test initadd initprepend path paths
+      if contains -- $i help add load swap switch show display avail is-loaded is-avail info-loaded whatis test initadd initprepend path paths
          return 0
       end
    end
@@ -54,25 +54,16 @@ function __fish_module_use_config --description 'Test if module command should h
    return 1
 end
 
-complete -c module -n '__fish_module_use_avail' -f -a "(module avail --color=never -s -t -S --no-indepth (commandline -ct) ^&1 | sed '\
-   /^-\+/d; /^\s*\$/d; \
-   /->.*\$/d; \
-   /:\$/d; \
-   /:ERROR:/d; \
-   s#^\(.*\)/\(.\+\)(.*default.*)#\1\n\1\/\2#; \
-   s#(.*)\$##g; \
-   s#\s*\$##g;')"
-complete -c module -n '__fish_module_use_list' -f -a "(module list --color=never -s -t ^&1 | sed '\
-   /No Modulefiles Currently Loaded\.\$/d; \
-   /Currently Loaded Modulefiles:\$/d;')"
-complete -c module -n '__fish_module_use_initlist' -f -a "(module initlist --color=never -s ^&1 | sed '\
+complete -c module -n '__fish_module_use_avail' -f -a "(module avail --color=never -s -t -S --no-indepth -o '' (commandline -ct) 2>&1)"
+complete -c module -n '__fish_module_use_list' -f -a "(module list --color=never -s -t -o '' 2>&1)"
+complete -c module -n '__fish_module_use_initlist' -f -a "(module initlist --color=never -s 2>&1 | sed '\
    / loads modules:\$/d;')"
-complete -c module -n '__fish_module_use_savelist' -f -a "(module savelist --color=never -s -t ^&1 | sed '\
+complete -c module -n '__fish_module_use_savelist' -f -a "(module savelist --color=never -s -t 2>&1 | sed '\
    /No named collection\.\$/d; \
    /Named collection list\$/d; \
    /:\$/d; \
    /:ERROR:/d;')"
-complete -c module -n '__fish_module_use_config' -f -a "--dump-state --reset advanced_version_spec auto_handling avail_indepth collection_pin_version collection_target color colors contact extended_default extra_siteconfig home icase implicit_default locked_configs ml pager rcfile run_quarantine search_match set_shell_startup silent_shell_debug term_background unload_match_order verbosity wa_277"
+complete -c module -n '__fish_module_use_config' -f -a "--dump-state --reset advanced_version_spec auto_handling avail_indepth avail_output avail_terse_output collection_pin_version collection_target color colors contact extended_default extra_siteconfig home icase implicit_default implicit_requirement list_output list_terse_output locked_configs mcookie_version_check ml nearly_forbidden_days pager rcfile run_quarantine search_match set_shell_startup shells_with_ksh_fpath silent_shell_debug tag_abbrev tag_color_name term_background term_width unload_match_order verbosity wa_277"
 
 complete -f -n '__fish_module_no_subcommand' -c module -a 'help' --description 'Print this or modulefile(s) help info'
 complete -f -n '__fish_module_no_subcommand' -c module -a 'avail' --description 'List all or matching available modules'
@@ -113,8 +104,10 @@ complete -f -n '__fish_module_no_subcommand' -c module -a 'prepend-path' --descr
 complete -f -n '__fish_module_no_subcommand' -c module -a 'remove-path' --description 'Remove value from environment variable'
 complete -f -n '__fish_module_no_subcommand' -c module -a 'clear' --description 'Reset Modules-specific runtime information'
 complete -f -n '__fish_module_no_subcommand' -c module -a 'config' --description 'Display or set Modules configuration'
+complete -f -n '__fish_module_no_subcommand' -c module -a 'sh-to-mod' --description 'Make modulefile from script env changes'
 
 complete -c module -s V -l version --description 'Module version'
+complete -c module -s T -l trace --description 'Enable trace and debug messages'
 complete -c module -s D -l debug --description 'Enable debug messages'
 complete -c module -s v -l verbose --description 'Enable verbose messages'
 complete -c module -s s -l silent --description 'Turn off error, warning and informational messages'
@@ -122,6 +115,9 @@ complete -c module -s i -l icase --description 'Case insensitive match'
 complete -c module -s t -l terse --description 'Display output in terse format'
 complete -c module -s l -l long --description 'Display output in long format'
 complete -c module -s j -l json --description 'Display output in JSON format'
+complete -c module -s o -l output --description 'Define elements to output in addition to module names'
+complete -c module -l output= --description 'Define elements to output in addition to module names'
+complete -c module -s a -l all --description 'Include hidden modules in search'
 complete -c module -s d -l default --description 'Only show default versions available'
 complete -c module -s L -l latest --description 'Only show latest versions available'
 complete -c module -s S -l starts-with --description 'Search modules whose name begins with query string'
@@ -135,3 +131,5 @@ complete -c module -l no-auto --description 'Disable automated module handling m
 complete -c module -s f -l force --description 'By-pass dependency consistency or confirmation dialog'
 complete -c module -l color --description 'Colorize the output'
 complete -c module -l color= --description 'Colorize the output'
+complete -c module -s w -l width --description 'Set output width'
+complete -c module -l width= --description 'Set output width'

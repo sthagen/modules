@@ -1,0 +1,631 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.70-maint/%M%
+#   Revision:		%I%
+#   First Edition:	2020/04/22
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:
+#   Modulefiles:
+#   Sub-Command:    sh-to-mod
+#
+#   Comment:	%C{
+#           Check 'sh-to-mod' sub-command
+#		}C%
+#
+##############################################################################
+
+proc testouterr_shtomod {sh cmdline out err {script {}}} {
+    if {$sh eq {ALL}} {
+        set shlist $::shtomod_avail_shells
+    } else {
+        set shlist [list $sh]
+    }
+    if {$cmdline ne {}} {
+        set cmdline " $cmdline"
+    }
+    set shscript $script
+    foreach sh $shlist {
+        if {$script eq {}} {
+            set shscript $::testscript($sh)
+        }
+        set tserr [string map [list {<SHELL>} $sh {<SCRIPTSH>} $shscript] $err]
+        testouterr_cmd sh "sh-to-mod $sh $shscript$cmdline" $out $tserr
+    }
+}
+
+set shtomod_supported_shells [list bash ksh zsh sh dash ksh93 fish csh tcsh]
+set testscriptsh testsuite/example/sh-to-mod.sh
+set testscriptcsh testsuite/example/sh-to-mod.csh
+set testscriptfish testsuite/example/sh-to-mod.fish
+set testscriptshws [string map {- { }} $testscriptsh]
+
+array set testscript [list bash $testscriptsh ksh $testscriptsh\
+    zsh $testscriptsh sh $testscriptsh dash $testscriptsh ksh93 $testscriptsh\
+    fish $testscriptfish csh $testscriptcsh tcsh $testscriptcsh]
+
+# what are the installed shells
+set shtomod_avail_shells [list]
+foreach sh $shtomod_supported_shells {
+    set shbin [lindex [auto_execok $sh] 0]
+    # mksh flavor of ksh is not supported
+    # sh from FreeBSD is not supported too
+    if {$shbin ne {} && ($sh ne {ksh} || !$ksh_is_mksh) && ($sh ne {sh} || $tcl_platform(os) ne {FreeBSD})} {
+        lappend shtomod_avail_shells $sh
+        set shell_pathname($sh) $shbin
+    }
+}
+
+# get a default shell for tests
+set onesh [lindex $shtomod_avail_shells 0]
+set oneshbin $shell_pathname($onesh)
+
+# clean environment from variables used in tests
+foreach var [array names -glob FOO*] {
+    unsetenv_var $var
+}
+
+# expected script env changes
+set tsvarpre "prepend-path\tFOOPATH /path/to/dir1 /path/to/dir2 /path/to/dir3
+prepend-path\tFOOPATHCB /path/to/dir1 /path/to/d\\{r2 /path/to/dir3
+prepend-path\tFOOPATHEM {} /path/to/dir1 /path/to/dir2 /path/to/dir3"
+set tsvar "setenv\t\tFOO value
+setenv\t\tFOOCB va\\{ue
+setenv\t\tFOOEM {}
+setenv\t\tFOOPATHSP {/path/to/dir1 /path/to/dir2 /path/to/dir3}
+setenv\t\tFOOPATHSPEM {/path/to/dir1 /path/to/dir2 /path/to/dir3 }
+setenv\t\tFOOSP {value }"
+set tsfunc_bash "set-function\tfunccb \\n\\ \\ \\ \\ echo\\ f\\{o
+set-function\tfuncfoo {
+    echo foo}
+set-function\tfuncnl {
+    echo foo;
+    echo bar}
+set-function\tfuncsp {
+    echo f\\\"o;
+    echo b\\\\\\\"r;
+    echo f\\'o}"
+set tsfunc_ksh "set-function\tfunccb \\n\\ \\ \\ \\ \\ \\ echo\\ f\\{o\\n\\ \\ \\ 
+set-function\tfuncfoo {
+      echo foo
+   }
+set-function\tfuncnl {
+      echo foo
+      echo bar
+   }
+set-function\tfuncsp {
+      echo f\\\"o
+      echo b\\\\\\\"r
+      echo f\\'o
+   }"
+set tsfunc_zsh "set-function\tfunccb \\n\\techo\\ f\\{o
+set-function\tfuncfoo {
+\techo foo}
+set-function\tfuncnl {
+\techo foo
+\techo bar}
+set-function\tfuncsp {
+\techo f\\\"o
+\techo b\\\\\\\"r
+\techo f\\'o}"
+set tsfunc_sh $tsfunc_bash
+set funcstart_fish [expr {[info exists fish_version_ge31] && $fish_version_ge31 ? {      } : "\t"}]
+set tsfunc_fish "set-function\tfunccb {
+${funcstart_fish}echo f\\{o}
+set-function\tfuncfoo {
+${funcstart_fish}echo foo}
+set-function\tfuncnl {
+${funcstart_fish}echo foo
+      echo bar}
+set-function\tfuncsp {
+${funcstart_fish}echo f\\\"o
+      echo b\\\\\\\"r
+      echo f\\'o}"
+set tsalias_bash "set-alias\talcb echo\\ f\\{o
+set-alias\talem {}
+set-alias\talfoo {echo \$(grep \"report .Modules \" ../../modulecmd.tcl | tr -d \\\\ 2>/dev/null | awk '\{print \$3\}')}
+set-alias\talsp {echo f\\\"o; echo b\\\\\\\"r; echo f\\'o}"
+set tsalias_ksh $tsalias_bash
+set tsalias_zsh $tsalias_bash
+set tsalias_sh $tsalias_bash
+set tsalias_dash $tsalias_bash
+set tsalias_fish "set-alias\talcb {echo f\\{o}
+set-alias\talfoo {echo \(grep \"report .Modules \" ../../modulecmd.tcl | tr -d \\\\ 2>/dev/null | awk \'\{print \$3\}\')}
+set-alias\talsp {echo f\\\"o; echo b\\\\\\\"r; echo f\\'o}"
+set tsalias_csh "set-alias\talcb {echo f\\{o}
+set-alias\talem {}
+set-alias\talfoo {echo `grep \"report .Modules \" ../../modulecmd.tcl | tr -d \\\\ | awk '\{print \\\$3\}'`}
+set-alias\talsp {echo f\\\"o; echo b\\\\\\\"r; echo f\\'o}"
+set tscwd "chdir\t\t$env(TESTSUITEDIR)/modulefiles.2"
+
+
+# test unknown shell
+testouterr_shtomod unk {} ERR "$error_msgs: Shell 'unk' not supported" $testscriptsh
+
+# bad arg number has been checked in 00/071
+
+# test unknown script
+testouterr_shtomod $onesh {} ERR "$error_msgs: Script '/path/to/unk' cannot be found" /path/to/unk
+
+# test full script output
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_dash\n$tsvar"
+    } else {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_sh\n$tsfunc_sh\n$tsvar"
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_dash\n$tsvar"
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_bash\n$tsfunc_bash\n$tsvar"
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_ksh\n$tsfunc_ksh\n$tsvar"
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_ksh\n$tsfunc_ksh\n$tsvar"
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_zsh\n$tsfunc_zsh\n$tsvar"
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_fish\n$tsfunc_fish\n$tsvar"
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_csh\n$tsvar"
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod csh {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsalias_csh\n$tsvar"
+}
+# remove progressively all kind of changes
+setenv_var TESTSUITE_SHTOMOD_NOVAR 1
+setenv_var TESTSUITE_SHTOMOD_NOPATH 1
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsalias_dash"
+    } else {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsalias_sh\n$tsfunc_sh"
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash {} OK "#%Module\n$tscwd\n$tsalias_dash"
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash {} OK "#%Module\n$tscwd\n$tsalias_bash\n$tsfunc_bash"
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh {} OK "#%Module\n$tscwd\n$tsalias_ksh\n$tsfunc_ksh"
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 {} OK "#%Module\n$tscwd\n$tsalias_ksh\n$tsfunc_ksh"
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh {} OK "#%Module\n$tscwd\n$tsalias_zsh\n$tsfunc_zsh"
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish {} OK "#%Module\n$tscwd\n$tsalias_fish\n$tsfunc_fish"
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh {} OK "#%Module\n$tscwd\n$tsalias_csh"
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod tcsh {} OK "#%Module\n$tscwd\n$tsalias_csh"
+}
+setenv_var TESTSUITE_SHTOMOD_NOFUNC 1
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsalias_dash"
+    } else {
+        testouterr_shtomod sh {} OK "#%Module\n$tscwd\n$tsalias_sh"
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash {} OK "#%Module\n$tscwd\n$tsalias_dash"
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash {} OK "#%Module\n$tscwd\n$tsalias_bash"
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh {} OK "#%Module\n$tscwd\n$tsalias_ksh"
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 {} OK "#%Module\n$tscwd\n$tsalias_ksh"
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh {} OK "#%Module\n$tscwd\n$tsalias_zsh"
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish {} OK "#%Module\n$tscwd\n$tsalias_fish"
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh {} OK "#%Module\n$tscwd\n$tsalias_csh"
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod tcsh {} OK "#%Module\n$tscwd\n$tsalias_csh"
+}
+setenv_var TESTSUITE_SHTOMOD_NOALIAS 1
+testouterr_shtomod ALL {} OK "#%Module\n$tscwd"
+setenv_var TESTSUITE_SHTOMOD_NOCD 1
+testouterr_shtomod ALL {} OK {}
+
+# check used shell
+setenv_var TESTSUITE_SHTOMOD_SHELLVAR 1
+testouterr_shtomod $onesh {} OK "#%Module\nsetenv\t\tFOOSHELL $oneshbin"
+testouterr_shtomod $oneshbin {} OK "#%Module\nsetenv\t\tFOOSHELL $oneshbin" $testscriptsh
+if {$is_symlink_supported} {
+    file link -symbolic testsuite/$onesh $oneshbin
+    set oneshspecialpath [file join [pwd] testsuite/bin/../$onesh]
+    testouterr_shtomod $oneshspecialpath {} OK "#%Module\nsetenv\t\tFOOSHELL $oneshspecialpath" $testscriptsh
+    file delete testsuite/$onesh
+    unset oneshspecialpath
+}
+setenv_var PATH {}
+testouterr_shtomod $onesh {} ERR "$error_msgs: Shell '$onesh' cannot be found"
+setenv_var PATH $ORIG_PATH
+
+# check if script contains a space character in its name
+file copy $testscriptsh $testscriptshws
+testouterr_shtomod $onesh {} OK "#%Module\nsetenv\t\tFOOSHELL $oneshbin" [string map {{ } {\ }} $testscriptshws]
+file delete $testscriptshws
+unsetenv_var TESTSUITE_SHTOMOD_SHELLVAR
+
+# check passed argument
+unsetenv_var TESTSUITE_SHTOMOD_NOVAR
+set tserr_noarg "#%Module
+setenv\t\tFOO value
+setenv\t\tFOOCB va\\{ue
+setenv\t\tFOOEM {}
+setenv\t\tFOOSP {value }"
+set tserr "#%Module
+setenv\t\tFOO value
+setenv\t\tFOOARG1 val
+setenv\t\tFOOARG2 {value }
+setenv\t\tFOOARG3 val\\{ue
+setenv\t\tFOOCB va\\{ue
+setenv\t\tFOOEM {}
+setenv\t\tFOOSP {value }"
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        # dash does not take into account arguments passed to sourced script
+        testouterr_shtomod sh "val value\\  val\{ue" OK $tserr_noarg
+    } else {
+        testouterr_shtomod sh "val value\\  val\{ue" OK $tserr
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash "val value\\  val\{ue" OK $tserr_noarg
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh "val value\\  val\{ue" OK $tserr
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod tcsh "val value\\  val\{ue" OK $tserr
+}
+set tserr "#%Module
+setenv\t\tFOO value
+setenv\t\tFOOARG1 v'l
+setenv\t\tFOOARG2 val\\\"e
+setenv\t\tFOOARG3 {val\\\"e}
+setenv\t\tFOOARG4 {}
+setenv\t\tFOOCB va\\{ue
+setenv\t\tFOOEM {}
+setenv\t\tFOOSP {value }"
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        testouterr_shtomod sh "v'l val\"e val\\\"e " OK $tserr_noarg
+    } else {
+        testouterr_shtomod sh "v'l val\"e val\\\"e " OK $tserr
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash "v'l val\"e val\\\"e " OK $tserr_noarg
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod tcsh "v'l val\"e val\\\"e " OK $tserr
+}
+
+# set an environment variable containing a newline char to see if it distrub parsing
+setenv_var TESTSUITE_FOONL "foo\nbar"
+set tserr "#%Module
+setenv\t\tFOO value
+setenv\t\tFOOARG1 v'l
+setenv\t\tFOOARG2 val\\\"e
+setenv\t\tFOOARG3 {val\\\"e}
+setenv\t\tFOOARG4 {}
+setenv\t\tFOOCB va\\{ue
+setenv\t\tFOOEM {}
+setenv\t\tFOOSP {value }"
+if {[info exists shell_pathname(sh)]} {
+    if {$sh_kind eq {dash}} {
+        testouterr_shtomod sh "v'l val\"e val\\\"e " OK $tserr_noarg
+    } else {
+        testouterr_shtomod sh "v'l val\"e val\\\"e " OK $tserr
+    }
+}
+if {[info exists shell_pathname(dash)]} {
+    testouterr_shtomod dash "v'l val\"e val\\\"e " OK $tserr_noarg
+}
+if {[info exists shell_pathname(bash)]} {
+    testouterr_shtomod bash "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(ksh)]} {
+    testouterr_shtomod ksh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(ksh93)]} {
+    testouterr_shtomod ksh93 "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(zsh)]} {
+    testouterr_shtomod zsh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(fish)]} {
+    testouterr_shtomod fish "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(csh)]} {
+    testouterr_shtomod csh "v'l val\"e val\\\"e " OK $tserr
+}
+if {[info exists shell_pathname(tcsh)]} {
+    testouterr_shtomod tcsh "v'l val\"e val\\\"e " OK $tserr
+}
+unsetenv_var TESTSUITE_FOONL
+setenv_var TESTSUITE_SHTOMOD_NOVAR 1
+
+
+# path-specific tests
+unsetenv_var TESTSUITE_SHTOMOD_NOPATH
+setenv_var FOOPATH /path/to/dir1:/path/to/dir2:/path/to/dir3
+setenv_var FOOPATHEM :/path/to/dir1:/path/to/dir2:/path/to/dir3
+setenv_var FOOPATHSP "/path/to/dir1 /path/to/dir2 /path/to/dir3"
+setenv_var FOOPATHSPEM "/path/to/dir1 /path/to/dir2 /path/to/dir3 "
+setenv_var FOOPATHCB /path/to/dir1:/path/to/d{r2:/path/to/dir3
+testouterr_shtomod ALL {} OK {}
+setenv_var FOOPATH /path/to/dir2
+setenv_var FOOPATHEM /path/to/dir2
+setenv_var FOOPATHSP /path/to/dir2
+setenv_var FOOPATHSPEM /path/to/dir2
+setenv_var FOOPATHCB /path/to/d{r2
+set tserr "#%Module
+append-path\t-d { } FOOPATHSP /path/to/dir3
+append-path\t-d { } FOOPATHSPEM /path/to/dir3 {}
+append-path\tFOOPATH /path/to/dir3
+append-path\tFOOPATHCB /path/to/dir3
+append-path\tFOOPATHEM /path/to/dir3
+prepend-path\t-d { } FOOPATHSP /path/to/dir1
+prepend-path\t-d { } FOOPATHSPEM /path/to/dir1
+prepend-path\tFOOPATH /path/to/dir1
+prepend-path\tFOOPATHCB /path/to/dir1
+prepend-path\tFOOPATHEM {} /path/to/dir1"
+testouterr_shtomod ALL {} OK $tserr
+setenv_var FOOPATH "/path/to/dir2:/path"
+setenv_var FOOPATHEM "/path/to/dir2:/path"
+setenv_var FOOPATHSP "/path/to/dir2 /path"
+setenv_var FOOPATHSPEM "/path/to/dir2 /path"
+setenv_var FOOPATHCB "/path/to/d{r2:/path"
+set tserr "#%Module
+append-path\t-d / FOOPATH to dir3
+append-path\t-d / FOOPATHCB to dir3
+append-path\t-d / FOOPATHEM to dir3
+append-path\t-d / FOOPATHSP to dir3
+append-path\t-d / FOOPATHSPEM to {dir3 }
+prepend-path\t-d { } FOOPATHSP /path/to/dir1
+prepend-path\t-d { } FOOPATHSPEM /path/to/dir1
+prepend-path\tFOOPATH /path/to/dir1
+prepend-path\tFOOPATHCB /path/to/dir1
+prepend-path\tFOOPATHEM {} /path/to/dir1"
+testouterr_shtomod ALL {} OK $tserr
+unsetenv_var FOOPATH
+unsetenv_var FOOPATHEM
+unsetenv_var FOOPATHSP
+unsetenv_var FOOPATHSPEM
+unsetenv_var FOOPATHCB
+
+# path dedup tests
+setenv_var TESTSUITE_SHTOMOD_NOPATH 1
+setenv_var TESTSUITE_SHTOMOD_PATHDUP 1
+
+# no prior value
+set tserr "#%Module
+prepend-path\tFOOPATHDUP /path/to/dir1 /path/to/dir2 /path/to/dir3 {/path/to dir4}
+prepend-path\tFOOPATHDUPEM {} /path/to/dir1 /path/to/dir2 /path/to/dir3
+prepend-path\tFOOPATHDUPMIX {} /path/to/dir1 {/path/to/dir1 /path/to/dir2 /path/to/dir1} /path/to/dir3
+prepend-path\tFOOPATHDUPSP {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir3 /path/to} {dir4 /path/to/dir3}
+setenv\t\tFOOPATHDUPSPEM {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir3 /path/to/dir3 }"
+testouterr_shtomod ALL {} OK $tserr
+
+# totally different value
+setenv_var FOOPATHDUP /path/to/dir5
+setenv_var FOOPATHDUPEM :/path/to/dir5
+setenv_var FOOPATHDUPMIX "/path/to/dir5: "
+setenv_var FOOPATHDUPSP "/path/to/dir5 /path/to/dir3"
+setenv_var FOOPATHDUPSPEM "/path/to/dir5 "
+set tserr "#%Module
+setenv\t\tFOOPATHDUP {/path/to/dir1:/path/to/dir1:/path/to/dir2:/path/to/dir1:/path/to/dir3:/path/to dir4:/path/to/dir3}
+setenv\t\tFOOPATHDUPEM :/path/to/dir1:/path/to/dir1:/path/to/dir2:/path/to/dir1:/path/to/dir3::/path/to/dir3
+setenv\t\tFOOPATHDUPMIX {:/path/to/dir1:/path/to/dir1 /path/to/dir2 /path/to/dir1:/path/to/dir3:/path/to/dir3:}
+setenv\t\tFOOPATHDUPSP {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir3 /path/to:dir4 /path/to/dir3}
+setenv\t\tFOOPATHDUPSPEM {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir3 /path/to/dir3 }"
+testouterr_shtomod ALL {} OK $tserr
+
+# single path prior value
+setenv_var FOOPATHDUP /path/to/dir2
+setenv_var FOOPATHDUPEM /path/to/dir2
+setenv_var FOOPATHDUPMIX /path/to/dir2
+setenv_var FOOPATHDUPSP /path/to/dir2
+setenv_var FOOPATHDUPSPEM /path/to/dir2
+set tserr "#%Module
+append-path\t-d { } FOOPATHDUPMIX /path/to/dir1:/path/to/dir3:/path/to/dir3:
+append-path\t-d { } FOOPATHDUPSP /path/to/dir1 /path/to/dir3 /path/to:dir4
+append-path\t-d { } FOOPATHDUPSPEM /path/to/dir1 /path/to/dir3 {}
+append-path\tFOOPATHDUP /path/to/dir1 /path/to/dir3 {/path/to dir4}
+append-path\tFOOPATHDUPEM /path/to/dir1 /path/to/dir3 {}
+prepend-path\t-d { } FOOPATHDUPMIX :/path/to/dir1:/path/to/dir1
+prepend-path\t-d { } FOOPATHDUPSP /path/to/dir1
+prepend-path\t-d { } FOOPATHDUPSPEM /path/to/dir1
+prepend-path\tFOOPATHDUP /path/to/dir1
+prepend-path\tFOOPATHDUPEM {} /path/to/dir1"
+testouterr_shtomod ALL {} OK $tserr
+
+# multiple paths as prior value
+setenv_var FOOPATHDUP /path/to/dir2:/path/to/dir1
+setenv_var FOOPATHDUPEM /path/to/dir2:/path/to/dir1
+setenv_var FOOPATHDUPMIX "/path/to/dir2 /path/to/dir1"
+setenv_var FOOPATHDUPSP "/path/to/dir2 /path/to/dir1"
+setenv_var FOOPATHDUPSPEM "/path/to/dir2 /path/to/dir1"
+set tserr "#%Module
+append-path\t-d { } FOOPATHDUPSP /path/to/dir3 /path/to:dir4
+append-path\t-d { } FOOPATHDUPSPEM /path/to/dir3 {}
+append-path\tFOOPATHDUP /path/to/dir3 {/path/to dir4}
+append-path\tFOOPATHDUPEM /path/to/dir3 {}
+append-path\tFOOPATHDUPMIX /path/to/dir3 {}
+prepend-path\t-d { } FOOPATHDUPMIX :/path/to/dir1:/path/to/dir1
+prepend-path\t-d { } FOOPATHDUPSP /path/to/dir1
+prepend-path\t-d { } FOOPATHDUPSPEM /path/to/dir1
+prepend-path\tFOOPATHDUP /path/to/dir1
+prepend-path\tFOOPATHDUPEM {} /path/to/dir1"
+testouterr_shtomod ALL {} OK $tserr
+
+# ambigous prior value
+setenv_var FOOPATHDUP /path/to/dir1
+setenv_var FOOPATHDUPEM :
+setenv_var FOOPATHDUPMIX :
+setenv_var FOOPATHDUPSP /path/to/dir1
+setenv_var FOOPATHDUPSPEM { }
+set tserr "#%Module
+append-path\t-d { } FOOPATHDUPSP /path/to/dir1 /path/to/dir2 /path/to/dir3 /path/to:dir4
+append-path\tFOOPATHDUP /path/to/dir1 /path/to/dir2 /path/to/dir3 {/path/to dir4}
+prepend-path\t-d 3 FOOPATHDUPSPEM {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir} { /path/to/dir}
+setenv\t\tFOOPATHDUPEM :/path/to/dir1:/path/to/dir1:/path/to/dir2:/path/to/dir1:/path/to/dir3::/path/to/dir3
+setenv\t\tFOOPATHDUPMIX {:/path/to/dir1:/path/to/dir1 /path/to/dir2 /path/to/dir1:/path/to/dir3:/path/to/dir3:}"
+testouterr_shtomod ALL {} OK $tserr
+
+# ambigous prior value (#2)
+setenv_var FOOPATHDUP /path/to/dir1
+setenv_var FOOPATHDUPEM {}
+setenv_var FOOPATHDUPMIX {}
+setenv_var FOOPATHDUPSP /path/to/dir1
+setenv_var FOOPATHDUPSPEM {}
+set tserr "#%Module
+append-path\t-d { } FOOPATHDUPSP /path/to/dir1 /path/to/dir2 /path/to/dir3 /path/to:dir4
+append-path\tFOOPATHDUP /path/to/dir1 /path/to/dir2 /path/to/dir3 {/path/to dir4}
+setenv\t\tFOOPATHDUPEM :/path/to/dir1:/path/to/dir1:/path/to/dir2:/path/to/dir1:/path/to/dir3::/path/to/dir3
+setenv\t\tFOOPATHDUPMIX {:/path/to/dir1:/path/to/dir1 /path/to/dir2 /path/to/dir1:/path/to/dir3:/path/to/dir3:}
+setenv\t\tFOOPATHDUPSPEM {/path/to/dir1 /path/to/dir1 /path/to/dir2 /path/to/dir1 /path/to/dir3 /path/to/dir3 }"
+testouterr_shtomod ALL {} OK $tserr
+
+# ambigous prior value (#3)
+setenv_var FOOPATHDUP /path/to/dir1
+setenv_var FOOPATHDUPEM /path/to/dir1:/path/to/dir3:
+setenv_var FOOPATHDUPMIX "/path/to/dir1 /path/to/dir2"
+setenv_var FOOPATHDUPSP {/path/to:dir4}
+setenv_var FOOPATHDUPSPEM {/path/to/dir3 }
+set tserr "#%Module
+append-path\t-d { } FOOPATHDUPMIX /path/to/dir1:/path/to/dir3:/path/to/dir3:
+append-path\t-d { } FOOPATHDUPSP /path/to/dir3
+append-path\tFOOPATHDUP /path/to/dir1 /path/to/dir2 /path/to/dir3 {/path/to dir4}
+append-path\tFOOPATHDUPEM /path/to/dir3
+prepend-path\t-d { } FOOPATHDUPSP /path/to/dir1 /path/to/dir2 /path/to/dir3
+prepend-path\t-d { } FOOPATHDUPSPEM /path/to/dir1 /path/to/dir2 /path/to/dir3
+prepend-path\tFOOPATHDUPEM {} /path/to/dir1 /path/to/dir2
+prepend-path\tFOOPATHDUPMIX {} /path/to/dir1"
+testouterr_shtomod ALL {} OK $tserr
+
+unsetenv_var TESTSUITE_SHTOMOD_PATHDUP
+
+# test variable unset
+setenv_var TESTSUITE_SHTOMOD_UNSETENV 1
+testouterr_shtomod ALL {} OK "#%Module\nunsetenv\tTESTSUITE_SHTOMOD_UNSETENV"
+unsetenv_var TESTSUITE_SHTOMOD_UNSETENV
+
+# test empty element append
+setenv_var TESTSUITE_SHTOMOD_EMPTYAPPEND 1
+testouterr_shtomod ALL {} OK "#%Module\nappend-path\tTESTSUITE_SHTOMOD_EMPTYAPPEND {}"
+unsetenv_var TESTSUITE_SHTOMOD_EMPTYAPPEND
+
+# test empty element prepend
+setenv_var TESTSUITE_SHTOMOD_EMPTYPREPEND 1
+testouterr_shtomod ALL {} OK "#%Module\nprepend-path\tTESTSUITE_SHTOMOD_EMPTYPREPEND {}"
+unsetenv_var TESTSUITE_SHTOMOD_EMPTYPREPEND
+
+unsetenv_var TESTSUITE_SHTOMOD_NOVAR
+unsetenv_var TESTSUITE_SHTOMOD_NOPATH
+unsetenv_var TESTSUITE_SHTOMOD_NOCD
+
+# output using same delimiter as sh-to-mod sub-command
+setenv_var TESTSUITE_SHTOMOD_FUZZYOUT1 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Unexpected output when sourcing '<SCRIPTSH>' in shell '<SHELL>'"
+unsetenv_var TESTSUITE_SHTOMOD_FUZZYOUT1
+setenv_var TESTSUITE_SHTOMOD_FUZZYOUT2 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Unexpected output when sourcing '<SCRIPTSH>' in shell '<SHELL>'"
+testouterr_shtomod ALL "val\\ ue" ERR "$error_msgs: Unexpected output when sourcing '<SCRIPTSH> {val ue}' in shell '<SHELL>'"
+unsetenv_var TESTSUITE_SHTOMOD_FUZZYOUT2
+
+
+# test script with error (exit 1)
+setenv_var TESTSUITE_SHTOMOD_EXIT1 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Script '<SCRIPTSH>' exited abnormally"
+# and message on stderr
+setenv_var TESTSUITE_SHTOMOD_ERRMSG 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Script '<SCRIPTSH>' exited abnormally\n    with following output\n  error message"
+
+# script output on stderr but no error
+unsetenv_var TESTSUITE_SHTOMOD_EXIT1
+testouterr_shtomod ALL {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsvar"
+# and message on stdout
+setenv_var TESTSUITE_SHTOMOD_OUTMSG 1
+testouterr_shtomod ALL {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsvar"
+
+# script output on stdout but no error
+unsetenv_var TESTSUITE_SHTOMOD_ERRMSG
+testouterr_shtomod ALL {} OK "#%Module\n$tscwd\n$tsvarpre\n$tsvar"
+# script output on stdout and error
+setenv_var TESTSUITE_SHTOMOD_EXIT1 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Script '<SCRIPTSH>' exited abnormally\n    with following output\n  output message"
+# and message on stderr
+setenv_var TESTSUITE_SHTOMOD_ERRMSG 1
+testouterr_shtomod ALL {} ERR "$error_msgs: Script '<SCRIPTSH>' exited abnormally\n    with following output\n  output message\n  error message"
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

@@ -19,7 +19,9 @@ may be placed after this string. The version number is useful as the
 :file:`modulecmd.tcl` required to interpret the modulefile. If a version
 number doesn't exist, then :file:`modulecmd.tcl` will assume the *modulefile*
 is compatible. Files without the magic cookie or with a version number greater
-than the current version of :file:`modulecmd.tcl` will not be interpreted.
+than the current version of :file:`modulecmd.tcl` will not be interpreted. If
+the :mconfig:`mcookie_version_check` configuration is disabled the version
+number set is not checked.
 
 Each *modulefile* contains the changes to a user's environment needed to
 access an application. Tcl is a simple programming language which permits
@@ -211,7 +213,7 @@ the *modulefile* is being loaded.
 
     .. versionadded:: 4.1
 
-.. mfcmd:: module [sub-command] [sub-command-args]
+.. mfcmd:: module [sub-command] [sub-command-options] [sub-command-args]
 
  Contains the same *sub-commands* as described in the :ref:`module(1)`
  man page in the :ref:`Module Sub-Commands` section. This command permits a
@@ -221,6 +223,10 @@ the *modulefile* is being loaded.
  ``module load`` commands. For example, if every user on the system
  requires a basic set of applications loaded, then a core *modulefile*
  would contain the necessary ``module load`` commands.
+
+ The ``--not-req`` option may be set for the ``load``, ``unload`` and
+ ``switch`` sub-commands to inhibit the definition of an implicit prereq or
+ conflict requirement onto specified modules.
 
  Command line switches :option:`--auto`, :option:`--no-auto` and
  :option:`--force` are ignored when passed to a :mfcmd:`module` command set in
@@ -240,6 +246,149 @@ the *modulefile* is being loaded.
 
  * another *modulefile* alias
 
+.. mfcmd:: module-forbid [options] modulefile...
+
+ Forbid use of *modulefile*. An error is obtained when trying to evaluate a
+ forbidden module. This command should be placed in one of the
+ :file:`modulecmd.tcl` rc files.
+
+ :mfcmd:`module-forbid` command accepts the following options:
+
+ * ``--after datetime``
+ * ``--before datetime``
+ * ``--not-user {user...}``
+ * ``--not-group {group...}``
+ * ``--message {text message}``
+ * ``--nearly-message {text message}``
+
+ If ``--after`` option is set, forbidding is only effective after specified
+ date time. Following the same principle, if ``--before`` option is set,
+ forbidding is only effective before specified date time. Accepted date time
+ format is ``YYYY-MM-DD[THH:MM]``. If no time (``HH:MM``) is specified,
+ ``00:00`` is assumed. ``--after`` and ``--before`` options are not supported
+ on Tcl versions prior to 8.5.
+
+ If ``--not-user`` option is set, forbidding is not applied if the username of
+ the user currently running :file:`modulecmd.tcl` is part of the list of
+ username specified. Following the same approach, if ``--not-group`` option is
+ set, forbidding is not applied if current user is member of one the group
+ specified. When both options are set, forbidding is not applied if a match is
+ found for ``--not-user`` or ``--not-group``.
+
+ Error message returned when trying to evaluate a forbidden module can be
+ supplemented with the *text message* set through ``--message`` option.
+
+ If ``--after`` option is set, modules are considered *nearly forbidden*
+ during a number of days defined by the :mconfig:`nearly_forbidden_days`
+ :file:`modulecmd.tcl` configuration option
+ (see :envvar:`MODULES_NEARLY_FORBIDDEN_DAYS`), prior reaching the expiry
+ date fixed by ``--after`` option. When a *nearly forbidden* module is
+ evaluated a warning message is issued to inform module will soon be
+ forbidden. This warning message can be supplemented with the *text message*
+ set through ``--nearly-message`` option.
+
+ If a :mfcmd:`module-forbid` command applies to a *modulefile* also targeted
+ by a :mfcmd:`module-hide --hard<module-hide>` command, this module is
+ unveiled when precisely named to return an access error.
+
+ Forbidden modules included in the result of an :subcmd:`avail` sub-command
+ are reported with a ``forbidden`` tag applied to them. Nearly forbidden
+ modules included in the result of an :subcmd:`avail` or a :subcmd:`list`
+ sub-command are reported with a ``nearly-forbidden`` tag applied to them. See
+ :ref:`Module tags` section in :ref:`module(1)`.
+
+ The parameter *modulefile* may leverage a specific syntax to finely select
+ module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionadded:: 4.6
+
+.. mfcmd:: module-hide [options] modulefile...
+
+ Hide *modulefile* to exclude it from available module search or module
+ selection unless query refers to *modulefile* by its exact name. This command
+ should be placed in one of the :file:`modulecmd.tcl` rc files.
+
+ :mfcmd:`module-hide` command accepts the following options:
+
+ * ``--soft|--hard``
+ * ``--hidden-loaded``
+ * ``--after datetime``
+ * ``--before datetime``
+ * ``--not-user {user...}``
+ * ``--not-group {group...}``
+
+ When ``--soft`` option is set, *modulefile* is also set hidden, but hiding is
+ disabled when search or selection query's root name matches module's root
+ name. This soft hiding mode enables to hide modulefiles from bare module
+ availability listing yet keeping the ability to select such module for load
+ with the regular resolution mechanism (i.e., no need to use module exact name
+ to select it)
+
+ When ``--hard`` option is set, *modulefile* is also set hidden and stays
+ hidden even if search or selection query refers to *modulefile* by its exact
+ name.
+
+ When ``--hidden-loaded`` option is set, hidden state also applies to the
+ *modulefile* when it is loaded. Hidden loaded modules do not appear on
+ :subcmd:`list` sub-command output, unless :option:`--all` option is set.
+ Their loading or unloading informational messages are not reported unless the
+ :envvar:`verbosity of Modules<MODULES_VERBOSITY>` is set to a level higher
+ than ``verbose``. Hidden loaded modules are detected in any cases by state
+ query commands like :mfcmd:`is-loaded`.
+
+ If ``--after`` option is set, hiding is only effective after specified date
+ time. Following the same principle, if ``--before`` option is set, hiding is
+ only effective before specified date time. Accepted date time format is
+ ``YYYY-MM-DD[THH:MM]``. If no time (``HH:MM``) is specified, ``00:00`` is
+ assumed. ``--after`` and ``--before`` options are not supported on Tcl
+ versions prior to 8.5.
+
+ If ``--not-user`` option is set, hiding is not applied if the username of the
+ user currently running :file:`modulecmd.tcl` is part of the list of username
+ specified. Following the same approach, if ``--not-group`` option is set,
+ hiding is not applied if current user is member of one the group specified.
+ When both options are set, hiding is not applied if a match is found for
+ ``--not-user`` or ``--not-group``.
+
+ If the :option:`--all` option is set on :subcmd:`avail`, :subcmd:`aliases`,
+ :subcmd:`whatis` or :subcmd:`search` sub-commands, hiding is disabled thus
+ hidden modulefiles are included in module search. Hard-hidden modules (i.e.,
+ declared hidden with ``--hard`` option) are not affected by :option:`--all`
+ and stay hidden even if option is set. :option:`--all` option does not apply
+ to *module selection* sub-commands like :subcmd:`load`. Thus in such context
+ a hidden module should always be referred by its exact full name (e.g.,
+ ``foo/1.2.3`` not ``foo``) unless if it has been hidden in ``--soft`` mode. A
+ hard-hidden module cannot be unveiled or selected in any case.
+
+ If several :mfcmd:`module-hide` commands target the same *modulefile*, the
+ strongest hiding level is retained which means if both a regular, a
+ ``--soft`` hiding command match a given module, regular hiding mode is
+ considered. If both a regular and a ``--hard`` hiding command match a given
+ module, hard hiding mode is retained. A set ``--hidden-loaded`` option is
+ retained even if the :mfcmd:`module-hide` statement on which it is declared
+ is superseded by a stronger :mfcmd:`module-hide` statement with no
+ ``--hidden-loaded`` option set.
+
+ Hidden modules included in the result of an :subcmd:`avail` sub-command are
+ reported with a ``hidden`` tag applied to them. Hidden loaded modules
+ included in the result of a :subcmd:`list` sub-command are reported with a
+ ``hidden-loaded`` tag applied to them. This tag is not reported on
+ :subcmd:`avail` sub-command context. See :ref:`Module tags` section in
+ :ref:`module(1)`.
+
+ The parameter *modulefile* may also be a symbolic modulefile name or a
+ modulefile alias. It may also leverage a specific syntax to finely select
+ module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionadded:: 4.6
+
+    .. versionchanged:: 4.7
+       Option ``--hidden-loaded`` added.
+
 .. mfcmd:: module-info option [info-args]
 
  Provide information about the :file:`modulecmd.tcl` program's state. Some of
@@ -247,20 +396,10 @@ the *modulefile* is being loaded.
  *option* is the type of information to be provided, and *info-args* are any
  arguments needed.
 
- **module-info type**
+ **module-info alias** name
 
-  Returns either ``C`` or ``Tcl`` to indicate which :command:`module` command
-  is being  executed, either the C version or the Tcl-only version, to allow
-  the *modulefile* writer to handle any differences between the two.
-
- **module-info mode** [modetype]
-
-  Returns the current :file:`modulecmd.tcl`'s mode as a string if no
-  *modetype* is given.
-
-  Returns ``1`` if :file:`modulecmd.tcl`'s mode is *modetype*. *modetype* can
-  be: ``load``, ``unload``, ``remove``, ``switch``, ``display``, ``help``,
-  ``test`` or ``whatis``.
+  Returns the full *modulefile* name to which the *modulefile* alias *name*
+  is assigned
 
  **module-info command** [commandname]
 
@@ -276,15 +415,32 @@ the *modulefile* is being loaded.
 
      .. versionadded:: 4.0
 
+ **module-info loaded** modulefile
+
+  Returns the names of currently loaded modules matching passed *modulefile*.
+  The parameter *modulefile* might either be a fully qualified *modulefile*
+  with name and version or just a directory which in case all loaded
+  *modulefiles* from the directory will be returned. The parameter
+  *modulefile* may also be a symbolic modulefile name or a modulefile alias.
+
+  .. only:: html
+
+     .. versionadded:: 4.1
+
+ **module-info mode** [modetype]
+
+  Returns the current :file:`modulecmd.tcl`'s mode as a string if no
+  *modetype* is given.
+
+  Returns ``1`` if :file:`modulecmd.tcl`'s mode is *modetype*. *modetype* can
+  be: ``load``, ``unload``, ``remove``, ``switch``, ``display``, ``help``,
+  ``test`` or ``whatis``.
+
  **module-info name**
 
   Return the name of the *modulefile*. This is not the full pathname for
   *modulefile*. See the `Modules Variables`_ section for information on the
   full pathname.
-
- **module-info specified**
-
-  Return the name of the *modulefile* specified on the command line.
 
  **module-info shell** [shellname]
 
@@ -301,9 +457,9 @@ the *modulefile* is being loaded.
  **module-info shelltype** [shelltypename]
 
   Return the family of the shell under which *modulefile* was invoked if no
-  *shelltypename* is given. As of :mfcmd:`module-info shell` this depends on
-  the first parameter of :file:`modulecmd.tcl`. The output reflects a shell
-  type determining the shell syntax of the commands produced by
+  *shelltypename* is given. As of :mfcmd:`module-info shell<module-info>` this
+  depends on the first parameter of :file:`modulecmd.tcl`. The output reflects
+  a shell type determining the shell syntax of the commands produced by
   :file:`modulecmd.tcl`.
 
   If a *shelltypename* is given, returns ``1`` if :file:`modulecmd.tcl`'s
@@ -311,17 +467,9 @@ the *modulefile* is being loaded.
   *shelltypename* can be: ``sh``, ``csh``, ``fish``, ``tcl``, ``perl``,
   ``python``, ``ruby``, ``lisp``, ``cmake``, ``r``.
 
- **module-info alias** name
+ **module-info specified**
 
-  Returns the full *modulefile* name to which the *modulefile* alias *name*
-  is assigned
-
- **module-info version** modulefile
-
-  Returns the physical module name and version of the passed symbolic
-  version *modulefile*.  The parameter *modulefile* might either be a full
-  qualified *modulefile* with name and version, another symbolic *modulefile*
-  name or a *modulefile* alias.
+  Return the name of the *modulefile* specified on the command line.
 
  **module-info symbols** modulefile
 
@@ -330,17 +478,99 @@ the *modulefile* is being loaded.
   *modulefile* with name and version, another symbolic *modulefile* name
   or a *modulefile* alias.
 
- **module-info loaded** modulefile
+ **module-info tags** [tag]
 
-  Returns the names of currently loaded modules matching passed *modulefile*.
-  The parameter *modulefile* might either be a fully qualified *modulefile*
-  with name and version or just a directory which in case all loaded
-  *modulefiles* from the directory will be returned. The parameter
-  *modulefile* may also be a symbolic modulefile name or a modulefile alias.
+  Returns all tags assigned to currently evaluated *modulefile* as a list of
+  strings if no *tag* name is given (see :ref:`Module tags` section in
+  :ref:`module(1)`)
+
+  Returns ``1`` if one of the tags applying to currently evaluated
+  *modulefile* is *tag*. Returns ``0`` otherwise.
 
   .. only:: html
 
-     .. versionadded:: 4.1
+     .. versionadded:: 4.7
+
+ **module-info type**
+
+  Returns either ``C`` or ``Tcl`` to indicate which :command:`module` command
+  is being  executed, either the C version or the Tcl-only version, to allow
+  the *modulefile* writer to handle any differences between the two.
+
+ **module-info usergroups** [name]
+
+  Returns all the groups the user currently running :file:`modulecmd.tcl` is
+  member of as a list of strings if no *name* is given.
+
+  Returns ``1`` if one of the group current user running :file:`modulecmd.tcl`
+  is member of is *name*. Returns ``0`` otherwise.
+
+  If the Modules Tcl extension library is disabled, the :manpage:`id(1)`
+  command is invoked to fetch groups of current user.
+
+  .. only:: html
+
+     .. versionadded:: 4.6
+
+ **module-info username** [name]
+
+  Returns the username of the user currently running :file:`modulecmd.tcl` as
+  a string if no *name* is given.
+
+  Returns ``1`` if username of current user running :file:`modulecmd.tcl` is
+  *name*. Returns ``0`` otherwise.
+
+  If the Modules Tcl extension library is disabled, the :manpage:`id(1)`
+  command is invoked to fetch username of current user.
+
+  .. only:: html
+
+     .. versionadded:: 4.6
+
+ **module-info version** modulefile
+
+  Returns the physical module name and version of the passed symbolic
+  version *modulefile*.  The parameter *modulefile* might either be a full
+  qualified *modulefile* with name and version, another symbolic *modulefile*
+  name or a *modulefile* alias.
+
+.. mfcmd:: module-tag [options] tag modulefile...
+
+ Associate *tag* to designated *modulefile*. This tag information will be
+ reported along *modulefile* on :subcmd:`avail` and :subcmd:`list`
+ sub-commands (see :ref:`Module tags` section in :ref:`module(1)`). Tag
+ information can be queried during *modulefile* evaluation with the
+ :mfcmd:`module-info tags<module-info>` modulefile command.
+ :mfcmd:`module-tag` commands should be placed in one of the
+ :file:`modulecmd.tcl` rc files.
+
+ :mfcmd:`module-tag` command accepts the following options:
+
+ * ``--not-user {user...}``
+ * ``--not-group {group...}``
+
+ If ``--not-user`` option is set, the tag is not applied if the username of
+ the user currently running :file:`modulecmd.tcl` is part of the list of
+ username specified. Following the same approach, if ``--not-group`` option is
+ set, the tag is not applied if current user is member of one the group
+ specified. When both options are set, the tag is not applied if a match is
+ found for ``--not-user`` or ``--not-group``.
+
+ The parameter *modulefile* may also be a symbolic modulefile name or a
+ modulefile alias. It may also leverage a specific syntax to finely select
+ module version (see `Advanced module version specifiers`_ section below).
+
+ Tags inherited from other modulefile commands or module states cannot be set
+ with :mfcmd:`module-tag`. Otherwise an error is returned. Those special tags
+ are: ``auto-loaded``, ``forbidden``, ``hidden``, ``hidden-loaded``,
+ ``loaded`` and ``nearly-forbidden``.
+
+ When *tag* equals ``sticky`` or ``super-sticky``, designated *modulefile* are
+ defined :ref:`Sticky modules`.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 .. mfcmd:: module-version modulefile version-name...
 
@@ -406,7 +636,7 @@ the *modulefile* is being loaded.
  reference counter environment variable is named by suffixing *variable*
  by ``_modshare``.
 
- When *value* is already defined in environement *variable*, it is not added
+ When *value* is already defined in environment *variable*, it is not added
  again except if ``--duplicates`` option is set.
 
  If the *variable* is not set, it is created. When a *modulefile* is
@@ -415,6 +645,11 @@ the *modulefile* is being loaded.
 
  If *value* corresponds to the concatenation of multiple elements separated by
  colon, or *delimiter*, character, each element is treated separately.
+
+ .. only:: html
+
+    .. versionchanged:: 4.1
+       Option ``--duplicates`` added
 
 .. mfcmd:: prereq modulefile...
 
@@ -440,6 +675,11 @@ the *modulefile* is being loaded.
 
  If *value* corresponds to the concatenation of multiple elements separated by
  colon, or *delimiter*, character, each element is treated separately.
+
+ .. only:: html
+
+    .. versionchanged:: 4.1
+       Option ``--index`` added
 
 .. mfcmd:: set-alias alias-name alias-string
 
@@ -474,6 +714,30 @@ the *modulefile* is being loaded.
  subsequent :subcmd:`unload` will unset the environment *variable* - the
  previous value cannot be restored! (Unless you handle it explicitly ... see
  below.)
+
+.. mfcmd:: source-sh shell script [arg...]
+
+ Evaluate with *shell* the designated *script* with defined *arguments* to
+ find out the environment changes it does. Those changes obtained by comparing
+ environment prior and after *script* evaluation are then translated into
+ corresponding *modulefile* commands, which are then applied during modulefile
+ evaluation as if they were directly written in it.
+
+ When modulefile is unloaded, environment changes done are reserved by
+ evaluating in the ``unload`` context the resulting modulefile commands, which
+ were recorded in the :envvar:`MODULES_LMSOURCESH` environment variable at
+ ``load`` time.
+
+ Changes on environment variables, shell aliases, shell functions and current
+ working directory are tracked.
+
+ *Shell* could be specified as a command name or a fully qualified pathname.
+ The following shells are supported: sh, dash, csh, tcsh, bash, ksh, ksh93,
+ zsh and fish.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
 
 .. mfcmd:: system string
 
@@ -526,6 +790,16 @@ the *modulefile* is being loaded.
  :mfcmd:`unsetenv` command changes the process' environment like
  :mfcmd:`setenv`.
 
+.. mfcmd:: versioncmp version1 version2
+
+ Compare version string *version1* against version string *version2*. Returns
+ ``-1``, ``0`` or ``1`` respectively if *version1* is less than, equal to or
+ greater than *version2*.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
 .. mfcmd:: x-resource [resource-string|filename]
 
  Merge resources into the X11 resource database. The resources are used to
@@ -559,8 +833,30 @@ the *modulefile* is being loaded.
 Modules Variables
 -----------------
 
-The ``ModulesCurrentModulefile`` variable contains the full pathname of
-the *modulefile* being interpreted.
+.. mfvar:: ModulesCurrentModulefile
+
+ The :mfvar:`ModulesCurrentModulefile` variable contains the full pathname of
+ the *modulefile* being interpreted.
+
+.. mfvar:: ModuleTool
+
+ The :mfvar:`ModuleTool` variable contains the name of the *module*
+ implementation currently in use. The value of this variable is set to
+ ``Modules`` for this implementation.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. mfvar:: ModuleToolVersion
+
+ The :mfvar:`ModuleToolVersion` variable contains the version of the *module*
+ implementation currently in use. The value of this variable is set to
+ |code version| for this version of Modules.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 .. _Locating Modulefiles:
 
@@ -641,6 +937,12 @@ specified is matched against starting portion of existing module versions,
 where portion is a substring separated from the rest of version string by a
 ``.`` character.
 
+When the implicit default mechanism and the `Advanced module version
+specifiers`_ are both enabled, a ``default`` and ``latest`` symbolic versions
+are automatically defined for each module name (also at each directory level
+in case of deep *modulefile*). Unless a symbolic version, alias, or regular
+module version already exists for these version names.
+
 If user names a *modulefile* that cannot be found in the first *modulepath*
 directory, *modulefile* will be searched in next *modulepath* directory
 and so on until a matching *modulefile* is found. If search goes through
@@ -656,13 +958,61 @@ be adapted to the rights the user has been granted. Exception is made when
 trying to directly access a directory or a *modulefile*. In this case,
 the access issue is returned as an error message.
 
-A *modulefile* whose name or element in its name starts with a ``.`` (dot) is
-considered hidden. Hidden *modulefile* is not displayed or taken into account
-except if it is explicitly named. By inheritance, a symbolic version-name
-assigned to a hidden *modulefile* is displayed or taken into account only
-if explicitly named. Module alias targeting a hidden *modulefile* appears
-like any other module alias.
+Depending on their name, their file permissions or the use of specific
+modulefile commands, *modulefile*, virtual module, module alias or symbolic
+version may be set hidden which impacts available modules search or module
+selection processes (see `Hiding modulefiles`_ section below).
 
+.. _Hiding modulefiles:
+
+Hiding modulefiles
+------------------
+
+A *modulefile*, virtual module, module alias or symbolic version whose name or
+element in their name starts with a dot character (``.``) or who are targeted
+by a :mfcmd:`module-hide` command are considered hidden. Hidden modules are
+not displayed or taken into account except if they are explicitly named (e.g.,
+``foo/1.2.3`` or ``foo/.2.0`` not ``foo``). If module has been hidden with the
+``--soft`` option of the :mfcmd:`module-hide` command set, it is not
+considered hidden if the root name of the query to search it matches module
+root name (e.g., searching ``foo`` will return a ``foo/1.2.3`` modulefile
+targeted by a ``module-hide --soft`` command). If module has been hidden with
+the ``--hard`` option of the :mfcmd:`module-hide` command set, it is always
+considered hidden thus it is never displayed nor taken into account even if
+it is explicitly named.
+
+A *modulefile*, virtual module, module alias or symbolic version who are
+targeted by a :mfcmd:`module-hide --hard<module-hide>` command and a
+:mfcmd:`module-forbid` command or whose file access permissions are restricted
+are considered hard-hidden and forbidden. Such modules are not displayed or
+taken into account. When explicitly named for evaluation selection, such
+modules are unveiled to return an access error.
+
+A symbolic version-name assigned to a hidden module is displayed or taken into
+account only if explicitly named and if module is not hard-hidden. Non-hidden
+module alias targeting a hidden *modulefile* appears like any other non-hidden
+module alias. Finally, a hidden symbolic version targeting a non-hidden module
+is displayed or taken into account only if not hard-hidden and explicitly
+named to refer to its non-hidden target.
+
+The automatic version symbols (e.g., ``default`` and ``latest``) are
+unaffected by hiding. Moreover when a regular ``default`` or ``latest``
+version is set hidden, the corresponding automatic version symbol takes the
+left spot. For instance, if ``foo/default`` which targets ``foo/1.2.3`` is set
+hard-hidden, the ``default`` automatic version symbol will be set onto
+``foo/2.1.3``, the highest available version of ``foo``.
+
+When loading a *modulefile* or a virtual module targeted by a
+:mfcmd:`module-hide --hidden-loaded<module-hide>` command, this module
+inherits the ``hidden-loaded`` tag. Hidden loaded modules are not reported
+among :subcmd:`list` sub-command results.
+
+If the :option:`--all` is set on :subcmd:`avail`, :subcmd:`aliases`,
+:subcmd:`whatis` or :subcmd:`search` sub-commands, hidden modules are taken
+into account in search. Hard-hidden modules are unaffected by this option.
+
+If the :option:`--all` is set on :subcmd:`list` sub-command, hidden loaded
+modules are included in result output.
 
 Advanced module version specifiers
 ----------------------------------
@@ -698,6 +1048,15 @@ versions, the version major element should corresponds to a number. For
 instance ``10a``, ``1.2.3``, ``1.foo`` are versions valid for range
 comparison whereas ``default`` or ``foo.2`` versions are invalid for range
 comparison.
+
+If the implicit default mechanism is also enabled (see
+:envvar:`MODULES_IMPLICIT_DEFAULT` in :ref:`module(1)`), a ``default`` and
+``latest`` symbolic versions are automatically defined for each module name
+(also at each directory level for deep *modulefiles*). These automatic version
+symbols are defined unless a symbolic version, alias, or regular module
+version already exists for these ``default`` or ``latest`` version names.
+Using the ``mod@latest`` (or ``mod/latest``) syntax ensures highest available
+version will be selected.
 
 
 Modulefile Specific Help
@@ -735,16 +1094,14 @@ additional descriptive information about the *modulefile*.
 ENVIRONMENT
 -----------
 
-.. envvar:: MODULEPATH
-
- Path of directories containing *modulefiles*.
-
+See the :ref:`ENVIRONMENT<module ENVIRONMENT>` section in the
+:ref:`module(1)` man page.
 
 SEE ALSO
 --------
 
 :ref:`module(1)`, :ref:`ml(1)`, :manpage:`Tcl(n)`, :manpage:`TclX(n)`,
-:manpage:`xrdb(1)`, :manpage:`exec(n)`, :manpage:`uname(1)`,
+:manpage:`id(1)`, :manpage:`xrdb(1)`, :manpage:`exec(n)`, :manpage:`uname(1)`,
 :manpage:`domainname(1)`, :manpage:`tclvars(n)`, :manpage:`lsort(n)`
 
 

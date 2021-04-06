@@ -1,0 +1,351 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.70-maint/%M%
+#   Revision:		%I%
+#   First Edition:	2021/01/22
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:
+#   Modulefiles:    foo
+#   Sub-Command:    avail
+#
+#   Comment:	%C{
+#           Test output customization on avail sub-command
+#		}C%
+#
+##############################################################################
+
+set mp $modpath.3
+set mpre [regsub -all "\(\[.+?\]\)" $mp {\\\1}]
+
+# setup specific environment
+setenv_path_var MODULEPATH $mp
+
+# ensure advanced version specifiers are enabled
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
+# ensure regular avail search match is set for these tests
+setenv_var MODULES_SEARCH_MATCH starts_with
+
+# ensure avail tests are made using in depth mode
+setenv_var MODULES_AVAIL_INDEPTH 1
+
+
+# enable a symbolic version for foo/1.0 module
+setenv_var TESTSUITE_AVAIL_OUTPUT_FOO_SYM 1
+
+
+#
+# -o/--output options test
+#
+
+set tserr_avail_foo "foo/1.0\\(bar\\)  "
+set tserr_avail_terse_foo "foo/1.0\\(bar\\)"
+testouterr_cmd_re sh {avail -o sym foo/1.0} OK $tserr_avail_foo
+testouterr_cmd sh {avail foo -o} ERR "$error_msgs: Missing value for '-o' option\n$err_typehelp"
+testouterr_cmd_re sh {avail --output=sym foo/1.0} OK $tserr_avail_foo
+testouterr_cmd sh {avail --output foo} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+testouterr_cmd sh {--output avail foo} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+
+# mix with --terse/--long/--json
+testouterr_cmd_re sh {avail -o sym --terse foo/1.0} OK $tserr_avail_terse_foo
+testouterr_cmd_re sh {avail -t --output=sym foo/1.0} OK $tserr_avail_terse_foo
+testouterr_cmd sh {avail -j --output=sym foo/1.0} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '--output' on json output mode\" \] } \]\n}"
+testouterr_cmd sh {avail -o sym -l foo/1.0} ERR "$error_msgs: Unsupported option '-o' on long output mode"
+testouterr_cmd sh {avail --long --output=sym foo/1.0} ERR "$error_msgs: Unsupported option '--output' on long output mode"
+testouterr_cmd sh {avail -j --output=sym foo/1.0} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '--output' on json output mode\" \] } \]\n}"
+testouterr_cmd sh {avail -o sym --json foo/1.0} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '-o' on json output mode\" \] } \]\n}"
+testouterr_cmd sh {avail -o sym --long -j foo/1.0} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '-o' on json output mode\" \] } \]\n}"
+
+# test with ml shortcut command
+testouterr_cmd_re sh {ml av -o sym foo/1.0} OK $tserr_avail_foo
+testouterr_cmd sh {ml av -o} ERR "$error_msgs: Missing value for '-o' option\n$err_typehelp"
+testouterr_cmd_re sh {ml --output=sym av foo/1.0} OK $tserr_avail_foo
+testouterr_cmd sh {--output ml av foo} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+testouterr_cmd sh {ml av --long --output=sym foo/1.0} ERR "$error_msgs: Unsupported option '--output' on long output mode"
+testouterr_cmd sh {--json ml av -o sym foo/1.0} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '-o' on json output mode\" \] } \]\n}"
+
+# test on a sub-command that does not support these options
+set ans [list]
+lappend ans [list setpath LOADEDMODULES foo/1.0]
+lappend ans [list setpath _LMFILES_ $mp/foo/1.0]
+
+testouterr_cmd sh {load --output foo/1.0} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+testouterr_cmd sh {load foo/1.0 -o} ERR "$error_msgs: Missing value for '-o' option\n$err_typehelp"
+testouterr_cmd sh {load --output=sym foo/1.0} ERR "$error_msgs: Unsupported option '--output' on load sub-command"
+testouterr_cmd sh {load -o sym foo/1.0} ERR "$error_msgs: Unsupported option '-o' on load sub-command"
+testouterr_cmd sh {load -o sym --long foo/1.0} ERR "$error_msgs: Unsupported option '-o' on load sub-command"
+testouterr_cmd sh {ml --output=sym foo/1.0} ERR "$error_msgs: Unsupported option '--output' on load sub-command"
+testouterr_cmd sh {ml -o sym foo/1.0} ERR "$error_msgs: Unsupported option '-o' on load sub-command"
+testouterr_cmd sh {ml -o sym -j foo/1.0} ERR "$error_msgs: Unsupported option '-o' on load sub-command"
+
+# invalid value set
+set tserr_invalid_output_val "$error_msgs: Invalid element in value list for '--output' option on avail sub-command
+  Allowed elements are: modulepath alias dirwsym sym tag key (separated by ':')"
+set tserr_invalid_o_val "$error_msgs: Invalid element in value list for '-o' option on avail sub-command
+  Allowed elements are: modulepath alias dirwsym sym tag key (separated by ':')"
+testouterr_cmd sh {avail --output=foo foo} ERR $tserr_invalid_output_val
+testouterr_cmd sh {avail --output=sym,alias foo} ERR $tserr_invalid_output_val
+testouterr_cmd sh {avail --output="sym alias" foo} ERR $tserr_invalid_output_val
+testouterr_cmd sh {avail -o foo foo} ERR $tserr_invalid_o_val
+testouterr_cmd sh {avail -o sym,alias foo} ERR $tserr_invalid_o_val
+testouterr_cmd sh {avail -o "sym alias" foo} ERR $tserr_invalid_o_val
+testouterr_cmd sh {avail -o foo -l foo/1.0} ERR "$error_msgs: Unsupported option '-o' on long output mode"
+testouterr_cmd sh {ml -o foo av foo} ERR $tserr_invalid_o_val
+
+# test value accepted on 'list' but not on avail
+testouterr_cmd sh {avail -o header foo} ERR $tserr_invalid_o_val
+testouterr_cmd sh {avail --output=idx foo} ERR $tserr_invalid_output_val
+testouterr_cmd sh {avail --output=header:key foo} ERR $tserr_invalid_output_val
+
+# test usage in modulefile
+set ans [list]
+lappend ans [list setpath LOADEDMODULES output/1.0]
+lappend ans [list setpath _LMFILES_ $mp/output/1.0]
+
+if {[cmpversion $tclsh_version 8.6] == -1} {
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 1
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 2
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Missing value for '-o' option} {module avail foo/1.0 -o<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 3
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 4
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module avail --output foo/1.0<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 5
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_terse_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 6
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on long output mode} {module avail --long -o sym foo/1.0<EXM>} $mp/output/1.0 3]]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 7
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on unload sub-command} {module unload --not-req -o sym bar<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 8
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on unload sub-command} {module unload --not-req bar -o<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 9
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Unsupported option '--output' on unload sub-command} {module unload --not-req --output=sym bar<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 10
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module unload --not-req --output bar<EXM>} $mp/output/1.0 3]]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 20
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr "Invalid element in value list for '--output' option on avail sub-command\nAllowed elements are: modulepath alias dirwsym sym tag key (separated by ':')" {module avail --output=header foo/1.0<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 21
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr "Invalid element in value list for '-o' option on avail sub-command\nAllowed elements are: modulepath alias dirwsym sym tag key (separated by ':')" {module avail -o sym,alias foo/1.0<EXM>} $mp/output/1.0 3]]]
+
+} else {
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 1
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 2
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Missing value for '-o' option} {module avail foo/1.0 -o} $mp/output/1.0 6]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 3
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 4
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module avail --output foo/1.0} $mp/output/1.0 8]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 5
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_avail_terse_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 6
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on long output mode} {module avail --long -o sym foo/1.0} $mp/output/1.0 10]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 7
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on unload sub-command} {module unload --not-req -o sym bar} $mp/output/1.0 12]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 8
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on unload sub-command} {module unload --not-req bar -o} $mp/output/1.0 13]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 9
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Unsupported option '--output' on unload sub-command} {module unload --not-req --output=sym bar} $mp/output/1.0 14]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 10
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module unload --not-req --output bar} $mp/output/1.0 15]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 20
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr "Invalid element in value list for '--output' option on avail sub-command\nAllowed elements are: modulepath alias dirwsym sym tag key (separated by ':')" {module avail --output=header foo/1.0} $mp/output/1.0 24]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 21
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr "Invalid element in value list for '-o' option on avail sub-command\nAllowed elements are: modulepath alias dirwsym sym tag key (separated by ':')" {module avail -o sym,alias foo/1.0} $mp/output/1.0 25]]
+}
+
+unsetenv_var TESTSUITE_OUTPUT_INMODFILE
+
+
+#
+# MODULES_AVAIL_OUTPUT/MODULES_AVAIL_TERSE_OUTPUT tests
+#
+
+setenv_var MODULES_AVAIL_OUTPUT modulepath
+setenv_var MODULES_AVAIL_TERSE_OUTPUT modulepath
+
+testouterr_cmd_re sh {avail foo/1.0} OK "$modlin $mpre $modlin\nfoo/1.0  "
+testouterr_cmd_re sh {avail -t foo/1.0} OK "$mpre:\nfoo/1.0"
+
+# no impact on -l/-j
+set tserr_avail_long "- Package/Alias $modlin.- Versions $modlin.- Last mod. $modlin\n$mpre:\nfoo/1.0\\s+bar\\s+\[0-9:\/ ]*"
+testouterr_cmd_re sh {avail -l foo/1.0} OK $tserr_avail_long
+set tserr_avail_json "{\"$mp\": {
+\"foo/1.0\": { \"name\": \"foo/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\" \], \"tags\": \[\], \"pathname\": \"$mp/foo/1.0\"}
+}}"
+testouterr_cmd sh {avail -j foo/1.0} OK $tserr_avail_json
+
+# invalid value set (ignored)
+setenv_var MODULES_AVAIL_OUTPUT foo
+setenv_var MODULES_AVAIL_TERSE_OUTPUT foo
+
+testouterr_cmd_re sh {avail foo/1.0} OK "$modlin $mpre $modlin\n$tserr_avail_foo\n\nKey:\n\\(symbolic-version\\)  "
+testouterr_cmd_re sh {avail -t foo/1.0} OK $mpre:\n$tserr_avail_terse_foo
+testouterr_cmd_re sh {avail -o sym foo/1.0} OK $tserr_avail_foo
+testouterr_cmd_re sh {avail -t --output=sym foo/1.0} OK $tserr_avail_terse_foo
+testouterr_cmd sh {avail -o foo foo/1.0} ERR $tserr_invalid_o_val
+
+
+#
+# key test
+#
+
+testouterr_cmd_re sh {avail -o modulepath:key:sym foo/1.0} OK "$modlin $mpre $modlin\n$tserr_avail_foo\n\nKey:\n\\(symbolic-version\\)  "
+testouterr_cmd_re sh {avail -t --output=modulepath:sym:key foo/1.0} OK "$mpre:\n$tserr_avail_terse_foo\n\nKey:\n\\(symbolic-version\\)  "
+setenv_var MODULES_AVAIL_OUTPUT modulepath:key:sym
+testouterr_cmd_re sh {avail foo/1.0} OK "$modlin $mpre $modlin\n$tserr_avail_foo\n\nKey:\n\\(symbolic-version\\)  "
+unsetenv_var MODULES_AVAIL_OUTPUT
+
+
+#
+# sym test
+#
+
+testouterr_cmd_re sh {avail -o modulepath:key foo/1.0} OK "$modlin $mpre $modlin\nfoo/1.0  "
+testouterr_cmd_re sh {avail -t --output=modulepath:key foo/1.0} OK "$mpre:\nfoo/1.0"
+setenv_var MODULES_AVAIL_OUTPUT modulepath
+testouterr_cmd_re sh {avail foo/1.0} OK "$modlin $mpre $modlin\nfoo/1.0  "
+unsetenv_var MODULES_AVAIL_OUTPUT
+
+
+#
+# tag test
+#
+
+setenv_var TESTSUITE_AVAIL_OUTPUT_FOO_TAG 1
+testouterr_cmd_re sh {avail -o modulepath:key:tag foo/1.0} OK "$modlin $mpre $modlin\nfoo/1.0 <baz>  \n\nKey:\n<module-tag>  "
+testouterr_cmd_re sh {avail -t --output=tag:modulepath foo/1.0} OK "$mpre:\nfoo/1.0 <baz>"
+setenv_var MODULES_AVAIL_OUTPUT modulepath:tag:sym:key
+testouterr_cmd_re sh {avail foo/1.0} OK "$modlin $mpre $modlin\nfoo/1.0\\(bar\\) <baz>  \n\nKey:\n\\(symbolic-version\\)  <module-tag>  "
+unsetenv_var MODULES_AVAIL_OUTPUT
+unsetenv_var TESTSUITE_AVAIL_OUTPUT_FOO_TAG
+
+
+#
+# alias test
+#
+
+set mp $modpath.2
+set mpre [regsub -all "\(\[.+?\]\)" $mp {\\\1}]
+setenv_path_var MODULEPATH $mp
+
+testouterr_cmd_re sh {avail -t --output=tag:modulepath hide2} OK "$mpre:\nhide2/1.0\nhide2/1.5"
+testouterr_cmd_re sh {avail -t --output=tag:modulepath hide2/1.1} OK {}
+testouterr_cmd_re sh {avail -o tag:modulepath hide2/1.1} OK {}
+setenv_var MODULES_AVAIL_OUTPUT modulepath:alias
+testouterr_cmd_re sh {avail hide2} OK "$modlin $mpre $modlin\nhide2/1.0  hide2/1.1  hide2/1.5  "
+unsetenv_var MODULES_AVAIL_OUTPUT
+setenv_var MODULES_AVAIL_TERSE_OUTPUT modulepath:alias
+testouterr_cmd_re sh {avail -t hide2} OK "$mpre:\nhide2/1.0\nhide2/1.1\nhide2/1.5"
+testouterr_cmd_re sh {avail -t hide2@1.1:1.2} OK {}
+unsetenv_var MODULES_AVAIL_TERSE_OUTPUT
+
+
+#
+# dirwsym test
+#
+
+testouterr_cmd_re sh {avail -o modulepath hide3/sub2} OK "$modlin $mpre $modlin\nhide3/sub2/4.0  hide3/sub2/5.0  "
+testouterr_cmd_re sh {avail --output=sym:modulepath hide3/sub2} OK "$modlin $mpre $modlin\nhide3/sub2/4.0\\(default:sym\\)  hide3/sub2/5.0\\(new\\)  "
+testouterr_cmd_re sh {avail -t -o modulepath:dirwsym hide3/sub2} OK "$mpre:\nhide3/sub2/\nhide3/sub2/4.0\nhide3/sub2/5.0"
+testouterr_cmd_re sh {avail -t --output=modulepath:sym:dirwsym hide3/sub2} OK "$mpre:\nhide3/sub2/\\(sym\\)\nhide3/sub2/4.0\\(default:sym\\)\nhide3/sub2/5.0\\(new\\)"
+setenv_var MODULES_AVAIL_TERSE_OUTPUT modulepath:dirwsym:sym
+testouterr_cmd_re sh {avail -t hide3/sub2} OK "$mpre:\nhide3/sub2/\\(sym\\)\nhide3/sub2/4.0\\(default:sym\\)\nhide3/sub2/5.0\\(new\\)"
+unsetenv_var MODULES_AVAIL_TERSE_OUTPUT
+
+
+#
+# modulepath test
+#
+
+setenv_path_var MODULEPATH $modpath.path1:$modpath.path2
+
+set test_cols 100
+if {![info exists term_cols]} {
+    # skip tests if current terminal witdh is unknown
+    send_user "\tskipping terminal width-specific tests\n"
+# set a specific terminal width
+} elseif {[catch {exec stty cols $test_cols}] || [getTtyCols] ne $test_cols} {
+    send_user "\tskipping terminal width-specific tests, cannot set width\n"
+} else {
+    testouterr_cmd sh {avail -o sym:tag} OK "cross/1.0             dcross/dir2/1.0(craft)   lcross/1   lcross/11          vcross/4.0  
+cross/3.0(bef)        dvcross/4.0              lcross/2   loc_dv10/1.1       vcross/6.0  
+cross/4.0             dvcross/dir1/1.0(bef)    lcross/4   loc_dv10/1.2       
+cross/6.0             dvcross/dir1/2.0         lcross/5   novercross         
+dcross/4.0            dvcross/dir2/1.0(craft)  lcross/6   othcross/1.0(bef)  
+dcross/dir1/1.0(bef)  fodcross/2.7.13          lcross/7   vcross/1.0         
+dcross/dir1/2.0       fodcross/2.7.13/sub-13   lcross/10  vcross/3.0(bef)    "
+
+    testouterr_cmd sh {avail -t -o sym:tag} OK "cross/1.0
+cross/3.0(bef)
+cross/4.0
+cross/6.0
+dcross/4.0
+dcross/dir1/1.0(bef)
+dcross/dir1/2.0
+dcross/dir2/1.0(craft)
+dvcross/4.0
+dvcross/dir1/1.0(bef)
+dvcross/dir1/2.0
+dvcross/dir2/1.0(craft)
+fodcross/2.7.13
+fodcross/2.7.13/sub-13
+lcross/1
+lcross/2
+lcross/4
+lcross/5
+lcross/6
+lcross/7
+lcross/10
+lcross/11
+loc_dv10/1.1
+loc_dv10/1.2
+novercross
+othcross/1.0(bef)
+vcross/1.0
+vcross/3.0(bef)
+vcross/4.0
+vcross/6.0"
+
+    # restore terminal width
+    exec stty cols $term_cols
+}
+
+# tags or symbols applying to a lower priority module with same name are still reported
+setenv_path_var MODULEPATH $modpath.2:$modpath.3
+setenv_path_var MODULES_AVAIL_OUTPUT sym:tag
+setenv_path_var MODULES_AVAIL_TERSE_OUTPUT sym:tag
+testouterr_cmd sh {avail foo/0} OK "foo/0.1  foo/0.2(sym) <tag>  foo/0.err  foo/0.load  foo/0.prereq  "
+testouterr_cmd sh {avail -t foo/0} OK "foo/0.1
+foo/0.2(sym) <tag>
+foo/0.err
+foo/0.load
+foo/0.prereq"
+
+setenv_path_var MODULEPATH $modpath.3:$modpath.2
+testouterr_cmd sh {avail foo/0} OK "foo/0.1  foo/0.2(sym) <tag>  foo/0.err  foo/0.load  foo/0.prereq  "
+testouterr_cmd sh {avail -t foo/0} OK "foo/0.1
+foo/0.2(sym) <tag>
+foo/0.err
+foo/0.load
+foo/0.prereq"
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

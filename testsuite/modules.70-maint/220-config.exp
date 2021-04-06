@@ -24,7 +24,18 @@
 unsetenv_var MODULES_VERBOSITY
 unsetenv_var MODULES_EXTENDED_DEFAULT
 unsetenv_var MODULES_COLOR
+unsetenv_var MODULES_IMPLICIT_REQUIREMENT
 unsetenv_var MODULERCFILE
+unsetenv_var MODULES_TAG_COLOR_NAME
+unsetenv_var MODULES_MCOOKIE_VERSION_CHECK
+unsetenv_var MODULES_AVAIL_OUTPUT
+unsetenv_var MODULES_AVAIL_TERSE_OUTPUT
+unsetenv_var MODULES_LIST_OUTPUT
+unsetenv_var MODULES_LIST_TERSE_OUTPUT
+if {[info exists env(MODULES_ICASE)]} {
+    set saved_icase $env(MODULES_ICASE)
+    unsetenv_var MODULES_ICASE
+}
 
 set config_header "- Config. name $modlin.- Value \\(set by if default overridden\\) $modlin"
 set state_header "- State name $modlin.- Value $modlin"
@@ -37,8 +48,9 @@ array set configdfl [list\
     advanced_version_spec     [expr {$install_advversspec eq {y}}]\
     auto_handling             [expr {$install_autohandling eq {y}}]\
     avail_indepth             [expr {$install_availindepth eq {y}}]\
-    avail_report_dir_sym      1\
-    avail_report_mfile_sym    1\
+    avail_output              $install_availoutput\
+    avail_terse_output        $install_availterseoutput\
+    csh_limit                 4000\
     collection_pin_version    0\
     collection_target         <undef>\
     color                     never\
@@ -50,17 +62,26 @@ array set configdfl [list\
     icase                     $install_icase\
     ignored_dirs              {CVS RCS SCCS .svn .git .SYNC .sos}\
     implicit_default          [expr {$install_implicitdefault eq {y}}]\
+    implicit_requirement      [expr {$install_implicitrequirement eq {y}}]\
+    list_output               $install_listoutput\
+    list_terse_output         $install_listterseoutput\
     locked_configs            $install_lockedconfigs\
+    mcookie_version_check     [expr {$install_mcookieversioncheck eq {y}}]\
     ml                        [expr {$install_ml eq {y}}]\
+    nearly_forbidden_days     $install_nearlyforbiddendays\
     pager                     "$install_pagercmd"\
     rcfile                    <undef>\
     run_quarantine            <undef>\
     search_match              $install_searchmatch\
     set_shell_startup         [expr {$install_setshellstartup eq {y}}]\
+    shells_with_ksh_fpath     {}\
     silent_shell_debug        <undef>\
     siteconfig                $siteconfig_filere\
     tcl_ext_lib               lib/libtclenvmodules$install_shlib_suffix\
+    tag_abbrev                $install_tagabbrev\
+    tag_color_name            $install_tagcolorname\
     term_background           $install_termbg\
+    term_width                0\
     unload_match_order        $install_unloadmatchorder\
     verbosity                 $install_verbosity\
     wa_277                    [expr {$install_wa277 eq {y}}]\
@@ -70,6 +91,8 @@ array set configvar [list\
     advanced_version_spec     MODULES_ADVANCED_VERSION_SPEC\
     auto_handling             MODULES_AUTO_HANDLING\
     avail_indepth             MODULES_AVAIL_INDEPTH\
+    avail_output              MODULES_AVAIL_OUTPUT\
+    avail_terse_output        MODULES_AVAIL_TERSE_OUTPUT\
     collection_pin_version    MODULES_COLLECTION_PIN_VERSION\
     collection_target         MODULES_COLLECTION_TARGET\
     color                     MODULES_COLOR\
@@ -80,14 +103,23 @@ array set configvar [list\
     home                      MODULESHOME\
     icase                     MODULES_ICASE\
     implicit_default          MODULES_IMPLICIT_DEFAULT\
+    implicit_requirement      MODULES_IMPLICIT_REQUIREMENT\
+    list_output               MODULES_LIST_OUTPUT\
+    list_terse_output         MODULES_LIST_TERSE_OUTPUT\
+    mcookie_version_check     MODULES_MCOOKIE_VERSION_CHECK\
     ml                        MODULES_ML\
+    nearly_forbidden_days     MODULES_NEARLY_FORBIDDEN_DAYS\
     pager                     MODULES_PAGER\
     rcfile                    MODULERCFILE\
     run_quarantine            MODULES_RUN_QUARANTINE\
     search_match              MODULES_SEARCH_MATCH\
     set_shell_startup         MODULES_SET_SHELL_STARTUP\
+    shells_with_ksh_fpath     MODULES_SHELLS_WITH_KSH_FPATH\
     silent_shell_debug        MODULES_SILENT_SHELL_DEBUG\
+    tag_abbrev                MODULES_TAG_ABBREV\
+    tag_color_name            MODULES_TAG_COLOR_NAME\
     term_background           MODULES_TERM_BACKGROUND\
+    term_width                MODULES_TERM_WIDTH\
     unload_match_order        MODULES_UNLOAD_MATCH_ORDER\
     verbosity                 MODULES_VERBOSITY\
     wa_277                    MODULES_WA_277\
@@ -97,19 +129,38 @@ array set configvalid [list\
     advanced_version_spec     {0 1}\
     auto_handling             {0 1}\
     avail_indepth             {0 1}\
+    avail_output              {modulepath alias dirwsym sym tag key}\
+    avail_terse_output        {modulepath alias dirwsym sym tag key}\
     collection_pin_version    {0 1}\
     color                     {never auto always}\
     extended_default          {0 1}\
     icase                     {never search always}\
     implicit_default          {0 1}\
+    implicit_requirement      {0 1}\
+    list_output               {header idx sym tag key}\
+    list_terse_output         {header idx sym tag key}\
+    mcookie_version_check     {0 1}\
     ml                        {0 1}\
+    nearly_forbidden_days     {0 365}\
     search_match              {starts_with contains}\
     set_shell_startup         {0 1}\
+    shells_with_ksh_fpath     {sh bash csh tcsh fish}\
     silent_shell_debug        {0 1}\
     term_background           {dark light}\
+    term_width                {0 1000}\
     unload_match_order        {returnlast returnfirst}\
-    verbosity                 {silent concise normal verbose debug}\
+    verbosity                 {silent concise normal verbose verbose2 trace debug debug2}\
     wa_277                    {0 1}\
+]
+
+array set configvalidkind [list\
+    avail_output              eltlist\
+    avail_terse_output        eltlist\
+    list_output               eltlist\
+    list_terse_output         eltlist\
+    nearly_forbidden_days     intbe\
+    shells_with_ksh_fpath     eltlist\
+    term_width                intbe\
 ]
 
 array set configlockable [list\
@@ -117,7 +168,7 @@ array set configlockable [list\
     implicit_default          1\
 ]
 
-set statelist [list cmdline extra_siteconfig_loaded force is_stderr_tty is_win machine os pager_started paginate path_separator rc_loaded siteconfig_loaded shell shelltype subcmd subcmd_args tcl_ext_lib_loaded tcl_version term_columns]
+set statelist [list always_read_full_file autoinit clock_seconds cmdline commandname domainname error_count extra_siteconfig_loaded false_rendered force hiding_threshold inhibit_errreport inhibit_interp init_error_report is_stderr_tty is_win kernelversion lm_info_cached machine modulefile nodename os osversion paginate path_separator report_format reportfd return_false shell shelltype siteconfig_loaded sub1_separator sub2_separator subcmd subcmd_args tcl_ext_lib_loaded tcl_version tcl_version_lt85 term_columns usergroups username]
 
 
 # single config parameter report
@@ -148,13 +199,62 @@ foreach param [array names configdfl] {
 
 # set parameter that could be altered and whose value is checked
 foreach param [array names configvalid] {
-    # valid value tests
-    foreach val $configvalid($param) {
-        set ans [list [list set $configvar($param) $val]]
-        testouterr_cmd_re sh "config $param $val" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+    if {[info exists configvalidkind($param)]} {
+        switch -- $configvalidkind($param) {
+            eltlist {
+                set val [join [lrange $configvalid($param) 0 end-2] :]
+                set ans [list [list set $configvar($param) $val]]
+                testouterr_cmd_re sh "config $param $val" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+
+                # invalid value test
+                set tserr [if_configlocked $param [err_conflocked $param] "$error_msgs: Invalid element in value list for config. option '$param'\n  Allowed elements are: $configvalid($param) (separated by ':')"]
+                testouterr_cmd sh "config $param foo" ERR $tserr
+                # badly separated value list
+                set val [join [lrange $configvalid($param) 0 end-2] ,]
+                testouterr_cmd sh "config $param $val" ERR $tserr
+                set val [join [lrange $configvalid($param) 0 end-2] {\ }]
+                testouterr_cmd sh "config $param $val" ERR $tserr
+            }
+            intbe {
+                set lowerbound [lindex $configvalid($param) 0]
+                set upperbound [lindex $configvalid($param) 1]
+
+                set ans [list [list set $configvar($param) $lowerbound]]
+                testouterr_cmd_re sh "config $param $lowerbound" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+                set ans [list [list set $configvar($param) $upperbound]]
+                testouterr_cmd_re sh "config $param $upperbound" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+                set val [expr {$lowerbound + 10}]
+                set ans [list [list set $configvar($param) $val]]
+                testouterr_cmd_re sh "config $param $val" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+
+                # invalid value test
+                set tserr [if_configlocked $param [err_conflocked $param] "$error_msgs: Invalid value for configuration option '$param'\n  Value should be an integer comprised between $lowerbound and $upperbound"]
+                testouterr_cmd_re sh "config $param -10" ERR "$error_msgs: Invalid option '-10'\n$err_typehelp"
+                testouterr_cmd_re sh "config $param [expr {$upperbound + 10}]" ERR $tserr
+                testouterr_cmd_re sh "config $param foo" ERR $tserr
+            }
+        }
+    } else {
+        switch -- $configvalid($param) {
+            integer {
+                if {$configvalid($param) eq {integer}} {
+                    set ans [list [list set $configvar($param) 0]]
+                    testouterr_cmd_re sh "config $param 0" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+                    set ans [list [list set $configvar($param) 54]]
+                    testouterr_cmd_re sh "config $param 54" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+                }
+            }
+            default {
+                # valid value tests
+                foreach val $configvalid($param) {
+                    set ans [list [list set $configvar($param) $val]]
+                    testouterr_cmd_re sh "config $param $val" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
+                }
+            }
+        }
+        # invalid value test
+        testouterr_cmd_re sh "config $param foo" ERR [if_configlocked $param [err_conflocked $param] "$error_msgs: Valid values for configuration option '$param' are: $configvalid($param)"]
     }
-    # invalid value test
-    testouterr_cmd_re sh "config $param foo" ERR [if_configlocked $param [err_conflocked $param] "$error_msgs: Valid values for configuration option '$param' are: $configvalid($param)"]
     # reset to default
     set ans [list [list unset $configvar($param)]]
     testouterr_cmd_re sh "config --reset $param" [if_configlocked $param ERR $ans] [if_configlocked $param [err_conflocked $param] {}]
@@ -185,10 +285,14 @@ foreach param [array names configvar] {
     # ensure valid value is set for colors and pager
     if {$param eq {colors}} {
         set val err=31
+    } elseif {$param eq {tag_abbrev}} {
+        set val loaded=L
     } elseif {$param eq {pager}} {
         set val $configdfl(pager)
     } elseif {[info exists configvalid($param)]} {
-        if {$param eq {verbosity}} {
+        if {$configvalid($param) eq {integer}} {
+            set val 5
+        } elseif {$param eq {verbosity}} {
             set val [lindex $configvalid($param) 1]
         } else {
             set val [lindex $configvalid($param) 0]
@@ -249,7 +353,11 @@ foreach param [lsort [array names configset]] {
         }
     }
 }
+
 append tserr "\n\n$state_header"
+if {[auto_execok uname] eq {} || [auto_execok domainname] eq {}} {
+    append tserr "(\nWARNING: Command '\\S+' cannot be found)+"
+}
 foreach param $statelist {
     append tserr "\n$param\\s+.*"
 }
@@ -262,6 +370,35 @@ foreach envvar [lsort -unique $envvar_list] {
     append tserr "\n[regsub -all {([\\${}*?()+\[\]])} $envvar {\\\1}]\\s+[regsub -all {([\\${}*?()+\[\]])} $env($envvar) {\\\1}]"
 }
 testouterr_cmd_re sh {config --dump-state} OK $tserr
+
+# provoke uname and domainname errors
+setenv_var PATH {}
+set tserr "$vers_reportre\n\n$config_header"
+foreach param [lsort [array names configset]] {
+    if {[info exists configlockable($param)] && [is_config_locked $param]} {
+        append tserr "\n$param\\s+$configdfl($param) \\(locked\\)"
+    } else {
+        append tserr "\n$param\\s+$configset($param)"
+        if {[info exists configvar($param)] || $param eq {runenv_foo}} {
+            append tserr " \\(env-var\\)"
+        }
+    }
+}
+append tserr "\n\n$state_header"
+append tserr "(\nWARNING: Command '\\S+' cannot be found)+"
+foreach param $statelist {
+    append tserr "\n$param\\s+.*"
+}
+append tserr "\n\n$envvar_header"
+set envvar_list [list]
+foreach var [list LOADEDMODULES _LMFILES_ MODULE* *_modshare *_modquar *_module*] {
+    set envvar_list [concat $envvar_list [array names env -glob $var]]
+}
+foreach envvar [lsort -unique $envvar_list] {
+    append tserr "\n[regsub -all {([\\${}*?()+\[\]])} $envvar {\\\1}]\\s+[regsub -all {([\\${}*?()+\[\]])} $env($envvar) {\\\1}]"
+}
+testouterr_cmd_re sh {config --dump-state} OK $tserr
+setenv_var PATH $ORIG_PATH
 
 # report current state with some module loaded
 setenv_loaded_module [list trace/all_on prereq/full] [list $modpath/trace/all_on $modpath/prereq/full] [list trace/all_on]
@@ -278,6 +415,9 @@ foreach param [lsort [array names configset]] {
     }
 }
 append tserr "\n\n$state_header"
+if {[auto_execok uname] eq {} || [auto_execok domainname] eq {}} {
+    append tserr "(\nWARNING: Command '\\S+' cannot be found)+"
+}
 foreach param $statelist {
     append tserr "\n$param\\s+.*"
 }
@@ -306,33 +446,4 @@ testouterr_cmd_re sh "config --dump-state auto_handling 0" $ans {}
 #  Cleanup
 #
 
-# restore environment
-unsetenv_loaded_module
-unsetenv_path_var MODULES_LMPREREQ
-foreach param [array names configvar] {
-    unsetenv_var $configvar($param)
-}
-unsetenv_var MODULES_RUNENV_FOO
-setenv_var MODULES_VERBOSITY normal
-setenv_var MODULES_EXTENDED_DEFAULT 0
-setenv_var MODULES_COLOR never
-setenv_var MODULERCFILE $env(TESTSUITEDIR)/etc/empty
-
-unset config_header
-unset state_header
-unset envvar_header
-unset configdfl
-unset configvar
-unset configvalid
-unset configlockable
-unset statelist
-
-unset valid_darkbgcolors
-unset valid_lightbgcolors
-
-unset tserr
-unset param
-unset envvar
-unset envvar_list
-unset val
-unset ans
+reset_test_env

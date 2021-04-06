@@ -146,6 +146,16 @@ interpreting *modulefiles*.
 All switches may be entered either in short or long notation. The following
 switches are accepted:
 
+.. option:: --all, -a
+
+ Include hidden modules in search performed with :subcmd:`avail`,
+ :subcmd:`aliases`, :subcmd:`list`, :subcmd:`search` or :subcmd:`whatis`
+ sub-commands. Hard-hidden modules are not affected by this option.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
+
 .. option:: --auto
 
  On :subcmd:`load`, :subcmd:`unload` and :subcmd:`switch` sub-commands, enable
@@ -174,23 +184,27 @@ switches are accepted:
 
     .. versionadded:: 4.3
 
-.. option:: --debug, -D
+.. option:: --debug, -D, -DD
 
  Debug mode. Causes :command:`module` to print debugging messages about its
- progress.
+ progress. Multiple :option:`-D` options increase the debug verbosity.  The
+ maximum is 2.
 
  .. only:: html
 
     .. versionadded:: 4.0
 
+    .. versionchanged:: 4.6
+       Option form :option:`-DD` added
+
 .. option:: --default, -d
 
  On :subcmd:`avail` sub-command, display only the default version of each
  module name. Default version is the explicitly set default version or also
- the implicit default version if the configuration option ``implicit_default``
- is enabled (see :ref:`Locating Modulefiles` section in the
- :ref:`modulefile(4)` man page for further details on implicit default
- version).
+ the implicit default version if the configuration option
+ :mconfig:`implicit_default` is enabled (see :ref:`Locating Modulefiles`
+ section in the :ref:`modulefile(4)` man page for further details on implicit
+ default version).
 
  .. only:: html
 
@@ -295,6 +309,29 @@ switches are accepted:
 
     .. versionadded:: 4.1
 
+.. option:: --output=LIST, -o LIST
+
+ Define the content to report in addition to module names. This option is
+ supported by :subcmd:`avail` and :subcmd:`list` sub-commands on their regular
+ or terse output modes. Accepted values are a *LIST* of elements to report
+ separated by colon character (``:``). The order of the elements in *LIST*
+ does not matter.
+
+ Accepted elements in *LIST* for :subcmd:`avail` sub-command are:
+ *modulepath*, *alias*, *dirwsym*, *sym*, *tag* and *key*.
+
+ Accepted elements in *LIST* for :subcmd:`list` sub-command are: *header*,
+ *idx*, *sym*, *tag* and *key*.
+
+ The order of the elements in *LIST* does not matter. Module names are the
+ only content reported when *LIST* is set to an empty value.
+
+ See also :envvar:`MODULES_AVAIL_OUTPUT` and :envvar:`MODULES_LIST_OUTPUT`.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
 .. option:: --paginate
 
  Pipe all message output into :command:`less` (or if set, to the command
@@ -330,9 +367,19 @@ switches are accepted:
  Display :subcmd:`avail`, :subcmd:`list` and :subcmd:`savelist` output in
  short format.
 
-.. option:: --verbose, -v
+.. option:: --trace, -T
 
- Enable verbose messages during :command:`module` command execution.
+ Trace mode. Report details on module searches, resolutions, selections and
+ evaluations in addition to printing verbose messages.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
+
+.. option:: --verbose, -v, -vv
+
+ Enable verbose messages during :command:`module` command execution. Multiple
+ :option:`-v` options increase the verbosity level. The maximum is 2.
 
  .. only:: html
 
@@ -340,10 +387,22 @@ switches are accepted:
        :option:`--verbose`/:option:`-v` support was dropped on version `4.0`
        but reintroduced starting version `4.3`.
 
+    .. versionchanged:: 4.7
+       Option form :option:`-vv` added
+
 .. option:: --version, -V
 
  Lists the current version of the :command:`module` command. The command then
  terminates without further processing.
+
+.. option:: --width=COLS, -w COLS
+
+ Set the width of the output to *COLS* columns. See also
+ :envvar:`MODULES_TERM_WIDTH` section.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 
 .. _Module Sub-Commands:
@@ -355,7 +414,7 @@ Module Sub-Commands
 
  See :subcmd:`load`.
 
-.. subcmd:: aliases
+.. subcmd:: aliases [-a]
 
  List all available symbolic version-names and aliases in the current
  :envvar:`MODULEPATH`.  All directories in the :envvar:`MODULEPATH` are
@@ -367,6 +426,9 @@ Module Sub-Commands
 
     .. versionadded:: 4.0
 
+    .. versionchanged:: 4.6
+       Option :option:`--all`/:option:`-a` added
+
 .. subcmd:: append-path [-d C|--delim C|--delim=C] [--duplicates] variable value...
 
  Append *value* to environment *variable*. The *variable* is a colon, or
@@ -377,11 +439,11 @@ Module Sub-Commands
 
     .. versionadded:: 4.1
 
-.. subcmd:: apropos [-j] string
+.. subcmd:: apropos [-a] [-j] string
 
  See :subcmd:`search`.
 
-.. subcmd:: avail [-d|-L] [-t|-l|-j] [-S|-C] [--indepth|--no-indepth] [path...]
+.. subcmd:: avail [-d|-L] [-t|-l|-j] [-a] [-o LIST] [-S|-C] [--indepth|--no-indepth] [path...]
 
  List all available *modulefiles* in the current :envvar:`MODULEPATH`. All
  directories in the :envvar:`MODULEPATH` are recursively searched for files
@@ -409,9 +471,42 @@ Module Sub-Commands
  applies to the module alias name. See :envvar:`MODULES_COLOR` and
  :envvar:`MODULES_COLORS` sections for details on colored output.
 
+ Module tags applying to the available *modulefiles* returned by the
+ :subcmd:`avail` sub-command are reported along the module name they are
+ associated to (see `Module tags`_ section).
+
+ A *Key* section is added at the end of the output in case some elements are
+ reported in parentheses or chevrons along module name or if some graphical
+ rendition is made over some outputed elements. This *Key* section gives hints
+ on the meaning of such elements.
+
  The parameter *path* may also refer to a symbolic modulefile name or a
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionchanged:: 4.0
+       Options :option:`--default`/:option:`-d`,
+       :option:`--latest`/:option:`-L` added
+
+    .. versionchanged:: 4.3
+       Options :option:`--starts-with`/:option:`-S`,
+       :option:`--contains`/:option:`-C`, :option:`--indepth`,
+       :option:`--no-indepth` added
+
+    .. versionchanged:: 4.5
+       Option :option:`--json`/:option:`-j` added
+
+    .. versionchanged:: 4.6
+       Option :option:`--all`/:option:`-a` added
+
+    .. versionchanged:: 4.7
+       *Key* section added at end of output
+
+    .. versionchanged:: 4.7
+       Option :option:`--output`/:option:`-o` added, compatible with regular
+       and terse output modes
 
 .. subcmd:: clear [-f]
 
@@ -448,65 +543,262 @@ Module Sub-Commands
 
  Existing option *names* are:
 
- * ``advanced_version_spec``: advanced module version specification to finely
-   select modulefiles (defines environment variable
-   :envvar:`MODULES_ADVANCED_VERSION_SPEC` when set
- * ``auto_handling``: automated module handling mode (defines
-   :envvar:`MODULES_AUTO_HANDLING`)
- * ``avail_indepth``: :subcmd:`avail` sub-command in depth search mode
-   (defines :envvar:`MODULES_AVAIL_INDEPTH`)
- * ``avail_report_dir_sym``: display symbolic versions targeting directories
-   on :subcmd:`avail` sub-command
- * ``avail_report_mfile_sym``: display symbolic versions targeting modulefiles
-   on :subcmd:`avail` sub-command
- * ``collection_pin_version``: register exact modulefile version in collection
-   (defines :envvar:`MODULES_COLLECTION_PIN_VERSION`)
- * ``collection_target``: collection target which is valid for current system
-   (defines :envvar:`MODULES_COLLECTION_TARGET`)
- * ``color``: colored output mode (defines :envvar:`MODULES_COLOR`)
- * ``colors``: chosen colors to highlight output items (defines
-   :envvar:`MODULES_COLORS`)
- * ``contact``: modulefile contact address (defines :envvar:`MODULECONTACT`)
- * ``extended_default``: allow partial module version specification (defines
-   :envvar:`MODULES_EXTENDED_DEFAULT`)
- * ``extra_siteconfig``: additional site-specific configuration script
-   location (defines :envvar:`MODULES_SITECONFIG`)
- * ``home``: location of Modules package master directory (defines
-   :envvar:`MODULESHOME`)
- * ``icase``: enable case insensitive match (defines :envvar:`MODULES_ICASE`)
- * ``ignored_dirs``: directories ignored when looking for modulefiles
- * ``implicit_default``: set an implicit default version for modules (defines
-   :envvar:`MODULES_IMPLICIT_DEFAULT`)
- * ``locked_configs``: configuration options that cannot be superseded
- * ``ml``: define :command:`ml` command at initialization time (defines
-   :envvar:`MODULES_ML`)
- * ``pager``: text viewer to paginate message output (defines
-   :envvar:`MODULES_PAGER`)
- * ``rcfile``: global run-command file location (defines
-   :envvar:`MODULERCFILE`)
- * ``run_quarantine``: environment variables to indirectly pass to
-   :file:`modulecmd.tcl` (defines :envvar:`MODULES_RUN_QUARANTINE`)
- * ``silent_shell_debug``: disablement of shell debugging property for the
-   module command (defines :envvar:`MODULES_SILENT_SHELL_DEBUG`)
- * ``search_match``: module search match style (defines
-   :envvar:`MODULES_SEARCH_MATCH`)
- * ``set_shell_startup``: ensure module command definition by setting shell
-   startup file (defines :envvar:`MODULES_SET_SHELL_STARTUP`)
- * ``siteconfig``: primary site-specific configuration script location
- * ``tcl_ext_lib``: Modules Tcl extension library location
- * ``term_background``: terminal background color kind (defines
-   :envvar:`MODULES_TERM_BACKGROUND`)
- * ``unload_match_order``: unload firstly loaded or lastly loaded module
-   matching request (defines :envvar:`MODULES_UNLOAD_MATCH_ORDER`)
- * ``verbosity``: module command verbosity level (defines
-   :envvar:`MODULES_VERBOSITY`)
- * ``wa_277``: workaround for Tcsh history issue (defines
-   :envvar:`MODULES_WA_277`)
+ .. mconfig:: advanced_version_spec
 
- The options ``avail_report_dir_sym``, ``avail_report_mfile_sym``,
- ``ignored_dirs``, ``locked_configs``, ``siteconfig`` and ``tcl_ext_lib``
- cannot be altered. Moreover all options referred in ``locked_configs`` value
- are locked, thus they cannot be altered.
+  Advanced module version specification to finely select modulefiles. Defines
+  environment variable :envvar:`MODULES_ADVANCED_VERSION_SPEC` when set.
+
+  .. only:: html
+
+     .. versionadded:: 4.4
+
+ .. mconfig:: auto_handling
+
+  Automated module handling mode. Defines :envvar:`MODULES_AUTO_HANDLING`.
+
+ .. mconfig:: avail_indepth
+
+  :subcmd:`avail` sub-command in depth search mode. Defines
+  :envvar:`MODULES_AVAIL_INDEPTH`.
+
+ .. mconfig:: avail_output
+
+  Content to report in addition to module names on :subcmd:`avail` sub-command
+  regular output mode. Defines :envvar:`MODULES_AVAIL_OUTPUT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: avail_terse_output
+
+  Content to report in addition to module names on :subcmd:`avail` sub-command
+  terse output mode. Defines :envvar:`MODULES_AVAIL_TERSE_OUTPUT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: collection_pin_version
+
+  Register exact modulefile version in collection. Defines
+  :envvar:`MODULES_COLLECTION_PIN_VERSION`.
+
+ .. mconfig:: collection_target
+
+  Collection target which is valid for current system. Defines
+  :envvar:`MODULES_COLLECTION_TARGET`.
+
+ .. mconfig:: color
+
+  Colored output mode. Defines :envvar:`MODULES_COLOR`.
+
+ .. mconfig:: colors
+
+  Chosen colors to highlight output items. Defines
+  :envvar:`MODULES_COLORS`.
+
+ .. mconfig:: contact
+
+  Modulefile contact address. Defines :envvar:`MODULECONTACT`.
+
+ .. mconfig:: extended_default
+
+  Allow partial module version specification. Defines
+  :envvar:`MODULES_EXTENDED_DEFAULT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.4
+
+ .. mconfig:: extra_siteconfig
+
+  Additional site-specific configuration script location. Defines
+  :envvar:`MODULES_SITECONFIG`.
+
+ .. mconfig:: home
+
+  Location of Modules package main directory. Defines
+  :envvar:`MODULESHOME`.
+
+  .. only:: html
+
+     .. versionadded:: 4.4
+
+ .. mconfig:: icase
+
+  Enable case insensitive match. Defines :envvar:`MODULES_ICASE`.
+
+  .. only:: html
+
+     .. versionadded:: 4.4
+
+ .. mconfig:: ignored_dirs
+
+  Directories ignored when looking for modulefiles.
+
+  The value of this option cannot be altered.
+
+ .. mconfig:: implicit_default
+
+  Set an implicit default version for modules. Defines
+  :envvar:`MODULES_IMPLICIT_DEFAULT`.
+
+ .. mconfig:: implicit_requirement
+
+  Implicitly define a requirement onto modules specified on :mfcmd:`module`
+  commands in modulefile. Defines :envvar:`MODULES_IMPLICIT_REQUIREMENT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: list_output
+
+  Content to report in addition to module names on :subcmd:`list` sub-command
+  regular output mode. Defines :envvar:`MODULES_LIST_OUTPUT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: list_terse_output
+
+  Content to report in addition to module names on :subcmd:`list` sub-command
+  terse output mode. Defines :envvar:`MODULES_LIST_TERSE_OUTPUT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: locked_configs
+
+  Configuration options that cannot be superseded. All options referred in
+  :mconfig:`locked_configs` value are locked, thus their value cannot be
+  altered.
+
+  The value of this option cannot be altered.
+
+ .. mconfig:: mcookie_version_check
+
+  Defines if the version set in the Modules magic cookie used in modulefile
+  should be checked against the version of :file:`modulecmd.tcl` to determine
+  if the modulefile could be evaluated or not. Defines
+  :envvar:`MODULES_MCOOKIE_VERSION_CHECK`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: ml
+
+  Define :command:`ml` command at initialization time. Defines
+  :envvar:`MODULES_ML`.
+
+  .. only:: html
+
+     .. versionadded:: 4.5
+
+ .. mconfig:: nearly_forbidden_days
+
+  Set the number of days a module should be considered *nearly forbidden*
+  prior reaching its expiry date. Defines
+  :envvar:`MODULES_NEARLY_FORBIDDEN_DAYS`.
+
+  .. only:: html
+
+     .. versionadded:: 4.6
+
+ .. mconfig:: pager
+
+  Text viewer to paginate message output. Defines :envvar:`MODULES_PAGER`.
+
+ .. mconfig:: rcfile
+
+  Global run-command file location. Defines :envvar:`MODULERCFILE`.
+
+ .. mconfig:: run_quarantine
+
+  Environment variables to indirectly pass to :file:`modulecmd.tcl`. Defines
+  :envvar:`MODULES_RUN_QUARANTINE`.
+
+ .. mconfig:: silent_shell_debug
+
+  Disablement of shell debugging property for the module command. Defines
+  :envvar:`MODULES_SILENT_SHELL_DEBUG`.
+
+ .. mconfig:: search_match
+
+  Module search match style. Defines :envvar:`MODULES_SEARCH_MATCH`.
+
+ .. mconfig:: set_shell_startup
+
+  Ensure module command definition by setting shell startup file. Defines
+  :envvar:`MODULES_SET_SHELL_STARTUP`.
+
+ .. mconfig:: shells_with_ksh_fpath
+
+  Ensure module command is defined in ksh when it is started as a sub-shell
+  from the listed shells. Defines :envvar:`MODULES_SHELLS_WITH_KSH_FPATH`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: siteconfig
+
+  Primary site-specific configuration script location.
+
+  The value of this option cannot be altered.
+
+ .. mconfig:: tag_abbrev
+
+  Abbreviations to use to report module tags. Defines
+  :envvar:`MODULES_TAG_ABBREV`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: tag_color_name
+
+  Tags whose name should be colored instead of module name. Defines
+  :envvar:`MODULES_TAG_COLOR_NAME`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: tcl_ext_lib
+
+  Modules Tcl extension library location.
+
+  The value of this option cannot be altered.
+
+ .. mconfig:: term_background
+
+  Terminal background color kind. Defines :envvar:`MODULES_TERM_BACKGROUND`.
+
+ .. mconfig:: term_width
+
+  Set the width of the output. Defines :envvar:`MODULES_TERM_WIDTH`.
+
+  .. only:: html
+
+     .. versionadded:: 4.7
+
+ .. mconfig:: unload_match_order
+
+  Unload firstly loaded or lastly loaded module matching request. Defines
+  :envvar:`MODULES_UNLOAD_MATCH_ORDER`.
+
+ .. mconfig:: verbosity
+
+  Module command verbosity level. Defines :envvar:`MODULES_VERBOSITY`.
+
+ .. mconfig:: wa_277
+
+  Workaround for Tcsh history issue. Defines :envvar:`MODULES_WA_277`.
 
  .. only:: html
 
@@ -653,21 +945,54 @@ Module Sub-Commands
 
     .. versionadded:: 4.1
 
-.. subcmd:: keyword [-j] string
+.. subcmd:: keyword [-a] [-j] string
 
  See :subcmd:`search`.
 
-.. subcmd:: list [-t|-l|-j]
+.. subcmd:: list [-a] [-o LIST] [-t|-l|-j]
 
  List loaded modules.
+
+ Module tags applying to the loaded modules are reported along the module name
+ they are associated to (see `Module tags`_ section).
+
+ A *Key* section is added at the end of the output in case some elements are
+ reported in parentheses or chevrons along module name or if some graphical
+ rendition is made over some outputed elements. This *Key* section gives hints
+ on the meaning of such elements.
+
+ .. only:: html
+
+    .. versionchanged:: 4.5
+       Option :option:`--json`/:option:`-j` added
+
+    .. versionchanged:: 4.7
+       Option :option:`--all`/:option:`-a` added
+
+    .. versionchanged:: 4.7
+       *Key* section added at end of output
+
+    .. versionchanged:: 4.7
+       Option :option:`--output`/:option:`-o` added, compatible with regular
+       and terse output modes.
 
 .. subcmd:: load [--auto|--no-auto] [-f] modulefile...
 
  Load *modulefile* into the shell environment.
 
+ Once loaded, the ``loaded`` module tag is associated to the loaded module. If
+ module has been automatically loaded by another module, the ``auto-loaded``
+ tag is associated instead (see `Module tags`_ section).
+
  The parameter *modulefile* may also be a symbolic modulefile name or a
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionchanged:: 4.2
+       Options :option:`--auto`, :option:`--no-auto`,
+       :option:`--force`/:option:`-f` added
 
 .. subcmd:: path modulefile
 
@@ -703,9 +1028,17 @@ Module Sub-Commands
 
     .. versionadded:: 4.1
 
-.. subcmd:: purge
+.. subcmd:: purge [-f]
 
  Unload all loaded *modulefiles*.
+
+ When the :option:`--force` option is set, also unload modulefiles that are
+ depended by unloadable modules.
+
+ .. only:: html
+
+    .. versionchanged:: 4.7
+       Option :option:`--force`/:option:`-f` added
 
 .. subcmd:: refresh
 
@@ -754,8 +1087,8 @@ Module Sub-Commands
 
  If a module, without a default version explicitly defined, is recorded in a
  *collection* by its bare name: loading this module when restoring the
- collection will fail if the configuration option ``implicit_default`` is
- disabled.
+ collection will fail if the configuration option :mconfig:`implicit_default`
+ is disabled.
 
  .. only:: html
 
@@ -779,8 +1112,8 @@ Module Sub-Commands
 
  By default, if a loaded modulefile corresponds to the explicitly defined
  default module version, the bare module name is recorded. If the
- configuration option ``implicit_default`` is enabled, the bare module name is
- also recorded for the implicit default module version. If
+ configuration option :mconfig:`implicit_default` is enabled, the bare module
+ name is also recorded for the implicit default module version. If
  :envvar:`MODULES_COLLECTION_PIN_VERSION` is set to ``1``, module version is
  always recorded even if it is the default version.
 
@@ -801,6 +1134,9 @@ Module Sub-Commands
  .. only:: html
 
     .. versionadded:: 4.0
+
+    .. versionchanged:: 4.5
+       Option :option:`--json`/:option:`-j` added
 
 .. subcmd:: saverm [collection]
 
@@ -827,10 +1163,10 @@ Module Sub-Commands
 
     .. versionadded:: 4.0
 
-.. subcmd:: search [-j] string
+.. subcmd:: search [-a] [-j] string
 
- Seeks through the :mfcmd:`module-whatis` informations of all *modulefiles*
- for the specified *string*. All *module-whatis* informations matching the
+ Seeks through the :mfcmd:`module-whatis` information of all *modulefiles*
+ for the specified *string*. All *module-whatis* information matching the
  *string* in a case insensitive manner will be displayed. *string* may contain
  wildcard characters.
 
@@ -839,6 +1175,31 @@ Module Sub-Commands
     .. versionadded:: 4.0
        Prior version `4.0` :mfcmd:`module-whatis` information search was
        performed with :subcmd:`apropos` or :subcmd:`keyword` sub-commands.
+
+    .. versionchanged:: 4.5
+       Option :option:`--json`/:option:`-j` added
+
+    .. versionchanged:: 4.6
+       Option :option:`--all`/:option:`-a` added
+
+.. subcmd:: sh-to-mod shell script [arg...]
+
+ Evaluate with *shell* the designated *script* with defined *arguments* to
+ find out the environment changes it does. Environment prior and after
+ *script* evaluation are compared to determine these changes. They are
+ translated into *modulefile* commands to output the modulefile content
+ equivalent to the evaluation of shell script.
+
+ Changes on environment variables, shell aliases, shell functions and current
+ working directory are tracked.
+
+ *Shell* could be specified as a command name or a fully qualified pathname.
+ The following shells are supported: sh, dash, csh, tcsh, bash, ksh, ksh93,
+ zsh and fish.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
 
 .. subcmd:: show modulefile...
 
@@ -869,6 +1230,12 @@ Module Sub-Commands
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
 
+ .. only:: html
+
+    .. versionchanged:: 4.2
+       Options :option:`--auto`, :option:`--no-auto`,
+       :option:`--force`/:option:`-f` added
+
 .. subcmd:: test modulefile...
 
  Execute and display results of the Module-specific tests for the
@@ -889,6 +1256,12 @@ Module Sub-Commands
  The parameter *modulefile* may also be a symbolic modulefile name or a
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionchanged:: 4.2
+       Options :option:`--auto`, :option:`--no-auto`,
+       :option:`--force`/:option:`-f` added
 
 .. subcmd:: unuse directory...
 
@@ -913,7 +1286,7 @@ Module Sub-Commands
  :envvar:`MODULEPATH_modshare<\<VAR\>_modshare>` is also set to increase the
  number of times *directory* has been added to :envvar:`MODULEPATH`.
 
-.. subcmd:: whatis [-j] [modulefile...]
+.. subcmd:: whatis [-a] [-j] [modulefile...]
 
  Display the information set up by the :mfcmd:`module-whatis` commands inside
  the specified *modulefiles*. These specified *modulefiles* may be
@@ -923,6 +1296,14 @@ Module Sub-Commands
  The parameter *modulefile* may also be a symbolic modulefile name or a
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionchanged:: 4.5
+       Option :option:`--json`/:option:`-j` added
+
+    .. versionchanged:: 4.6
+       Option :option:`--all`/:option:`-a` added
 
 
 Modulefiles
@@ -971,6 +1352,118 @@ versions, the version major element should corresponds to a number. For
 instance ``10a``, ``1.2.3``, ``1.foo`` are versions valid for range
 comparison whereas ``default`` or ``foo.2`` versions are invalid for range
 comparison.
+
+If the implicit default mechanism is also enabled (see
+:envvar:`MODULES_IMPLICIT_DEFAULT`), a ``default`` and ``latest`` symbolic
+versions are automatically defined for each module name (also at each
+directory level for deep *modulefiles*). These automatic version symbols are
+defined unless a symbolic version, alias, or regular module version already
+exists for these ``default`` or ``latest`` version names. Using the
+``mod@latest`` (or ``mod/latest``) syntax ensures highest available version
+will be selected.
+
+The symbolic version ``loaded`` may be used over loaded module name to
+designate the loaded version of the module. This version symbol should be
+specified using the ``@`` prefix notation (e.g. ``foo@loaded``). An error is
+returned if no version of designated module is currently loaded.
+
+
+.. _Module tags:
+
+Module tags
+^^^^^^^^^^^
+
+Module tags are piece of information that can be associated to individual
+modulefiles. Tags could be purely informational or may lead to specific
+behaviors.
+
+Module tags may be inherited from the module state set by a modulefile command
+or consequence of a module action. The inherited tags are:
+
+* ``auto-loaded``: module has been automatically loaded by another module
+* ``forbidden``: module has been set *forbidden* through the use of the
+  :mfcmd:`module-forbid` command and thus this module cannot be loaded.
+* ``hidden``: module has been set *hidden* through the use of the
+  :mfcmd:`module-hide` command and thus it is not reported by default among
+  the result of an :subcmd:`avail` sub-command.
+* ``hidden-loaded``: module has been set *hidden once loaded* through the use
+  of the :mfcmd:`module-hide --hidden-loaded<module-hide>` command thus it is
+  not reported bu default among the result of a :subcmd:`list` sub-command.
+* ``loaded``: module is currently loaded
+* ``nearly-forbidden``: module will soon be *forbidden*, which has been set
+  through the use of the :mfcmd:`module-forbid` command. Thus this module
+  will soon not be able to load anymore.
+
+Tags may also be associated to modules by using the :mfcmd:`module-tag`
+modulefile command. Among tags that could be set this way, some have a special
+meaning:
+
+* ``sticky``: module once loaded cannot be unloaded unless forced or reloaded
+  (see `Sticky modules`_ section)
+* ``super-sticky``: module once loaded cannot be unloaded unless reloaded,
+  module cannot be unloaded even if forced (see `Sticky modules`_ section)
+
+Module tags are reported along the module they are associated to on
+:subcmd:`avail` and :subcmd:`list` sub-command results. Tags could be reported
+either:
+
+* along the module name, all tags set within angle brackets, each tag
+  separated from the others with a colon character (e.g.,
+  ``foo/1.2 <tag1:tag2>``).
+* graphically rendered over the module name for each tag associated to a
+  Select Graphic Rendition (SGR) code in the color palette (see
+  :envvar:`MODULES_COLORS`)
+
+When an abbreviated string is associated to a tag name (see
+:envvar:`MODULES_TAG_ABBREV`), this abbreviation is used to report tag along
+the module name or the tag is graphically rendered over the module name if a
+SGR code is associated with tag abbreviation in the color palette. With an
+abbreviation set, the SGR code associated to the tag full name is ignored thus
+an SGR code should be associated to the abbreviation to get a graphical
+rendering of tag. If the abbreviation associated to a tag corresponds to the
+empty string, tag is not reported.
+
+Graphical rendering is made over the tag name or abbreviation instead of over
+the module name for each tag name or abbreviation set in the
+:envvar:`MODULES_TAG_COLOR_NAME` environment variable.
+
+When several tags have to be rendered graphically over the same module name,
+each tag is rendered over a sub-part of the module name. In case more tags
+need to be rendered than the total number of characters in the module name,
+the remaining tags are graphically rendered over the tag name instead of over
+the module name.
+
+When the JSON output mode is enabled (with :option:`--json`), tags are
+reported by their name under the ``tags`` attribute. Tag abbreviation and
+color rendering do not apply on JSON output.
+
+Module tags cannot be used in search query to designate a modulefile.
+
+
+.. _Sticky modules:
+
+Sticky modules
+^^^^^^^^^^^^^^
+
+Modules are said *sticky* when they cannot be unloaded (they stick to the
+loaded environment). Two kind of stickyness can be distinguished:
+
+* ``sticky`` module: cannot be unloaded unless if the unload is forced or if
+  the module is reloaded after being unloaded
+* ``super-sticky`` module: cannot be unloaded unless if the module is reloaded
+  after being unloaded; super-sticky modules cannot be unloaded even if the
+  unload is forced.
+
+Modules are designated sticky by associating them the ``sticky`` or the
+``super-sticky`` :ref:`module tag<Module tags>` with the :mfcmd:`module-tag`
+modulefile command.
+
+When stickyness is defined over the generic module name (and not over a
+specific module version, a version list or a version range), sticky or
+super-sticky module can be swapped by another version of module. For instance
+if the ``sticky`` tag is defined over *foo* module, loaded module *foo/1.2*
+can be swapped by *foo/2.0*. Such stickyness definition means one version of
+module should stay loaded whatever version it is.
 
 
 Collections
@@ -1025,11 +1518,11 @@ ENVIRONMENT
 .. envvar:: MODULEPATH
 
  The path that the :command:`module` command searches when looking for
- *modulefiles*. Typically, it is set to the master *modulefiles* directory,
+ *modulefiles*. Typically, it is set to the main *modulefiles* directory,
  |file modulefilesdir|, by the initialization script. :envvar:`MODULEPATH`
  can be set using :subcmd:`module use<use>` or by the module initialization
  script to search group or personal *modulefile* directories before or after
- the master *modulefile* directory.
+ the main *modulefile* directory.
 
  Path elements registered in the :envvar:`MODULEPATH` environment variable may
  contain reference to environment variables which are converted to their
@@ -1139,6 +1632,63 @@ ENVIRONMENT
 
     .. versionadded:: 4.3
 
+.. envvar:: MODULES_AVAIL_OUTPUT
+
+ A colon separated list of the elements to report in addition to module names
+ on :subcmd:`avail` sub-command regular output mode.
+
+ Accepted elements that can be set in value list are:
+
+ * ``alias``: module aliases.
+ * ``dirwsym``: directories associated with symbolic versions.
+ * ``key``: legend appended at the end of the output to explain it.
+ * ``modulepath``: modulepath names set as header prior the list of available
+   modules found in them.
+ * ``sym``: symbolic versions associated with available modules.
+ * ``tag``: tags associated with available modules.
+
+ The order of the elements in the list does not matter. Module names are the
+ only content reported when *LIST* is set to an empty value.
+
+ In case the ``modulepath`` element is missing from value list, the available
+ modules from global/user rc and all enabled modulepaths are reported as a
+ single list.
+
+ :subcmd:`avail` sub-command regular output content is defined in the
+ following order of preference: :option:`--output`/:option:`-o` command line
+ switches, then :envvar:`MODULES_AVAIL_OUTPUT` environment variable, then the
+ default set in :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_AVAIL_OUTPUT` overrides default configuration and
+ :option:`--output`/:option:`-o` command line switches override every other
+ ways to configure regular output content.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. envvar:: MODULES_AVAIL_TERSE_OUTPUT
+
+ A colon separated list of the elements to report in addition to module names
+ on :subcmd:`avail` sub-command terse output mode.
+
+ See :envvar:`MODULES_AVAIL_OUTPUT` to get the accepted elements that can be
+ set in value list.
+
+ The order of the elements in the list does not matter. Module names are the
+ only content reported when *LIST* is set to an empty value.
+
+ :subcmd:`avail` sub-command terse output content is defined in the following
+ order of preference: :option:`--output`/:option:`-o` command line switches,
+ then :envvar:`MODULES_AVAIL_TERSE_OUTPUT` environment variable, then the
+ default set in :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_AVAIL_TERSE_OUTPUT` overrides default configuration and
+ :option:`--output`/:option:`-o` command line switches override every other
+ ways to configure terse output content.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
 .. envvar:: MODULES_CMD
 
  The location of the active module command script.
@@ -1152,7 +1702,7 @@ ENVIRONMENT
  If set to ``1``, register exact version number of modulefiles when saving a
  collection. Otherwise modulefile version number is omitted if it corresponds
  to the explicitly set default version and also to the implicit default when
- the configuration option ``implicit_default`` is enabled.
+ the configuration option :mconfig:`implicit_default` is enabled.
 
  .. only:: html
 
@@ -1194,20 +1744,23 @@ ENVIRONMENT
 
  Colored output enablement is defined in the following order of preference:
  :option:`--color` command line switch, then :envvar:`MODULES_COLOR`
- environment variable, then :envvar:`CLICOLOR` and :envvar:`CLICOLOR_FORCE`
- environment variables, then the default set in :file:`modulecmd.tcl` script
- configuration. Which means :envvar:`MODULES_COLOR` overrides default
- configuration and the :envvar:`CLICOLOR`/:envvar:`CLICOLOR_FORCE` variables.
+ environment variable, then :envvar:`NO_COLOR`, :envvar:`CLICOLOR` and
+ :envvar:`CLICOLOR_FORCE` environment variables, then the default set in
+ :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_COLOR` overrides default configuration and the
+ :envvar:`NO_COLOR` and :envvar:`CLICOLOR`/:envvar:`CLICOLOR_FORCE` variables.
  :option:`--color` command line switch overrides every other ways to enable or
  disable this mode.
 
- :envvar:`CLICOLOR` and :envvar:`CLICOLOR_FORCE` environment variables are
- also honored to define color mode. The ``never`` mode is set if
+ :envvar:`NO_COLOR`, :envvar:`CLICOLOR` and :envvar:`CLICOLOR_FORCE`
+ environment variables are also honored to define color mode. The ``never``
+ mode is set if :envvar:`NO_COLOR` is defined (regardless of its value) or if
  :envvar:`CLICOLOR` equals to ``0``. If :envvar:`CLICOLOR` is set to another
  value, it corresponds to the ``auto`` mode. The ``always`` mode is set if
- :envvar:`CLICOLOR_FORCE` is set to a value different than ``0``. Color mode
- set with these two variables is superseded by mode set with
- :envvar:`MODULES_COLOR` environment variable.
+ :envvar:`CLICOLOR_FORCE` is set to a value different than ``0``.
+ :envvar:`NO_COLOR` variable prevails over :envvar:`CLICOLOR` and
+ :envvar:`CLICOLOR_FORCE`. Color mode set with these three variables is
+ superseded by mode set with :envvar:`MODULES_COLOR` environment variable.
 
  .. only:: html
 
@@ -1221,11 +1774,20 @@ ENVIRONMENT
  :envvar:`LS_COLORS`.
 
  Output items are designated by keys. Items able to be colorized are:
- highlighted element (``hi``), debug information (``db``), tag separator
- (``se``); Error (``er``), warning (``wa``), module error (``me``) and info
- (``in``) message prefixes; Modulepath (``mp``), directory (``di``), module
- alias (``al``), module symbolic version (``sy``), module ``default`` version
- (``de``) and modulefile command (``cm``).
+ highlighted element (``hi``), debug information (``db``), trace information
+ (``tr``), tag separator (``se``); Error (``er``), warning (``wa``), module
+ error (``me``) and info (``in``) message prefixes; Modulepath (``mp``),
+ directory (``di``), module alias (``al``), module symbolic version (``sy``),
+ module ``default`` version (``de``) and modulefile command (``cm``).
+
+ `Module tags`_ can also be colorized. The key to set in the color palette to
+ get a graphical rendering of a tag is the tag name or the tag abbreviation if
+ one is defined for tag. The SGR code applied to a tag name is ignored if an
+ abbreviation is set for this tag thus the SGR code should be defined for this
+ abbreviation to get a graphical rendering. Each basic tag has by default a
+ key set in the color palette, based on its abbreviated string: auto-loaded
+ (``aL``), forbidden (``F``), hidden and hidden-loaded (``H``), loaded
+ (``L``), nearly-forbidden (``nF``), sticky (``S``) and super-sticky (``sS``).
 
  See the Select Graphic Rendition (SGR) section in the documentation of the
  text terminal that is used for permitted values and their meaning as
@@ -1237,7 +1799,7 @@ ENVIRONMENT
  foreground colors. See also https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
  for a complete SGR code reference.
 
- No graphical rendition will be applied to an output item that could normaly
+ No graphical rendition will be applied to an output item that could normally
  be colored but which is not defined in the color set. Thus if
  :envvar:`MODULES_COLORS` is defined empty, no output will be colored at all.
 
@@ -1249,6 +1811,14 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.3
+
+    .. versionchanged:: 4.6
+       Output item for trace information (``tr``) added
+
+    .. versionchanged:: 4.7
+       Output items for module tags auto-loaded (``aL``), forbidden (``F``),
+       hidden and hidden-loaded (``H``), loaded (``L``), nearly-forbidden
+       (``nF``), sticky (``S``) and super-sticky (``sS``) added
 
 .. envvar:: MODULES_EXTENDED_DEFAULT
 
@@ -1265,7 +1835,7 @@ ENVIRONMENT
  :envvar:`MODULES_IMPLICIT_DEFAULT` section)
 
  This environment variable supersedes the value of the configuration option
- ``extended_default`` set in :file:`modulecmd.tcl` script.
+ :mconfig:`extended_default` set in :file:`modulecmd.tcl` script.
 
  .. only:: html
 
@@ -1319,13 +1889,84 @@ ENVIRONMENT
  implicit default version is defined.
 
  This environment variable supersedes the value of the configuration option
- ``implicit_default`` set in :file:`modulecmd.tcl` script. This environment
- variable is ignored if ``implicit_default`` has been declared locked in
- ``locked_configs`` configuration option.
+ :mconfig:`implicit_default` set in :file:`modulecmd.tcl` script. This
+ environment variable is ignored if :mconfig:`implicit_default` has been
+ declared locked in :mconfig:`locked_configs` configuration option.
 
  .. only:: html
 
     .. versionadded:: 4.3
+
+.. envvar:: MODULES_IMPLICIT_REQUIREMENT
+
+ Defines (if set to ``1``) or not (if set to ``0``) an implicit prereq or
+ conflict requirement onto modules specified respectively on
+ :mfcmd:`module load<module>` or :mfcmd:`module unload<module>` commands in
+ modulefile. When enabled an implicit conflict requirement onto switched-off
+ module and a prereq requirement onto switched-on module are also defined for
+ :mfcmd:`module switch <module>` commands used in modulefile.
+
+ This environment variable supersedes the value of the configuration option
+ :mconfig:`implicit_requirement` set in :file:`modulecmd.tcl` script.
+ :envvar:`MODULES_IMPLICIT_REQUIREMENT` is in turn superseded by the
+ ``--not-req`` option that applies to a :mfcmd:`module` command in a
+ modulefile.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. envvar:: MODULES_LIST_OUTPUT
+
+ A colon separated list of the elements to report in addition to module names
+ on :subcmd:`list` sub-command regular output mode.
+
+ Accepted elements that can be set in value list are:
+
+ * ``header``: sentence to introduce the list of loaded modules or to state
+   that no modules are loaded currently.
+ * ``idx``: index position of each loaded module.
+ * ``key``: legend appended at the end of the output to explain it.
+ * ``sym``: symbolic versions associated with loaded modules.
+ * ``tag``: tags associated with loaded modules.
+
+ The order of the elements in the list does not matter. Module names are the
+ only content reported when *LIST* is set to an empty value.
+
+ :subcmd:`list` sub-command regular output content is defined in the following
+ order of preference: :option:`--output`/:option:`-o` command line switches,
+ then :envvar:`MODULES_LIST_OUTPUT` environment variable, then the default set
+ in :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_LIST_OUTPUT` overrides default configuration and
+ :option:`--output`/:option:`-o` command line switches override every other
+ ways to configure regular output content.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. envvar:: MODULES_LIST_TERSE_OUTPUT
+
+ A colon separated list of the elements to report in addition to module names
+ on :subcmd:`list` sub-command terse output mode.
+
+ See :envvar:`MODULES_LIST_OUTPUT` to get the accepted elements that can be
+ set in value list.
+
+ The order of the elements in the list does not matter. Module names are the
+ only content reported when *LIST* is set to an empty value.
+
+ :subcmd:`list` sub-command regular output content is defined in the following
+ order of preference: :option:`--output`/:option:`-o` command line switches,
+ then :envvar:`MODULES_LIST_TERSE_OUTPUT` environment variable, then the
+ default set in :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_LIST_TERSE_OUTPUT` overrides default configuration and
+ :option:`--output`/:option:`-o` command line switches override every other
+ ways to configure regular output content.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 .. envvar:: MODULES_LMALTNAME
 
@@ -1336,12 +1977,21 @@ ENVIRONMENT
  loaded modulefile and its alternative names are separated by the ampersand
  character.
 
+ Each alternative name stored in :envvar:`MODULES_LMALTNAME` is prefixed by
+ the ``al|`` string if it corresponds to a module alias or prefixed by the
+ ``as|`` string if it corresponds to an automatic version symbol. These
+ prefixes help to distinguish the different kind of alternative name.
+
  This environment variable is intended for :command:`module` command internal
  use to get knowledge of the alternative names matching loaded *modulefiles*
  in order to keep environment consistent when conflicts or pre-requirements
  are set over these alternative designations. It also helps to find a match
  after *modulefiles* being loaded when :subcmd:`unload`, :subcmd:`is-loaded`
  or :subcmd:`info-loaded` actions are run over these names.
+
+ Starting version 4.7 of Modules, :envvar:`MODULES_LMALTNAME` is also used on
+ :subcmd:`list` sub-command to report the symbolic versions associated with
+ the loaded modules.
 
  .. only:: html
 
@@ -1396,6 +2046,58 @@ ENVIRONMENT
 
     .. versionadded:: 4.2
 
+.. envvar:: MODULES_LMSOURCESH
+
+ A colon separated list of the :mfcmd:`source-sh` statements defined by all
+ loaded *modulefiles*. Each element in this list starts by the name of the
+ loaded *modulefile* declaring the environment changes made by the evaluation
+ of :mfcmd:`source-sh` scripts. This name is followed by each
+ :mfcmd:`source-sh` statement call and corresponding result achieved in
+ modulefile. The loaded modulefile name and each :mfcmd:`source-sh` statement
+ description are separated by the ampersand character. The :mfcmd:`source-sh`
+ statement call and each resulting modulefile command (corresponding to the
+ environment changes done by sourced script) are separated by the pipe
+ character.
+
+ This environment variable is intended for :command:`module` command internal
+ use to get knowledge of the modulefile commands applied for each
+ :mfcmd:`source-sh` command when loading the modulefile. In order to reverse
+ these modulefile commands when modulefile is unloaded to undo the environment
+ changes.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
+
+.. envvar:: MODULES_LMTAG
+
+ A colon separated list of the tags corresponding to all loaded *modulefiles*
+ that have been set through :mfcmd:`module-tag` statements or from other
+ modulefile statements like :mfcmd:`module-forbid` (that may apply the
+ `nearly-forbidden` tag in specific situation) (see `Module tags`_ section).
+ Each element in this list starts by the name of the loaded *modulefile*
+ followed by all tags applying to it. The loaded modulefile and its tags are
+ separated by the ampersand character.
+
+ This environment variable is intended for :command:`module` command internal
+ use to get knowledge of the tags applying to loaded *modulefiles* in order
+ to report these tags on subcmd:`list` sub-command output or to apply specific
+ behavior when unloading *modulefile*.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. envvar:: MODULES_MCOOKIE_VERSION_CHECK
+
+ If set to ``1``, the version set in the Modules magic cookie in modulefile
+ is checked against the current version of :file:`modulecmd.tcl` to determine
+ if the modulefile can be evaluated.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
 .. envvar:: MODULES_ML
 
  If set to ``1``, define :command:`ml` command when initializing Modules (see
@@ -1410,6 +2112,23 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.5
+
+.. envvar:: MODULES_NEARLY_FORBIDDEN_DAYS
+
+ Number of days a module is considered *nearly forbidden* prior reaching its
+ expiry date set by :mfcmd:`module-forbid` modulefile command. When a *nearly
+ forbidden* module is evaluated a warning message is issued to inform module
+ will soon be forbidden. If set to ``0``, modules will never be considered
+ *nearly forbidden*. Accepted values are integers comprised between 0 and 365.
+
+ This configuration is defined in the following order of preference:
+ :envvar:`MODULES_NEARLY_FORBIDDEN_DAYS` environment variable then the default
+ set in :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_NEARLY_FORBIDDEN_DAYS` overrides default configuration.
+
+ .. only:: html
+
+    .. versionadded:: 4.6
 
 .. envvar:: MODULES_PAGER
 
@@ -1489,6 +2208,21 @@ ENVIRONMENT
 
     .. versionadded:: 4.3
 
+.. envvar:: MODULES_SHELLS_WITH_KSH_FPATH
+
+ A list of shell on which the :envvar:`FPATH` environment variable should be
+ defined at initialization time to point to the :file:`ksh-functions`
+ directory where the ksh initialization script for module command is located.
+ It enables for the listed shells to get module function defined when starting
+ ksh as sub-shell from there.
+
+ Accepted values are a list of shell among *sh*, *bash*, *csh*, *tcsh* and
+ *fish* separated by colon character (``:``).
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
 .. envvar:: MODULES_SILENT_SHELL_DEBUG
 
  If set to ``1``, disable any ``xtrace`` or ``verbose`` debugging property set
@@ -1505,12 +2239,51 @@ ENVIRONMENT
  Location of a site-specific configuration script to source into
  :file:`modulecmd.tcl`. See also `Modulecmd startup`_ section.
 
- This environment variable is ignored if ``extra_siteconfig`` has been
- declared locked in ``locked_configs`` configuration option.
+ This environment variable is ignored if :mconfig:`extra_siteconfig` has been
+ declared locked in :mconfig:`locked_configs` configuration option.
 
  .. only:: html
 
     .. versionadded:: 4.3
+
+.. envvar:: MODULES_TAG_ABBREV
+
+ Specifies the abbreviation strings used to report module tags (see `Module
+ tags`_ section). Its value is a colon-separated list of module tag names
+ associated to an abbreviation string (e.g. *tagname=abbrev*).
+
+ If a tag is associated to an empty string abbreviation, this tag will not be
+ reported. In case the whole :envvar:`MODULES_TAG_ABBREV` environment variable
+ is set to an empty string, tags are reported but not abbreviated.
+
+ The tag abbreviation definition set in :envvar:`MODULES_TAG_ABBREV`
+ environment variable supersedes the default configuration set in
+ :file:`modulecmd.tcl` script.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
+
+.. envvar:: MODULES_TAG_COLOR_NAME
+
+ Specifies the tag names or abbreviations whose graphical rendering should be
+ applied over themselves instead of being applied over the name of the module
+ they are attached to. Value of :envvar:`MODULES_TAG_COLOR_NAME` is a
+ colon-separated list of module tag names or abbreviation strings (see `Module
+ tags`_ section).
+
+ When a select graphic rendition is defined for a tag name or a tag
+ abbreviation string, it is applied over the module name associated with the
+ tag and tag name or abbreviation is not displayed. When listed in
+ :envvar:`MODULES_TAG_COLOR_NAME` environment variable, a tag name or
+ abbreviation is displayed and select graphic rendition is applied over it.
+
+ The definition set in :envvar:`MODULES_TAG_COLOR_NAME` environment variable
+ supersedes the default configuration set in :file:`modulecmd.tcl` script.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 .. envvar:: MODULES_TERM_BACKGROUND
 
@@ -1523,6 +2296,25 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.3
+
+.. envvar:: MODULES_TERM_WIDTH
+
+ Specifies the number of columns of the output. If set to ``0``, the output
+ width will be the full terminal width, which is automatically detected by
+ the module command. Accepted values are integers comprised between 0 and
+ 1000.
+
+ This configuration is defined in the following order of preference:
+ :option:`--width` or :option:`-w` command line switches, then
+ :envvar:`MODULES_TERM_WIDTH` environment variable, then the default set in
+ :file:`modulecmd.tcl` script configuration. Which means
+ :envvar:`MODULES_TERM_WIDTH` overrides default configuration.
+ :option:`--width` or :option:`-w` command line switches override every other
+ configuration.
+
+ .. only:: html
+
+    .. versionadded:: 4.7
 
 .. envvar:: MODULES_UNLOAD_MATCH_ORDER
 
@@ -1561,19 +2353,33 @@ ENVIRONMENT
    :subcmd:`restore` or :subcmd:`source` sub-commands.
  * ``verbose``: add additional informational messages, like a systematic
    report of the loading or unloading module evaluations.
+ * ``verbose2``: report loading or unloading module evaluations of
+   hidden-loaded modules, report if loading module is already loaded or if
+   unloading module is not loaded.
+ * ``trace``: provide details on module searches, resolutions, selections and
+   evaluations.
  * ``debug``: print debugging messages about module command execution.
+ * ``debug2``: report :file:`modulecmd.tcl` procedure calls in addition to
+   printing debug messages.
 
  Module command verbosity is defined in the following order of preference:
- :option:`--silent`, :option:`--verbose` and :option:`--debug` command line
- switches, then :envvar:`MODULES_VERBOSITY` environment variable, then the
- default set in :file:`modulecmd.tcl` script configuration. Which means
- :envvar:`MODULES_VERBOSITY` overrides default configuration and
- :option:`--silent`/:option:`--verbose`/:option:`--debug` command line
- switches overrides every other ways to set verbosity level.
+ :option:`--silent`, :option:`--verbose`, :option:`--debug` and
+ :option:`--trace` command line switches, then :envvar:`MODULES_VERBOSITY`
+ environment variable, then the default set in :file:`modulecmd.tcl` script
+ configuration. Which means :envvar:`MODULES_VERBOSITY` overrides default
+ configuration and
+ :option:`--silent`/:option:`--verbose`/:option:`--debug`/:option:`--trace`
+ command line switches overrides every other ways to set verbosity level.
 
  .. only:: html
 
     .. versionadded:: 4.3
+
+    .. versionchanged:: 4.6
+       Verbosity levels ``trace`` and ``debug2`` added
+
+    .. versionchanged:: 4.7
+       Verbosity level ``verbose2`` added
 
 .. envvar:: MODULES_WA_277
 
@@ -1593,9 +2399,9 @@ ENVIRONMENT
 
 .. envvar:: MODULESHOME
 
- The location of the master Modules package file directory containing module
+ The location of the main Modules package file directory containing module
  command initialization scripts, the executable program :file:`modulecmd.tcl`,
- and a directory containing a collection of master *modulefiles*.
+ and a directory containing a collection of main *modulefiles*.
 
 .. envvar:: <VAR>_modquar
 

@@ -22,6 +22,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set mod "spread"
 set mod1 "$mod/3.0"
 set mod2 "$mod/4.0"
@@ -176,31 +179,4 @@ testouterr_cmd_re "sh" "unload $mod1 $mod2" $ans "$spreadres"
 #  Cleanup
 #
 
-# Clean up the environment
-unsetenv_loaded_module
-
-unset ans
-
-unset mod1disph
-unset mod2disph
-unset mod1dispres
-
-unset mod1helph
-unset mod2helph
-unset mod1helpres
-unset mod2helpres
-
-unset mod1testh
-unset mod2testh
-unset mod1testres
-unset mod2testres
-
-unset spreadres
-
-unset modfile1
-unset modfilere1
-unset modfile2
-unset modfilere2
-unset mod
-unset mod1
-unset mod2
+reset_test_env

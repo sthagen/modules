@@ -1,11 +1,11 @@
 #!/usr/bin/env tclsh
 #
 # MB, make bench between modulecmd versions
-# Copyright (C) 2019-2020 Xavier Delaruelle
+# Copyright (C) 2019-2021 Xavier Delaruelle
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -42,13 +42,33 @@ proc runtest {mode test} {
       }
    }
 
-   lappend cmdlist $test
+   if {[info exists ::testsubcmdlist($test)]} {
+      lappend cmdlist $::testsubcmdlist($test)
+   } else {
+      lappend cmdlist $test
+   }
+
    if {[info exists ::testarglist($test)]} {
       set cmdlist [concat $cmdlist $::testarglist($test)]
    }
 
    foreach tag $::taglist {
-      lappend ::testres($test) $tag [eval $mode $tag $cmdlist]
+      # run test if tag version is compatible with it
+      if {[info exists ::testcompatlist($test)] && [string match {v[0-9]*}\
+         $tag] && "v$::testcompatlist($test)" ne $tag && [lindex [lsort\
+         -dictionary [list v$::testcompatlist($test) $tag]] 0] eq $tag} {
+         if {$mode eq {bench}} {
+            set res -
+         } else {
+            set res [list - 0 0]
+            for {set i 0} {$i < $::profprocnb} {incr i 1} {
+               lappend res - 0 0
+            }
+         }
+      } else {
+         set res [eval $mode $tag $cmdlist]
+      }
+      lappend ::testres($test) $tag $res
    }
 
    # clean test environment
@@ -60,9 +80,24 @@ proc runtest {mode test} {
 }
 
 # fetch args
-switch -- [lindex $argv 0] {
-   profile { set mode profile }
-   default { set mode bench }
+foreach arg $argv {
+   switch -- $arg {
+      profile {
+         set mode profile
+      }
+      help - avail - avail2 - avail3 - whatis - whatis2 - whatis3 - apropos -\
+         load - list - unload {
+         lappend testlist $arg
+      }
+   }
+}
+# use default values if not set on command-line
+if {![info exists mode]} {
+   set mode bench
+}
+if {![info exists testlist]} {
+   set testlist [list help avail avail2 avail3 whatis whatis2 whatis3 apropos\
+      load list unload]
 }
 
 # fetch information from git repository to save workspace and get available
@@ -77,8 +112,8 @@ set needstash [expr {[exec git status --porcelain --untracked-files=no] ne\
    {}}]
 
 # only keep last bugfix version of each minor release
-# drop releases older than 4.1 (or older than 4.2 if profile mode)
-set exclbef [expr {$mode eq {profile} ? {4.3} : {4.1}}]
+# drop releases older than 4.1 (or older than 4.3 if profile mode)
+set exclbef [expr {$mode eq {profile} ? {4.4} : {4.1}}]
 array set tagarray [list]
 foreach tag [exec git tag --list v*] {
    if {[string compare $tag v$exclbef] == 1} {
@@ -147,12 +182,18 @@ catch {unset env(MODULEPATH_modshare)}
 
 # define bench tests and their arguments and environment
 set modpath $curdir/testsuite/modulefiles
-set testlist [list help avail whatis apropos load list unload]
-array set testarglist [list load load/all unload load/all]
+array set testsubcmdlist [list avail2 avail avail3 avail whatis2 whatis whatis3 whatis]
+array set testarglist [list avail2 load whatis2 load load load/all unload load/all]
 array set testenvlist [list avail [list MODULEPATH $modpath.deep:$modpath.deps] load [list MODULEPATH $modpath] list [list MODULEPATH $modpath LOADEDMODULES load/10:load/11:load/12:load/13:load/14:load/15:load/16:load/17:load/18:load/19:load/20:load/21:load/22:load/23:load/24:load/25:load/26:load/27:load/28:load/29:load/30:load/all _LMFILES_ $modpath/load/10:$modpath/load/11:$modpath/load/12:$modpath/load/13:$modpath/load/14:$modpath/load/15:$modpath/load/16:$modpath/load/17:$modpath/load/18:$modpath/load/19:$modpath/load/20:$modpath/load/21:$modpath/load/22:$modpath/load/23:$modpath/load/24:$modpath/load/25:$modpath/load/26:$modpath/load/27:$modpath/load/28:$modpath/load/29:$modpath/load/30:$modpath/load/all MODULES_LMALTNAME load/all&load/default&load]]
+set testenvlist(avail2) $testenvlist(avail)
+set testenvlist(avail3) [list MODULEPATH $modpath.2 MODULERCFILE $curdir/testsuite/etc/modulerc.bench3 MODULES_ADVANCED_VERSION_SPEC 1 MODULES_EXTENDED_DEFAULT 1]
 set testenvlist(whatis) $testenvlist(avail)
+set testenvlist(whatis2) $testenvlist(avail)
+set testenvlist(whatis3) $testenvlist(avail3)
 set testenvlist(apropos) $testenvlist(avail)
 set testenvlist(unload) $testenvlist(list)
+# some tests have a minimum version requirement
+array set testcompatlist [list avail3 4.6.0 whatis3 4.6.0]
 
 # adapt output table to test mode
 if {$mode eq {profile}} {

@@ -22,6 +22,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 #
 #  Variables. This test forces a module load command. It will result in the
 #    environment variables "_LMFILES_", "MODULEPATH", "LOADEDMODULES" to
@@ -156,25 +159,4 @@ test_cmd_re "sh" "load $module9" $ans
 #  Cleanup
 #
 
-unset ans
-
-unset err_msg
-
-unset modulefile9
-unset modulefile8
-unset modulefile7
-unset modulefile6
-unset modulefile5
-unset modulefile4
-unset modulefile3
-unset modulefile2
-unset modulefile1
-unset module9
-unset module8
-unset module7
-unset module6
-unset module5
-unset module4
-unset module3
-unset module2
-unset module1
+reset_test_env

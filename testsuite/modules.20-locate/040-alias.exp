@@ -105,9 +105,18 @@ test_cmd "csh" "load $module_6" $ans
 
 set ans [list]
 lappend ans [list set ts1 "loc_sym"]
-lappend ans [list set ts2 "loc_sym/default"]
+# an auto default symbol is set when querying all loc_sym
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list set ts2 "loc_sym/version26"]
+} else {
+    lappend ans [list set ts2 "loc_sym/default"]
+}
 lappend ans [list set ts3 "loc_sym/1.0"]
-lappend ans [list set ts4 "loc_sym/1.0"]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list set ts4 "loc_sym/version26"]
+} else {
+    lappend ans [list set ts4 "loc_sym/1.0"]
+}
 lappend ans [list setpath LOADEDMODULES $module_7]
 lappend ans [list setpath _LMFILES_ $modulefile_7]
 test_cmd "csh" "load $module_7" $ans
@@ -121,9 +130,17 @@ test_cmd "csh" "load $module_8" $ans
 
 set ans [list]
 lappend ans [list set ts1 "loc_sym"]
-lappend ans [list set ts2 "loc_sym/default"]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list set ts2 "loc_sym/version26"]
+} else {
+    lappend ans [list set ts2 "loc_sym/default"]
+}
 lappend ans [list set ts3 "loc_sym/10"]
-lappend ans [list set ts4 "loc_sym/10"]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list set ts4 "loc_sym/version26"]
+} else {
+    lappend ans [list set ts4 "loc_sym/10"]
+}
 lappend ans [list setpath LOADEDMODULES $module_9]
 lappend ans [list setpath _LMFILES_ $modulefile_9]
 test_cmd "csh" "load $module_9" $ans
@@ -147,27 +164,4 @@ testouterr_cmd "csh" "load $module_11" $ans [msg_load $module_11 "$error_msgs: R
 #  Cleanup
 #
 
-unset ans
-
-unset modulefile_1
-unset module_1
-unset modulefile_2
-unset module_2
-unset modulefile_3
-unset module_3
-unset modulefile_4
-unset module_4
-unset modulefile_5
-unset module_5
-unset modulefile_6
-unset module_6
-unset modulefile_7
-unset module_7
-unset modulefile_8
-unset module_8
-unset modulefile_9
-unset module_9
-unset modulefile_10
-unset module_10
-unset modulefile_11
-unset module_11
+reset_test_env

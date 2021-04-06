@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# ENVML, setup environment with module then run specified command 
-# Copyright (C) 2015 CEA/DAM
+# ENVML, setup environment with module then run specified command
+# Copyright (C) 2015-2021 CEA/DAM
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -40,11 +40,16 @@ arg_into_modaction() {
     # split module action from its argument
     local action="${1/=/ }"
     # split multiple arguments
-    action="${action//&/ }"
+    if [ "${action//;/ }" == "${action}" ]; then
+        action="${action//&/ }"
+    else
+        # enable arg split over ';' to enable same behavior than envml.cmd
+        action="${action//;/ }"
+    fi
 
     case "$action" in
         purge*|restore*|unload*|switch*|load*) echo "$action"  ;;
-        *) echo "load $action" ;;        
+        *) echo "load $action" ;;
     esac
 }
 

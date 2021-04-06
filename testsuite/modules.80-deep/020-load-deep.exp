@@ -10,6 +10,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set p		"$modpath/"
 
 lappend ans [list set TEST $oplain0]
@@ -259,6 +262,4 @@ lappend ans [list ERR]
 testouterr_cmd_re "csh" "load $ibadvers1" [if_implicitdefault $ans ERR] "$error_msgs: Invalid ModulesVersion 'dir1/2.0' defined[if_implicitdefault {} \n$err_nodefault'$ibadvers1']"
 
 
-unset p
-
-unset ans
+reset_test_env

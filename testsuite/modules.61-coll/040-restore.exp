@@ -41,9 +41,11 @@ set c11errmsg "load $c11mod1\nLoading $c11mod1\nload $c11mod2\nLoading $c11mod2"
 set c12errmsg "unload $c9mod3\nUnloading $c9mod3\nunload $c9mod2\nUnloading $c9mod2\nunload $c9mod1\nUnloading $c9mod1\nload f4\nLoading f4\nload f5\nLoading f5\n\n[msg_load f6 [err_conlo f5]]\n\n[msg_load f7 [err_reqmis f6]]"
 set c13errmsg $cderrmsg
 set c14errmsg "unload m2\nUnloading m2\nload m3\nLoading m3"
+set c15errmsg "Loading $c15mod1\nLoading $c15mod2\nLoading $c15mod3"
+set c16errmsg "Loading $c16mod1\nLoading $c16mod2\nLoading $c16mod3\nLoading $c16mod4\nLoading $c16mod5"
+set c17errmsg "Loading $c17mod1\nLoading $c17mod2"
 
 # set HOME to location containing collections
-set ORIG_HOME $env(HOME)
 if { $verbose > 0 } {
     send_user "\tSetup HOME = $homewithcoll\n"
 }
@@ -520,41 +522,51 @@ unsetenv_var MODULES_AUTO_HANDLING
 
 
 #
+# restore collection where modulepath and module names contain space character
+#
+
+if {!$is_symlink_supported} {
+    send_user "\tskipping tests over '$modpath wspace' modulepath as symbolic links are not supported on filesystem\n"
+} else {
+
+unsetenv_path_var MODULEPATH
+unsetenv_loaded_module
+unsetenv_path_var MODULES_LMPREREQ
+
+set ans [list]
+lappend ans [list setpath MODULEPATH $c15modpath]
+lappend ans [list setpath LOADEDMODULES $c15lm]
+lappend ans [list setpath _LMFILES_ $c15lmf]
+lappend ans [list setpath MODULES_LMALTNAME $c15lmalt]
+testouterr_cmd_re sh "restore $coll15fp" $ans $c15errmsg
+
+set ans [list]
+lappend ans [list setpath MODULEPATH $c16modpath]
+lappend ans [list setpath LOADEDMODULES $c16lm]
+lappend ans [list setpath _LMFILES_ $c16lmf]
+lappend ans [list setpath MODULES_LMALTNAME $c16lmalt]
+testouterr_cmd_re sh "restore $coll16fp" $ans $c16errmsg
+
+}
+
+#
+# restore collection where modulepath start with a variable reference
+#
+
+set ans [list]
+lappend ans [list set testsuite "yes"]
+lappend ans [list setpath MODULEPATH $c17modpath]
+lappend ans [list setpath LOADEDMODULES $c17lm]
+lappend ans [list setpath _LMFILES_ $c17lmf]
+lappend ans [list setpath MODULES_LMALTNAME loc_rc1/1.0&loc_rc1/foo]
+lappend ans [list set t15 t15]
+lappend ans [list unset mload]
+testouterr_cmd_re sh "restore $coll17fp" $ans $c17errmsg
+
+
+
+#
 # Cleanup
 #
 
-# restore environment
-# _LMFILES_ and LOADEDMODULES already restored during last test
-unsetenv_var MODULES_COLLECTION_TARGET
-unsetenv_path_var MODULES_LMPREREQ
-setenv_path_var MODULEPATH $modpath
-unsetenv_loaded_module
-
-setenv_var HOME $ORIG_HOME
-unset ORIG_HOME
-
-unset ans
-
-unset cbadnerrmsg
-unset cbadfperrmsg
-unset cbadterrmsg
-unset cderrmsg
-unset c1errmsg
-unset c2errmsg
-unset c1errmsgf2
-unset c3errmsg
-unset c4errmsg
-unset c5errmsg
-unset c6errmsg
-unset c7errmsg
-unset c8errmsg
-unset c9errmsg
-unset c10errmsg
-unset c9errmsg2
-unset c11errmsg
-unset c12errmsg
-unset c13errmsg
-unset c14errmsg
-unset badcontfp
-unset badcontfperrmsg
-
+reset_test_env

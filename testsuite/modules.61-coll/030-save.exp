@@ -59,7 +59,6 @@ file delete $baddotmod
 
 # set home to unexistent directory for tests
 # will automatically be created by save command
-set ORIG_HOME $env(HOME)
 if { $verbose > 0 } {
     send_user "\tSetup HOME = $hometestcoll\n"
 }
@@ -234,6 +233,29 @@ testoutfile_cmd sh "save $coll11" OK $hometestdotmod/$coll11f $c11cont
 
 
 #
+# test when current environment has modulepath and module names containing space
+#
+
+unsetenv_path_var MODULES_LMPREREQ
+eval setenv_path_var MODULEPATH [split $c15modpath :]
+eval setenv_path_var MODULES_LMALTNAME [split $c15lmalt :]
+setenv_loaded_module [split $c15lm :] [split $c15lmf :]
+
+testoutfile_cmd sh "save $coll15" OK $hometestdotmod/$coll15f $c15cont
+
+unsetenv_path_var MODULES_LMALTNAME
+
+
+#
+# test modulepath starting with a reference to a variable
+#
+
+setenv_path_var MODULEPATH $c17modpath1
+setenv_loaded_module [split $c17lm :] [split $c17lmf :]
+testoutfile_cmd sh "save $coll17" OK $hometestdotmod/$coll17f $c17cont
+
+
+#
 # test unsetting HOME
 #
 
@@ -249,7 +271,6 @@ if { $verbose > 0 } {
     send_user "\tRestore HOME = $ORIG_HOME\n"
 }
 set env(HOME) $ORIG_HOME
-unset ORIG_HOME
 
 
 #
@@ -276,15 +297,4 @@ testouterr_cmd "sh" "save" "ERR" "$error_msgs: Cannot save collection, some modu
 # Cleanup
 #
 
-# restore environment
-if { $verbose > 0 } {
-    send_user "\tUnset MODULES_COLLECTION_TARGET\n"
-}
-unset env(MODULES_COLLECTION_TARGET)
-setenv_path_var MODULEPATH $modpath
-unsetenv_path_var MODULES_LMCONFLICT
-unsetenv_loaded_module
-
-unset baddotmod
-unset baddotmodfp
-unset baddotmodfd
+reset_test_env

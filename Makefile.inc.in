@@ -42,6 +42,11 @@ EXEEXT := @EXEEXT@
 libtclenvmodules := @libtclenvmodules@
 SHLIB_SUFFIX := @SHLIB_SUFFIX@
 
+# multi library installation support
+multilibsupport := @multilibsupport@
+libdir64 := @libdir64@
+libdir32 := @libdir32@
+
 # enable or not some specific definition
 setmanpath := @setmanpath@
 appendmanpath := @appendmanpath@
@@ -78,6 +83,9 @@ termbg := @termbg@
 # automated modules handling
 autohandling := @autohandling@
 
+# implicitly define requirement on module load/module unload modules
+implicitrequirement := @implicitrequirement@
+
 # in depth avail search
 availindepth := @availindepth@
 
@@ -111,10 +119,30 @@ ml := @ml@
 # install Windows-specific files
 windowssupport := @windowssupport@
 
+# days to be considered nearly-forbidden
+nearlyforbiddendays := @nearlyforbiddendays@
+
+# tag abbreviations and coloring properties
+tagabbrev := @tagabbrev@
+tagcolorname := @tagcolorname@
+
+# check version on magic cookie
+mcookieversioncheck := @mcookieversioncheck@
+
+# output configuration
+availoutput := @availoutput@
+availterseoutput := @availterseoutput@
+listoutput := @listoutput@
+listterseoutput := @listterseoutput@
+
 # command location
 TCLSH := @TCLSH@
+PYTHON := @PYTHON@
 SPHINXBUILD := @SPHINXBUILD@
 PS := @PS@
 BASENAME := @BASENAME@
+
+# specific command option support
 RMDIR_IGN_NON_EMPTY := @RMDIR_IGN_NON_EMPTY@
+SED_ERE := @SED_ERE@
 

@@ -192,13 +192,14 @@ restore_file_perms $lmf4
 
 change_file_perms $lmf5 $hide_perms
 
-lappend ans [list set _LMFILES__modshare "$rlmf5:1"]
-lappend ans [list set LOADEDMODULES_modshare "$rlm5:1"]
-lappend ans [list set MODULES_LMALTNAME_modshare $rlm5&loc_rc1/foo:1]
-lappend ans [list set _LMFILES_ $rlmf5]
-lappend ans [list set LOADEDMODULES $rlm5]
 lappend ans [list set testsuite yes]
-lappend ans [list set MODULES_LMALTNAME $rlm5&loc_rc1/foo]
+lappend ans [list setpath LOADEDMODULES $rlm5]
+lappend ans [list setpath _LMFILES_ $rlmf5]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm5&loc_rc1/foo&as|loc_rc1/default&as|loc_rc1/latest]
+} else {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm5&loc_rc1/foo]
+}
 
 # another implicit default is chosen
 testouterr_cmd "sh" "load $m5" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m5'"]
@@ -275,11 +276,12 @@ restore_file_perms $lmrc9
 change_file_perms $lmrc10 $hide_perms
 
 set ans [list]
-lappend ans [list set _LMFILES__modshare "$rlmf10:1"]
-lappend ans [list set LOADEDMODULES_modshare "$rlm10:1"]
-lappend ans [list set _LMFILES_ $rlmf10]
-lappend ans [list set LOADEDMODULES $rlm10]
 lappend ans [list set testsuite yes]
+lappend ans [list setpath LOADEDMODULES $rlm10]
+lappend ans [list setpath _LMFILES_ $rlmf10]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm10&as|$m10/default&as|$m10/latest]
+}
 
 # another implicit default is chosen
 testouterr_cmd "sh" "load $m10" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m10'"]
@@ -507,11 +509,12 @@ restore_file_perms $lmf25
 change_file_perms $lmf26 $hide_perms
 
 set ans [list]
-lappend ans [list set _LMFILES__modshare "$rlmf26:1"]
-lappend ans [list set LOADEDMODULES_modshare "$rlm26:1"]
-lappend ans [list set _LMFILES_ $rlmf26]
-lappend ans [list set LOADEDMODULES $rlm26]
 lappend ans [list set testsuite yes]
+lappend ans [list setpath LOADEDMODULES $rlm26]
+lappend ans [list setpath _LMFILES_ $rlmf26]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm26&as|$m26/default&as|$m26/latest]
+}
 
 # another implicit default is chosen
 testouterr_cmd "sh" "load $m26" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m26'"]
@@ -585,92 +588,6 @@ restore_file_perms $lmd29
 # Cleanup
 #
 
-unsetenv_var MODULES_AVAIL_INDEPTH
-
-unset ans
-
-unset pheader
-unset theader
-unset hide_perms
-
-unset m1
-unset lm1
-unset lmf1
-unset m2
-unset lm2
-unset lmf2
-unset m3
-unset lm3
-unset lmf3
-unset m4
-unset lm4
-unset lmf4
-unset m5
-unset lm5
-unset lmf5
-unset rlm5
-unset rlmf5
-unset rlmf5re
-unset m6
-unset lm6
-unset lmf6
-unset m7
-unset lm7
-unset lmf7
-unset m8
-unset lmrc8
-unset m9
-unset lmrc9
-unset m10
-unset lmrc10
-unset rlm10
-unset rlmf10
-unset rlmf10re
-unset m11
-unset m12
-unset lmd12
-unset m13
-unset lmd13
-unset m14
-unset lmd14
-unset m15
-unset lmd15
-unset m16
-unset lmd16
-unset m17
-unset lm17
-unset lmf17
-unset m18
-unset lm18
-unset lmf18
-unset m19
-unset lm19
-unset lmf19
-unset m20
-unset lmd20
-unset m21
-unset lmd21
-unset m22
-unset lmd22
-unset m23
-unset lmrc23
-unset m24
-unset lmf24
-unset m25
-unset lmf25
-unset m26
-unset lm26
-unset lmf26
-unset rlm26
-unset rlmf26
-unset rlmf26re
-unset m27
-unset lmf27
-unset m28
-unset lmd28
-unset m29
-unset lmf29
-unset lmf29re
-unset lmd29
+reset_test_env
 
 }

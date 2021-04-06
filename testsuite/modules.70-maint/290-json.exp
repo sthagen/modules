@@ -39,19 +39,20 @@ setenv_path_var MODULEPATH $mp
 # check json output on supported sub-commands over the different module kinds
 # (modulefile, symbols, alias, directory, virtual modules)
 testouterr_cmd sh {avail nocase/ --json} OK "{\"$mp\": {
-\"nocase/deep/3\": { \"name\": \"nocase/deep/3\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/nocase/deep/3\"},
-\"nocase/1\": { \"name\": \"nocase/1\", \"type\": \"modulefile\", \"symbols\": \[ \"vers\" \], \"pathname\": \"$mp/nocase/1\"},
-\"nocase/alias\": { \"name\": \"nocase/alias\", \"type\": \"alias\", \"symbols\": \[\], \"target\": \"nocase/1\"},
-\"nocase/ialias\": { \"name\": \"nocase/ialias\", \"type\": \"alias\", \"symbols\": \[\], \"target\": \"Nocase/Virt\"},
-\"nocase/virt\": { \"name\": \"nocase/virt\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/nocase/1\"},
+\"nocase/deep/3\": { \"name\": \"nocase/deep/3\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/nocase/deep/3\"},
+\"nocase/1\": { \"name\": \"nocase/1\", \"type\": \"modulefile\", \"symbols\": \[ \"vers\" \], \"tags\": \[\], \"pathname\": \"$mp/nocase/1\"},
+\"nocase/alias\": { \"name\": \"nocase/alias\", \"type\": \"alias\", \"symbols\": \[\], \"tags\": \[\], \"target\": \"nocase/1\"},
+\"nocase/ialias\": { \"name\": \"nocase/ialias\", \"type\": \"alias\", \"symbols\": \[\], \"tags\": \[\], \"target\": \"Nocase/Virt\"},
+\"nocase/virt\": { \"name\": \"nocase/virt\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/nocase/1\"},
 \"nocase/deep\": { \"name\": \"nocase/deep\", \"type\": \"directory\", \"symbols\": \[ \"dirsym\" \]},
-\"nocase/regular\": { \"name\": \"nocase/regular\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/nocase/regular\"},
-\"nocase/deep/2\": { \"name\": \"nocase/deep/2\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/nocase/deep/2\"}
+\"nocase/regular\": { \"name\": \"nocase/regular\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/nocase/regular\"},
+\"nocase/deep/2\": { \"name\": \"nocase/deep/2\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/nocase/deep/2\"}
 }}"
 testouterr_cmd sh {whatis nocase/ --json} OK "{\"$mp\": {
 \"nocase/1\": { \"name\": \"nocase/1\", \"whatis\": \[ \"nocase/1\" \]},
 \"nocase/deep/2\": { \"name\": \"nocase/deep/2\", \"whatis\": \[ \"nocase/deep/2\" \]},
 \"nocase/deep/3\": { \"name\": \"nocase/deep/3\", \"whatis\": \[ \"nocase/deep/3\" \]},
+\"nocase/regular\": { \"name\": \"nocase/regular\", \"whatis\": \[ \"nocase/regular\" \]},
 \"nocase/virt\": { \"name\": \"nocase/virt\", \"whatis\": \[ \"nocase/virt\" \]}
 }}"
 # newline in result comes from a modulefile that directly puts to stderr during its search evaluation
@@ -68,9 +69,9 @@ testouterr_cmd sh {savelist --json} OK "{}"
 # test list sub-command on loaded environment
 setenv_loaded_module [list nocase/virt extdfl/1.3.1 extdfl3/1.1/3] [list $mp/nocase/1 $mp/extdfl/1.3.1 $mp/extdfl3/1.1/3]
 setenv_path_var MODULES_LMALTNAME extdfl/1.3.1&extdfl/default&extdfl
-set tserr "{\"nocase/virt\": { \"name\": \"nocase/virt\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/nocase/1\"},
-\"extdfl/1.3.1\": { \"name\": \"extdfl/1.3.1\", \"type\": \"modulefile\", \"symbols\": \[ \"default\" \], \"pathname\": \"$mp/extdfl/1.3.1\"},
-\"extdfl3/1.1/3\": { \"name\": \"extdfl3/1.1/3\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/extdfl3/1.1/3\"}}"
+set tserr "{\"nocase/virt\": { \"name\": \"nocase/virt\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/nocase/1\"},
+\"extdfl/1.3.1\": { \"name\": \"extdfl/1.3.1\", \"type\": \"modulefile\", \"symbols\": \[ \"default\" \], \"tags\": \[\], \"pathname\": \"$mp/extdfl/1.3.1\"},
+\"extdfl3/1.1/3\": { \"name\": \"extdfl3/1.1/3\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/extdfl3/1.1/3\"}}"
 testouterr_cmd sh {list -j} OK $tserr
 testouterr_cmd sh {ml -j} OK $tserr
 testouterr_cmd sh {ml --json} OK $tserr
@@ -132,7 +133,7 @@ testouterr_cmd sh {savelist -j --foo} ERR $tserr
 # check a modulepath recorded with an extra / does not impact output
 setenv_path_var MODULEPATH $mp/
 set tserr "{\"$mp\": {
-\"extdfl/1.3.1\": { \"name\": \"extdfl/1.3.1\", \"type\": \"modulefile\", \"symbols\": \[ \"default\" \], \"pathname\": \"$mp/extdfl/1.3.1\"}
+\"extdfl/1.3.1\": { \"name\": \"extdfl/1.3.1\", \"type\": \"modulefile\", \"symbols\": \[ \"default\" \], \"tags\": \[\], \"pathname\": \"$mp/extdfl/1.3.1\"}
 }}"
 testouterr_cmd sh {avail -j extdfl/default} OK $tserr
 # test mix of -t -l -j switches, last wins
@@ -146,29 +147,26 @@ testouterr_cmd sh {whatis --json NaN} OK "{\"$mp\": {
 }}"
 
 # result from multiple paths (including "global/user modulerc")
-if {[info exists env(MODULERCFILE)]} {
-    set saverc $env(MODULERCFILE)
-}
 setenv_var MODULERCFILE $env(TESTSUITEDIR)/etc/rc
 setenv_path_var MODULEPATH $modpath:$mp
-testouterr_cmd sh {avail -j -C *foo} OK "{\"global/user modulerc\": {
-\"sym_foo\": { \"name\": \"sym_foo\", \"type\": \"alias\", \"symbols\": \[ \"special2\" \], \"target\": \"loc_rc2/foo\"}
+testouterrjson_cmd sh {avail -j -C *foo} OK "{\"global/user modulerc\": {
+\"sym_foo\": { \"name\": \"sym_foo\", \"type\": \"alias\", \"symbols\": \[ \"special2\" \], \"tags\": \[\], \"target\": \"loc_rc2/foo\"}
 },
 \"$modpath\": {
-\"loc_rc1/1.0\": { \"name\": \"loc_rc1/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"foo\" \], \"pathname\": \"$modpath/loc_rc1/1.0\"},
-\"loc_rc2/1.0\": { \"name\": \"loc_rc2/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\", \"blah\", \"foo\", \"special2\" \], \"pathname\": \"$modpath/loc_rc2/1.0\"},
-\"loc_tr/3.0\": { \"name\": \"loc_tr/3.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\", \"default\", \"exp\", \"foo\", \"reg\", \"tr2bar\", \"tr2exp\", \"trbar\", \"trexp\", \"trreg\" \], \"pathname\": \"$modpath/loc_tr/3.0\"},
-\"info/specified\": { \"name\": \"info/specified\", \"type\": \"modulefile\", \"symbols\": \[ \"foo\" \], \"pathname\": \"$modpath/info/specified\"},
-\"modbad/foo\": { \"name\": \"modbad/foo\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$modpath/modbad/foo\"},
-\"inforc/foo\": { \"name\": \"inforc/foo\", \"type\": \"alias\", \"symbols\": \[\], \"target\": \"inforc/1.0\"}
+\"loc_rc1/1.0\": { \"name\": \"loc_rc1/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"foo\" \], \"tags\": \[\], \"pathname\": \"$modpath/loc_rc1/1.0\"},
+\"loc_rc2/1.0\": { \"name\": \"loc_rc2/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\", \"blah\", \"foo\", \"special2\" \], \"tags\": \[\], \"pathname\": \"$modpath/loc_rc2/1.0\"},
+\"loc_tr/3.0\": { \"name\": \"loc_tr/3.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\", \"default\", \"exp\", \"foo\", \"reg\", \"tr2bar\", \"tr2exp\", \"trbar\", \"trexp\", \"trreg\" \], \"tags\": \[\], \"pathname\": \"$modpath/loc_tr/3.0\"},
+\"info/specified\": { \"name\": \"info/specified\", \"type\": \"modulefile\", \"symbols\": \[ \"foo\" \], \"tags\": \[\], \"pathname\": \"$modpath/info/specified\"},
+\"modbad/foo\": { \"name\": \"modbad/foo\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$modpath/modbad/foo\"},
+\"inforc/foo\": { \"name\": \"inforc/foo\", \"type\": \"alias\", \"symbols\": \[\], \"tags\": \[\], \"target\": \"inforc/1.0\"}
 },
 \"$mp\": {
-\"foo/1\": { \"name\": \"foo/1\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/foo/1\"},
-\"foo/2\": { \"name\": \"foo/2\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/foo/2\"},
-\"nanfoo/1\": { \"name\": \"nanfoo/1\", \"type\": \"modulefile\", \"symbols\": \[ \"nan\" \], \"pathname\": \"$mp/nanfoo/1\"},
-\"extdfl7/10foo\": { \"name\": \"extdfl7/10foo\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/extdfl7/10foo\"},
-\"foo/0.1\": { \"name\": \"foo/0.1\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/foo/0.1\"},
-\"foo/0.2\": { \"name\": \"foo/0.2\", \"type\": \"modulefile\", \"symbols\": \[\], \"pathname\": \"$mp/foo/0.2\"}
+\"foo/1\": { \"name\": \"foo/1\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/foo/1\"},
+\"nanfoo/1\": { \"name\": \"nanfoo/1\", \"type\": \"modulefile\", \"symbols\": \[ \"nan\" \], \"tags\": \[\], \"pathname\": \"$mp/nanfoo/1\"},
+\"foo/2\": { \"name\": \"foo/2\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/foo/2\"},
+\"extdfl7/10foo\": { \"name\": \"extdfl7/10foo\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/extdfl7/10foo\"},
+\"foo/0.1\": { \"name\": \"foo/0.1\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/foo/0.1\"},
+\"foo/0.2\": { \"name\": \"foo/0.2\", \"type\": \"modulefile\", \"symbols\": \[\], \"tags\": \[\], \"pathname\": \"$mp/foo/0.2\"}
 }}"
 
 testouterr_cmd sh {whatis -j *foo} ERR "{\"$modpath\": {
@@ -182,16 +180,12 @@ testouterr_cmd sh {whatis -j *foo} ERR "{\"$modpath\": {
 \"nanfoo/1\": { \"name\": \"nanfoo/1\", \"whatis\": \[\]}
 }}"
 
-if {[info exists saverc]} {
-    setenv_var MODULERCFILE $saverc
-} else {
-    unsetenv_var MODULERCFILE
-}
+setenv_var MODULERCFILE $ORIG_MODULERCFILE
 setenv_path_var MODULEPATH $mp
 
 # no MODULEPATH defined
 unsetenv_path_var MODULEPATH
-set tserr "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"No module path defined\" \] } \]\n}"
+set tserr "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"$msg_nomodpath\" \] } \]\n}"
 testouterr_cmd sh {avail -j} ERR $tserr
 testouterr_cmd sh {whatis -j} ERR $tserr
 testouterr_cmd sh {search -j} ERR $tserr
@@ -236,12 +230,12 @@ if {$is_file_perms_editable && $tcl_platform(user) ne {root} && !$is_locked_dir_
 	change_file_perms $mp/iCaSe/1 ugo-rx
 	change_file_perms $mp/icASE/1 ugo-rx
 	change_file_perms $mp/icase/1 ugo-rx
-	testouterr_cmd sh {whatis --json -i ICASE/1} ERR "{\"errors\": \[
+	testouterrjson_cmd sh {whatis --json -i ICASE/1} ERR "{\"errors\": \[
 { \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/icase/1'\" \] },
-{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/icASE/1'\" \] },
 { \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/iCaSe/1'\" \] },
-{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/IcAsE/1'\" \] },
-{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/ICASE/1'\" \] } \]
+{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/ICASE/1'\" \] },
+{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/icASE/1'\" \] },
+{ \"severity\": \"ERROR\", \"message\": \[ \"Permission denied on '$mp/IcAsE/1'\" \] } \]
 }"
 	testouterr_cmd sh {whatis --json -i -s ICASE/1} ERR "{}"
 	restore_file_perms $mp/IcAsE/1
@@ -265,7 +259,7 @@ if {[siteconfig_isStderrTty]} {
 	setenv_var MODULES_PAGER foo
 	setenv_loaded_module [list foo bar] [list $mp/foo]
 	testouterr_cmd sh {list --json} ERR "{\"errors\": \[
-{ \"severity\": \"ERROR\", \"message\": \[ \"Loaded environment state is inconsistent\", \"  LOADEDMODULES=foo bar\", \"  _LMFILES_=$mp/foo\" \] },
+{ \"severity\": \"ERROR\", \"message\": \[ \"Loaded environment state is inconsistent\", \"LOADEDMODULES=foo bar\", \"_LMFILES_=$mp/foo\" \] },
 { \"severity\": \"WARNING\", \"message\": \[ \"couldn't execute \\\"foo\\\": no such file or directory\" \] } \]
 }"
 	unsetenv_var MODULES_PAGER
@@ -279,15 +273,4 @@ if {[siteconfig_isStderrTty]} {
 #  Cleanup
 #
 
-# restore environment
-unsetenv_loaded_module
-unsetenv_var MODULES_SEARCH_MATCH
-unsetenv_var MODULES_AVAIL_INDEPTH
-unsetenv_var MODULES_UNLOAD_MATCH_ORDER
-setenv_path_var MODULEPATH $modpath
-
-unset mp
-unset mpre
-unset ans
-unset tserr
-unset saverc
+reset_test_env

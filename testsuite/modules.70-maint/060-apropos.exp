@@ -73,21 +73,10 @@ testouterr_cmd_re "csh" "search token" "ERR" "$header\n$ts_1\n$ts_1a"
 testouterr_cmd_re "csh" "apropos erroneous" "ERR" "$header\n$ts_5\n$ts_6\n$ts_7"
 
 # same test in debug mode, should produce error message
-testouterr_cmd_re "csh" "-D apropos erroneous" "ERR" "(DEBUG .*)+\n$moderr_msgs:.*$header\n$ts_5\n$ts_6\n$ts_7\n\n(DEBUG .*)+"
+testouterr_cmd_re "csh" "-D apropos erroneous" "ERR" "(DEBUG .*)+\n$moderr_msgs:.*$header\n$ts_5\n$ts_6\n$ts_7\nDEBUG unsetState: report_sep_next unset\n\n(DEBUG .*)+"
 
 #
 #  Cleanup
 #
 
-unset header
-
-unset warn_opt
-
-unset ts_1
-unset ts_1a
-unset ts_2
-unset ts_3
-unset ts_4
-unset ts_5
-unset ts_6
-unset ts_7
+reset_test_env

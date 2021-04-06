@@ -1,0 +1,4 @@
+#%Module
+if {[info exists env(TESTSUITE_STICKY_DEP)]} {
+    prereq foo baz
+}

@@ -41,6 +41,9 @@ setenv_path_var MODULEPATH $mp
 # ensure load tests have implicit default enabled
 setenv_var MODULES_IMPLICIT_DEFAULT 1
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 
 #
 # load tests
@@ -633,7 +636,7 @@ testouterr_cmd_re sh {load --no-auto swk} ERR [join $tserr \n]
 # switched-off module produces a module error when unloaded
 setenv_loaded_module [list swn] [list $mp/swn]
 
-set tserr [list {load swl} {unload swn} \n[msg_unload swn "$moderr_msgs: invalid command name \"bad\"" "  In '$mpre/swn'" $err_contact] \n[msg_load swl [err_swoff swn] [err_conun swn]]]
+set tserr [escre [list {load swl} {unload swn} \n[msg_unload swn [msg_moderr "$msg_invcmdname \"bad\"" {bad} $mp/swn 3]] \n[msg_load swl [err_swoff swn] [err_conun swn]]]]
 testouterr_cmd_re sh {load --auto swl} ERR [join $tserr \n]
 testouterr_cmd_re sh {load --no-auto swl} ERR [join $tserr \n]
 
@@ -641,7 +644,7 @@ testouterr_cmd_re sh {load --no-auto swl} ERR [join $tserr \n]
 # switched-on module produces a module error when loaded
 unsetenv_loaded_module
 
-set tserr [list {load swm} {load swn} \n[msg_load swn "$moderr_msgs: invalid command name \"bad\"" "  In '$mpre/swn'" $err_contact] \n[msg_load swm [err_swon swn] [err_reqlo swn]]]
+set tserr [escre [list {load swm} {load swn} \n[msg_load swn [msg_moderr "$msg_invcmdname \"bad\"" {bad} $mp/swn 3]] \n[msg_load swm [err_swon swn] [err_reqlo swn]]]]
 testouterr_cmd_re sh {load --auto swm} ERR [join $tserr \n]
 testouterr_cmd_re sh {load --no-auto swm} ERR [join $tserr \n]
 
@@ -657,7 +660,7 @@ lappend ans [list unsetpath MODULES_LMCONFLICT]
 lappend ans [list setpath _LMFILES_ $mp/swn]
 lappend ans [list setpath LOADEDMODULES swn]
 lappend ans [list ERR]
-set tserr [list {unload swm} {unload swn} \n[msg_unload swn "$moderr_msgs: invalid command name \"bad\"" "  In '$mpre/swn'" $err_contact] \n[msg_top_unload swm {} {} {} [err_urequn swn]]]
+set tserr [escre [list {unload swm} {unload swn} \n[msg_unload swn [msg_moderr "$msg_invcmdname \"bad\"" {bad} $mp/swn 3]] \n[msg_top_unload swm {} {} {} [err_urequn swn]]]]
 testouterr_cmd_re sh {unload --auto swm} $ans [join $tserr \n]
 set ans [list]
 lappend ans [list setpath LOADEDMODULES swn]
@@ -672,16 +675,6 @@ testouterr_cmd_re sh {unload --no-auto swm} $ans [join $tserr \n]
 #  Cleanup
 #
 
-# restore environment
-unsetenv_path_var MODULES_LMPREREQ
-unsetenv_path_var MODULES_LMCONFLICT
-unsetenv_loaded_module
-setenv_path_var MODULEPATH $modpath
-unsetenv_var MODULES_IMPLICIT_DEFAULT
-
-unset mp
-unset mpre
-unset ans
-unset tserr
+reset_test_env
 
 }

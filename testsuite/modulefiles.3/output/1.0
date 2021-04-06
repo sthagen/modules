@@ -1,0 +1,29 @@
+#%Module
+
+if {[info exists env(TESTSUITE_OUTPUT_INMODFILE)]} {
+    switch -- $env(TESTSUITE_OUTPUT_INMODFILE) {
+        1 {module avail -o sym foo/1.0}
+        2 {module avail foo/1.0 -o}
+        3 {module avail --output=sym foo/1.0}
+        4 {module avail --output foo/1.0}
+        5 {module avail -o sym -t foo/1.0}
+        6 {module avail --long -o sym foo/1.0}
+
+        7 {module unload --not-req -o sym bar}
+        8 {module unload --not-req bar -o}
+        9 {module unload --not-req --output=sym bar}
+        10 {module unload --not-req --output bar}
+
+        11 {module list -o sym}
+        12 {module list -o}
+        13 {module list --output=sym}
+        14 {module list --output}
+        15 {module list --terse -o sym}
+        16 {module list -o sym -l}
+
+        20 {module avail --output=header foo/1.0}
+        21 {module avail -o sym,alias foo/1.0}
+        22 {module list --output=modulepath}
+        23 {module list -o sym,alias}
+    }
+}

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# createmodule.sh - Takes the name of a environment init script and 
+# createmodule.sh - Takes the name of a environment init script and
 # produces a modulefile that duplicates the changes made by the init script
 #
 # Copyright (C) 2010-2012 by Orion E. Poplawski <orion@cora.nwra.com>
@@ -40,18 +40,29 @@ done
 if [ ! -r "$1" ]
 then
   echo "ERROR: Cannot read $1" 1>&2
-  exit 1 
+  exit 1
 fi
 
 #Will print out array assignment list
 printenvarray () {
+  local skip=0
   env | while read x
   do
-    key=${x%%=*}
-    value=`printenv "$key"`
-    if [ $? -eq 0 ]
-    then
-      echo [$key]="'$value'"
+    # start of function definition: skip full definition
+    if [[ "$x" =~ '() {' ]]; then
+      skip=1
+    fi
+    if [ $skip -eq 0 ]; then
+      key=${x%%=*}
+      value=`printenv "$key"`
+      if [ $? -eq 0 ]
+      then
+        echo [$key]="'$value'"
+      fi
+    fi
+    # end of function definition
+    if [ "$x" = '}' ]; then
+      skip=0
     fi
   done
 }
@@ -63,7 +74,7 @@ declare -A env1 env2
 eval env1=(`printenvarray`)
 
 #Source the environment script
-. "$@"
+. "$@" >/dev/null
 
 #Record ending environment
 eval env2=(`printenvarray`)
@@ -83,7 +94,7 @@ dedup() {
   echo $1 | sed -r -e 's,[^/]+/\.\./,,g' -e 's,[^/]+/\.\./,,g' -e "s/\\$sep/\n/g" |
     while read x
     do
-      grep -Fx ${x} $list && continue
+      grep -q -Fx ${x} $list && continue
       if [ -n "$prefix" ]
       then
         echo $x | sed -e s,$prefix,\$prefix,
@@ -93,8 +104,8 @@ dedup() {
       echo $x >> $list
     done | tr '\n' $sep | sed -e "s/\\$sep\$//"
   rm $list
-} 
-    
+}
+
 #Keys that changed
 for key in "${!env1[@]}"
 do
@@ -172,10 +183,12 @@ do
         fi
       fi
     else
-      #Unhandled
-      echo "Unhandled change of $key" 1>&2
-      echo "Before <${env1[$key]}>" 1>&2
-      echo "After  <${env2[$key]}>" 1>&2
+      if [ -n "$prefix" ]
+      then
+        echo -e "setenv\t\t${key}\t${env2[$key]}" | sed -e s,$prefix,\$prefix,g
+      else
+        echo -e "setenv\t\t${key}\t${env2[$key]}"
+      fi
     fi
   fi
   #Delete keys we have handled
@@ -205,3 +218,4 @@ do
   fi
 done
 ) | sort
+# vim:set tabstop=2 shiftwidth=2 expandtab autoindent:

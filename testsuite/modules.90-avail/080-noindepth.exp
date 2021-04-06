@@ -26,6 +26,9 @@ set mpre "$modpathre.indepth"
 # setup specific environment
 setenv_path_var MODULEPATH $mp
 
+# ensure default tag abbreviation is defined
+setenv_var MODULES_TAG_ABBREV {auto-loaded=aL:loaded=L:hidden=H:hidden-loaded=H:forbidden=F:nearly-forbidden=nF}
+
 set ts_indepth "$mp:
 deepA/4/1/(ds)
 deepA/4/1/2/1
@@ -99,7 +102,7 @@ testouterr_cmd_re sh {avail -l mod1} OK $tserr
 
 # hidden modulefile only displayed if fully qualified
 testouterr_cmd sh {avail -t mod4} OK {}
-testouterr_cmd sh {avail -t mod4/.1} OK "$mp:\nmod4/.1"
+testouterr_cmd sh {avail -t mod4/.1} OK "$mp:\nmod4/.1 <H>"
 
 # returns elements of current depth level (need a trailing / to go down)
 testouterr_cmd sh {avail -t mod1} OK "$mp:\nmod1/\nmod10\nmod11/"
@@ -150,13 +153,13 @@ testouterr_cmd sh {avail -t mod11/sym} OK "$mp:\nmod11/1(sym)"
 testouterr_cmd sh {avail -t mod?/3/} OK "$mp:\nmod6/3/1/\nmod9/3/2(default)"
 
 # check impact of only latest and only default output filtering
-testouterr_cmd sh {avail -t -d} OK $ts_noindepth
+testouterr_cmd sh {avail -t -d} OK [if_implicitdefault $ts_noindepth $mp:\nmod0\nmod2/\nmod10\nmodv/]
 testouterr_cmd sh {avail -t -L} OK $ts_noindepth
 testouterr_cmd sh {avail -t -d mod2} OK "$mp:\nmod2/"
 testouterr_cmd sh {avail -t -L mod2} OK "$mp:\nmod2/"
 testouterr_cmd sh {avail -t -d mod2/} OK "$mp:\nmod2/1(default)"
 testouterr_cmd sh {avail -t -L mod2/} OK "$mp:\nmod2/2"
-testouterr_cmd sh {avail -t -d mod1*} OK "$mp:\nmod1/\nmod10\nmod11/"
+testouterr_cmd sh {avail -t -d mod1*} OK [if_implicitdefault $mp:\nmod1/\nmod10\nmod11/ $mp:\nmod10]
 testouterr_cmd sh {avail -t -L mod1*} OK "$mp:\nmod1/\nmod10\nmod11/"
 testouterr_cmd sh {avail -t -d mod1*/*} OK [if_implicitdefault "$mp:\nmod1/2\nmod11/2"]
 testouterr_cmd sh {avail -t -L mod1*/*} OK "$mp:\nmod1/2\nmod11/2"
@@ -243,18 +246,42 @@ if {$install_availindepth eq {y}} {
     testouterr_cmd sh {load mod0 --no-indepth} $ans $ts_noindepth
 }
 
+# test modulepath and module names containing space character
+setenv_var MODULES_AVAIL_INDEPTH 0
+set mp "$modpath wspace"
+if {!$is_symlink_supported} {
+    send_user "\tskipping tests over '$mp' modulepath as symbolic links are not supported on filesystem\n"
+} else {
+
+setenv_path_var MODULEPATH $mp
+testouterr_cmd sh {avail -t spacen} OK "$mp:\nspacen/\nspacenb/(dw s)\nspacenc/"
+testouterr_cmd sh {avail -t space\ ya} OK "$mp:\nspace ya/"
+
+}
+
+set mp "$modpath wspac "
+# create modulepath finishing by space on the file (it crashes git checkout on Windows if saved in repo)
+if {!$is_symlink_supported || [catch {file link -symbolic $mp modulefiles.2}]} {
+    send_user "\tskipping tests over '$mp' modulepath as symbolic links are not supported on filesystem or cannot be created\n"
+} else {
+
+# generate modulefiles that cannot be recorded in git repository
+create_endspace_test_modulefiles
+
+setenv_path_var MODULEPATH $mp
+testouterr_cmd sh {avail -t space\ y\ } OK "$mp:\nspace y /"
+
+# delete modulepath link created for the test
+file delete $mp
+
+# delete generated modulefiles
+delete_endspace_test_modulefiles
+
+}
+
 
 #
 #  Cleanup
 #
 
-# restore MODULEPATH
-setenv_path_var MODULEPATH $modpath
-
-unset mp
-unset mpre
-unset ans
-
-unset ts_indepth
-unset ts_noindepth
-unset tserr
+reset_test_env

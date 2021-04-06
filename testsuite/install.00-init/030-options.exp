@@ -24,7 +24,15 @@ set bad_cmd "$error_msgs: Invalid command 'foo'"
 set use_desc "Search path for module files \\(in search order\\):"
 set moddir_header "$install_modulefilesdirre:"
 set versdir_header "$install_versionfilesdirre:"
-set mod_examples "dot\nmodule-git\nmodule-info\nmodules\nnull\nuse.own"
+foreach mod [list dot module-git module-info modules null use.own] {
+   if {[info exists mod_examples]} {
+      append mod_examples "\n"
+   }
+   append mod_examples $mod
+   if {[lsearch -exact [split $install_loadedmodulesre :] $mod] != -1} {
+      append mod_examples { <L>}
+   }
+}
 set lm_list [split $install_loadedmodulesre ":"]
 
 # check if modulefiles dir is part of default MODULEPATH
@@ -53,28 +61,38 @@ set version_msg "Modules Release \\S+ (\\S+)"
 # The tests
 #
 
-if {$install_setmanpath eq "y" && $install_builddoc eq "y"} {
+if {$install_setmanpath eq "y" && $install_builddoc ne "n"} {
    if {$verbose > 0} {
       send_user "\tChecking man pages availability\n"
    }
    foreach shell $shell_list {
       if {$install_compatversion eq "y"} {
-         testall_cmd_re "$shell" "man -w modulefile-compat" "^$install_mandirre/man4/modulefile-compat.*\$" "^\$" 0
-         testall_cmd_re "$shell" "man -w module-compat" "^$install_mandirre/man1/module-compat.*\$" "^\$" 0
+         testall_cmd_re "$shell" "man -w modulefile-compat" "$install_mandirre/man4/modulefile-compat.*" {} 0
+         testall_cmd_re "$shell" "man -w module-compat" "$install_mandirre/man1/module-compat.*" {} 0
       }
-      testall_cmd_re "$shell" "man -w modulefile" "^$install_mandirre/man4/modulefile.*\$" "^\$" 0
-      testall_cmd_re "$shell" "man -w module" "^$install_mandirre/man1/module.*\$" "^\$" 0
+      testall_cmd_re "$shell" "man -w modulefile" "$install_mandirre/man4/modulefile.*" {} 0
+      testall_cmd_re "$shell" "man -w module" "$install_mandirre/man1/module.*" {} 0
    }
 } elseif {$verbose > 0} {
    send_user "\tSkipping man pages availability checks\n"
 }
 
 if {$install_setbinpath eq "y"} {
+   if {[file executable $install_python]} {
+      if {$verbose > 0} {
+         send_user "\tChecking createmodule.py availability\n"
+      }
+      foreach shell $shell_list {
+         testall_cmd_re "$shell" "createmodule.py -h" "Usage: createmodule.py .*" {} 0
+      }
+   } elseif {$verbose > 0} {
+      send_user "\tSkipping createmodule.py availability tests as no python interpreter found\n"
+   }
    if {$verbose > 0} {
       send_user "\tChecking envml availability\n"
    }
    foreach shell $shell_list {
-      testall_cmd_re "$shell" "envml -h" "^Usage:.*/envml .*\$" "^\$" 0
+      testall_cmd_re "$shell" "envml -h" "Usage:.*/envml .*" {} 0
    }
    if {$install_examplemodulefiles eq "y" && $install_loadedmodules eq "" \
       && $modfilesdir_in_modpath} {
@@ -92,9 +110,9 @@ if {$install_setbinpath eq "y"} {
    }
    foreach shell $shell_list {
       if {$shell eq "basheu"} {
-         testall_cmd_re "$shell" "modulecmd bash --version" "^\$" "^Modules Release \\S+ (\\S+)\$" 0
+         testall_cmd_re "$shell" "modulecmd bash --version" {} "Modules Release \\S+ (\\S+)" 0
       } else {
-         testall_cmd_re "$shell" "modulecmd $shell --version" "^\$" "^Modules Release \\S+ (\\S+)\$" 0
+         testall_cmd_re "$shell" "modulecmd $shell --version" {} "Modules Release \\S+ (\\S+)" 0
       }
    }
    if {$install_compatversion eq "y"} {
@@ -107,9 +125,9 @@ if {$install_setbinpath eq "y"} {
          # compat version does not support Fish shell
          if {$shell ne "fish"} {
             if {$shell eq "basheu"} {
-               testall_cmd_re "$shell" "modulecmd bash --version" " test 0 = 1;" "^${compat_warn_setvar}VERSION=\\S+.*\$" 1
+               testall_cmd_re "$shell" "modulecmd bash --version" " test 0 = 1;\$" "${compat_warn_setvar}VERSION=\\S+.*" 1
             } else {
-               testall_cmd_re "$shell" "modulecmd $shell --version" " test 0 = 1;" "^${compat_warn_setvar}VERSION=\\S+.*\$" 1
+               testall_cmd_re "$shell" "modulecmd $shell --version" " test 0 = 1;\$" "${compat_warn_setvar}VERSION=\\S+.*" 1
             }
          }
       }
@@ -136,6 +154,7 @@ if {$install_setbinpath eq "y"} {
       }
    }
 } elseif {$verbose > 0} {
+   send_user "\tSkipping createmodule.py availability checks\n"
    send_user "\tSkipping envml availability checks\n"
    send_user "\tSkipping modulecmd availability checks\n"
    send_user "\tSkipping other utilities availability checks\n"
@@ -148,10 +167,10 @@ if {$install_compatversion eq "y"} {
    foreach shell $shell_list {
       switch -- $shell {
          sh - bash - ksh - zsh {
-            testall_cmd_re "$shell" "type switchml" "^switchml is a.*\$" "^\$" 0
+            testall_cmd_re "$shell" "type switchml" "switchml is a.*" {} 0
          }
          csh - tcsh {
-            testall_cmd_re "$shell" "alias switchml" "^.+\$" "^\$" 0
+            testall_cmd_re "$shell" "alias switchml" ".+" {} 0
          }
       }
    }
@@ -161,14 +180,14 @@ if {$install_compatversion eq "y"} {
    }
    foreach shell $shell_list {
       if {$shell ne "fish"} {
-         testall_cmd_re "$shell" "module --version; switchml; switchml; module --version;" "^$swcompat_msg\n$swmain_msg\$" "^$version_msg\n$version_msg\$" 0
+         testall_cmd_re "$shell" "module --version; switchml; switchml; module --version;" "$swcompat_msg\n$swmain_msg" "$version_msg\n$version_msg" 0
       }
    }
    # set module compat version as default
    set env(MODULES_USE_COMPAT_VERSION) 1
    foreach shell $shell_list {
       if {$shell ne "fish"} {
-         testall_cmd_re "$shell" "switchml; module --version; switchml; switchml; module --version;" "^$swmain_msg\n$swcompat_msg\n$swmain_msg\$" "^$version_msg\n$version_msg\$" 0
+         testall_cmd_re "$shell" "switchml; module --version; switchml; switchml; module --version;" "$swmain_msg\n$swcompat_msg\n$swmain_msg" "$version_msg\n$version_msg" 0
       }
    }
    unset env(MODULES_USE_COMPAT_VERSION)
@@ -181,10 +200,10 @@ if {$install_modulepath ne ""} {
       send_user "\tChecking default modulepath setup\n"
    }
    foreach shell $shell_list {
-      testall_cmd_re "$shell" "module use" "^\$" "^$use_desc\n\\s+[join $modpath_listre {\n\\s+}]\$" 0
+      testall_cmd_re "$shell" "module use" {} "$use_desc\n\\s+[join $modpath_listre {\n\\s+}]" 0
    }
    foreach shell $othlang_list {
-      testall_cmd_re "$shell" "use" "^\$" "^$use_desc\n\\s+[join $modpath_listre {\n\\s+}]\$" 0
+      testall_cmd_re "$shell" "use" {} "$use_desc\n\\s+[join $modpath_listre {\n\\s+}]" 0
    }
 } elseif {$verbose > 0} {
    send_user "\tSkipping default modulepath checks\n"
@@ -194,19 +213,21 @@ if {$install_examplemodulefiles eq "y" && $modfilesdir_in_modpath} {
    if {$verbose > 0} {
       send_user "\tChecking example modulefiles installation\n"
    }
+   set env(MODULES_TAG_ABBREV) {loaded=L}
    foreach shell $shell_list {
-      testall_cmd_re "$shell" "module avail -t" "^\$" "$moddir_header\n$mod_examples" 0
+      testall_cmd_re "$shell" "module avail -t" {} "$moddir_header\n$mod_examples" 0
    }
    foreach shell $othlang_list {
-      testall_cmd_re "$shell" "avail,-t" "^\$" "$moddir_header\n$mod_examples" 0
+      testall_cmd_re "$shell" "avail,-t" {} "$moddir_header\n$mod_examples" 0
    }
+   unset env(MODULES_TAG_ABBREV)
    # check version-specific modulefile, related to versioning installation mode
    if {$install_versioning eq "y"} {
       foreach shell $shell_list {
-         testall_cmd_re "$shell" "module load modules; module avail -t $install_version" "^\$" "^$versdir_header\n$install_versionre\$" 0
+         testall_cmd_re "$shell" "module load modules; module avail -t $install_version" {} "$versdir_header\n$install_versionre" 0
       }
       foreach shell $othlang_list {
-         testall_cmd_re "$shell" "load,modules:avail,-t,$install_version" "^\$" "^$versdir_header\n$install_versionre\$" 0
+         testall_cmd_re "$shell" "load,modules:avail,-t,$install_version" {} "$versdir_header\n$install_versionre" 0
       }
    }
 } elseif {$verbose > 0} {
@@ -218,10 +239,10 @@ if {$install_loadedmodules ne ""} {
       send_user "\tChecking default loaded modules setup\n"
    }
    foreach shell $shell_list {
-      testall_cmd_re "$shell" "module list -t" "^\$" "^$cur_loaded\n[join $lm_list {.*\n}]\$" 0
+      testall_cmd_re "$shell" "module list -t" {} "$cur_loaded\n[join $lm_list {.*\n}]" 0
    }
    foreach shell $othlang_list {
-      testall_cmd_re "$shell" "list,-t" "^\$" "^$cur_loaded\n[join $lm_list {.*\n}]\$" 0
+      testall_cmd_re "$shell" "list,-t" {} "$cur_loaded\n[join $lm_list {.*\n}]" 0
    }
 } elseif {$verbose > 0} {
    send_user "\tSkipping default loaded modules checks\n"
@@ -243,7 +264,7 @@ foreach shell $shell_sh_family {
    } else {
       set shell_opts($shell) "-xv"
    }
-   testall_cmd_re "$shell" "module --version" "^\$" ".*Modules Release \\S+ (\\S+).*" 0
+   testall_cmd_re "$shell" "module --version" {} ".*Modules Release \\S+ (\\S+).*" 0
    if {[info exists shell_opts_save]} {
       set shell_opts($shell) $shell_opts_save
       unset shell_opts_save
@@ -264,7 +285,7 @@ foreach shell $shell_sh_family {
    } else {
       set shell_opts($shell) "-xv"
    }
-   testall_cmd_re "$shell" "module --version" "^\$" ".*Modules Release \\S+ (\\S+).*" 0
+   testall_cmd_re "$shell" "module --version" {} ".*Modules Release \\S+ (\\S+).*" 0
    if {[info exists shell_opts_save]} {
       set shell_opts($shell) $shell_opts_save
       unset shell_opts_save
@@ -284,25 +305,14 @@ if {$verbose > 0} {
 }
 testall_cmd_re "sh" "test -e $install_initdir/cmd.cmd" "" "" [expr {$install_windowssupport ne {y}}]
 testall_cmd_re "sh" "test -e $install_bindir/module.cmd" "" "" [expr {$install_windowssupport ne {y}}]
+testall_cmd_re "sh" "test -e $install_bindir/ml.cmd" "" "" [expr {$install_windowssupport ne {y}}]
+testall_cmd_re "sh" "test -e $install_bindir/envml.cmd" "" "" [expr {$install_windowssupport ne {y}}]
 
 
 #
 #  Clean up variables used in this test case
 #
 
-unset bad_cmd
-unset use_desc
-unset mod_examples
-unset moddir_header
-unset versdir_header
-unset lm_list
-
-unset modp
-unset modfilesdir_in_modpath
-unset modpath_listre
-
-unset swmain_msg
-unset swcompat_msg
-unset version_msg
+reset_test_env
 
 # vim:set tabstop=3 shiftwidth=3 expandtab autoindent:

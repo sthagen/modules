@@ -37,16 +37,26 @@ set ans [list]
 if {[info exists tclextlib_file]} {
     # restrict read access to Tcl extension library
     change_file_perms $tclextlib_file ugo-rx
-    lappend ans "DEBUG CALLING $MODULECMD sh --no-pager -D -V"
+    lappend ans "DEBUG setState: cmdline set to '$MODULECMD sh --no-pager -D -V'"
+    if {$::install_multilibsupport eq {y}} {
+        lappend ans "DEBUG setState: machine set to '$::tcl_platform(machine)'"
+    }
     lappend ans "DEBUG setConf: tcl_ext_lib set to '$tclextlib_file'"
-    lappend ans "DEBUG setConf: siteconfig set to '$siteconfig_filere'(\\nDEBUG sourceSiteConfig: Source site configuration \\($siteconfig_filere\\))?"
+    lappend ans "DEBUG setConf: siteconfig set to '$siteconfig_filere'(\\nDEBUG sourceSiteConfig: Source site configuration \\($siteconfig_filere\\))?(\\nDEBUG setState: siteconfig_loaded set to '1')?"
     lappend ans "DEBUG setConf: locked_configs set to '$install_lockedconfigs'"
-    lappend ans "DEBUG setConf: pager set to '$install_pagercmd'"
-    lappend ans "DEBUG initPager: no pager start \\(is_tty=[siteconfig_isStderrTty], mod_cmd='', use_pager=0, asked_use_pager=0, cmd='$install_pagercmd'\\)"
+    lappend ans "DEBUG setState: shell set to 'sh'"
+    lappend ans "DEBUG setState: shelltype set to 'sh'"
+    lappend ans "DEBUG setState: subcmd set to ''"
+    lappend ans "DEBUG setState: subcmd_args set to ''"
+    lappend ans "DEBUG setState: init_error_report set to '1'"
     lappend ans "DEBUG setConf: verbosity set to 'debug'"
     lappend ans "DEBUG setConf: term_background set to '$install_termbg'"
     lappend ans "(DEBUG initConfColors: Ignore invalid default.*\\n)?DEBUG setConf: colors set to '.*'"
     lappend ans "DEBUG setConf: color set to '0'"
+    lappend ans "DEBUG setConf: pager set to '$install_pagercmd'"
+    lappend ans "DEBUG setState: paginate set to '0'"
+    lappend ans "DEBUG setState: report_format set to 'regular'"
+    lappend ans "DEBUG setState: reportfd set to 'stderr'"
     lappend ans $vers_reportre
     testouterr_cmd_re sh {--no-pager -D -V} {} [join $ans \n]
     restore_file_perms $tclextlib_file
@@ -54,15 +64,15 @@ if {[info exists tclextlib_file]} {
     # replace Tcl extension library by a non lib file
     file rename $tclextlib_file $tclextlib_file.orig
     file copy lib/envmodules.c $tclextlib_file
+    set tclextlib_file_abs_re [regsub -all "\(\[.+?\]\)" [file normalize $tclextlib_file] {\\\1}]
     if {$tcl_platform(os) eq {Darwin}} {
-        set tserr "$error_msgs: dlopen\\\($tclextlib_file,.*"
+        set tserr "$error_msgs: dlopen\\\($tclextlib_file_abs_re,.*"
     } else {
-        set tserr "$error_msgs: couldn't load file \"$tclextlib_file\":.*"
+        set tserr "$error_msgs: couldn't load file \"$tclextlib_file_abs_re\":.*"
     }
     testouterr_cmd_re sh {-V} {} $tserr
     file delete $tclextlib_file
     file rename $tclextlib_file.orig $tclextlib_file
-    unset tserr
 }
 
 # restrict read access to site-specific configuration script
@@ -80,7 +90,6 @@ if {![is_config_locked extra_siteconfig]} {
     testouterr_cmd_re sh {-V} {} $vers_reportre
     restore_file_perms $addsiteconfig_file
     unsetenv_var MODULES_SITECONFIG
-    unset addsiteconfig_file
 }
 
 # restrict read access to MODULERCFILE
@@ -89,14 +98,13 @@ setenv_var MODULERCFILE $modulerc_file
 change_file_perms $modulerc_file ugo-rx
 testouterr_cmd_re sh {list} {} $no_loaded
 restore_file_perms $modulerc_file
-unsetenv_var MODULERCFILE
+setenv_var MODULERCFILE $ORIG_MODULERCFILE
 
 
 #
 # Cleanup
 #
 
-unset ans
-unset modulerc_file
+reset_test_env
 
 }

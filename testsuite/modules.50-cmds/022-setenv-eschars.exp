@@ -21,6 +21,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 #
 #  Variables. This test forces a module load command. It will result in the
 #    environment variables "_LMFILES_", "LOADEDMODULES" and "pathelogical" to
@@ -63,9 +66,4 @@ foreach sh $supported_shells {
 #  Cleanup
 #
 
-unset sh
-unset ans
-unset ans2
-
-unset modulefile
-unset module
+reset_test_env

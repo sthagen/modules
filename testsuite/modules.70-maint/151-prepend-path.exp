@@ -77,9 +77,9 @@ testouterr_cmd_re "sh" "prepend-path FOO " $ans ""
 
 # test bad argument list
 testouterr_cmd_re "sh" "prepend-path FOO" "ERR" "$error_msgs: Unexpected number of args for 'prepend-path' command\n$err_typehelp"
-testouterr_cmd_re "sh" "prepend-path -d : FOO" "ERR" "$error_msgs: add-path should get a value for environment variable FOO"
-testouterr_cmd_re "sh" "prepend-path -d :" "ERR" "$error_msgs: add-path should get an environment variable name"
-testouterr_cmd_re "sh" "prepend-path -d : " "ERR" "$error_msgs: add-path should get a valid environment variable name"
+testouterr_cmd_re "sh" "prepend-path -d : FOO" "ERR" "$error_msgs: add-path $msg_needenvvarval FOO"
+testouterr_cmd_re "sh" "prepend-path -d :" "ERR" "$error_msgs: add-path $msg_needenvvarname"
+testouterr_cmd_re "sh" "prepend-path -d : " "ERR" "$error_msgs: add-path $msg_validenvvarname"
 
 
 #
@@ -136,19 +136,4 @@ testouterr_cmd_re "sh" "prepend-path --duplicates FOO $path1" $ans ""
 #  Cleanup
 #
 
-# Clean up the environment
-if {[info exists ORIG_FOO]} {
-    if { $verbose > 0 } {
-        send_user "\tRestore FOO = '$ORIG_FOO'\n"
-    }
-    set env(FOO) $ORIG_FOO
-    unset ORIG_FOO
-} else {
-    unset env(FOO)
-}
-unset env(FOO_modshare)
-
-unset ans
-
-unset path1
-unset path2
+reset_test_env

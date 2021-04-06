@@ -1,0 +1,252 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.20-locate/%M%
+#   Revision:		%I%
+#   First Edition:	2020/08/03
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:		avail, load, list, unload, whatis, purge, reload,
+#                   is-avail
+#   Modulefiles:
+#   Sub-Command:
+#
+#   Comment:	%C{
+#           Disable hiding with '--not-user' or '--not-group' options of
+#           'module-hide' command
+#		}C%
+#
+##############################################################################
+
+# ensure avail tests are made using in depth mode
+setenv_var MODULES_AVAIL_INDEPTH 1
+
+# ensure avail tests have implicit default enabled
+setenv_var MODULES_IMPLICIT_DEFAULT 1
+
+# ensure regular avail search match is set for these tests
+setenv_var MODULES_SEARCH_MATCH starts_with
+
+# ensure extended default and advanced version specifiers are enabled for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 1
+setenv_var MODULES_EXTENDED_DEFAULT 1
+
+set mp $modpath.2
+set mpre $modpathre.2
+setenv_path_var MODULEPATH $mp
+
+setenv_var MODULERCFILE $env(TESTSUITEDIR)/etc/modulerc.hide
+
+
+set ans [list]
+lappend ans [list setpath LOADEDMODULES hide1/5.0]
+lappend ans [list setpath _LMFILES_ $mp/hide1/5.0]
+lappend ans [list setpath MODULES_LMALTNAME hide1/5.0&as|hide1/latest]
+
+set ans2 [list]
+lappend ans2 [list setpath LOADEDMODULES hide1/5.0]
+lappend ans2 [list setpath _LMFILES_ $mp/hide1/5.0]
+lappend ans2 [list setpath MODULES_LMALTNAME hide1/5.0&as|hide1/latest]
+lappend ans2 [list ERR]
+
+set tserr1 $mp:\nhide1/5.0
+set tserr2 $err_path'hide1@5:'
+
+# test --not-user option
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET1 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET1
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET2 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+# fake Windows platform if expected siteconfig file is installed
+if {[siteconfig_isStderrTty]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM 1
+
+    if {[cmpversion $tclsh_version 8.6] == -1} {
+        set custom "    invoked from within
+\"if \{\[info exists env(TESTSUITE_HIDE_ALLOW_USER_SET2)\]\} \{
+    module-hide --not-user unknown hide1/5.0
+\}\""
+        set linenum 47
+    } else {
+        set custom {}
+        set linenum 48
+    }
+    set tserr3 [escre [msg_moderr {Option '--not-user' not supported on Windows platform} {module-hide --not-user unknown hide1/5.0} $mp/hide1/.modulerc $linenum {  } {} {} $custom]]
+
+    testouterr_cmd_re sh {load hide1@5:} $ans2 $tserr3
+    testouterr_cmd sh {avail -t hide1@5:} OK $mp:\nhide1/5.0
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM
+}
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET2
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET3 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET3
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET4 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET4
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET5 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET5
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_SET6 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_SET6
+
+
+# test --not-group option
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET1 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET1
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET2 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+# fake Windows platform if expected siteconfig file is installed
+if {[siteconfig_isStderrTty]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM 1
+
+    if {[cmpversion $tclsh_version 8.6] == -1} {
+        set custom "    invoked from within
+\"if \{\[info exists env(TESTSUITE_HIDE_ALLOW_GROUP_SET2)\]\} \{
+    module-hide --not-group unknown hide1/5.0
+\}\""
+        set linenum 66
+    } else {
+        set custom {}
+        set linenum 67
+    }
+    set tserr3 [escre [msg_moderr {Option '--not-group' not supported on Windows platform} {module-hide --not-group unknown hide1/5.0} $mp/hide1/.modulerc $linenum {  } {} {} $custom]]
+
+    testouterr_cmd_re sh {load hide1@5:} $ans2 $tserr3
+    testouterr_cmd sh {avail -t hide1@5:} OK $mp:\nhide1/5.0
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM
+}
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET2
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET3 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET3
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET4 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET4
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET5 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET5
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET6 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET6
+
+setenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET7 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+unsetenv_var TESTSUITE_HIDE_ALLOW_GROUP_SET7
+
+# test cumulative use of --not-user and --not-group options
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET1 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET1
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET2 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET2
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET3 1
+testouterr_cmd sh {load hide1@5:} ERR $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK {}
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET3
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET4 1
+testouterr_cmd sh {load hide1@5:} $ans {}
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_SET4
+
+
+set ans [list]
+lappend ans [list setpath LOADEDMODULES hide1/5.0]
+lappend ans [list setpath _LMFILES_ $mp/hide1/5.0]
+lappend ans [list setpath MODULES_LMALTNAME hide1/5.0&as|hide1/latest]
+lappend ans [list ERR]
+
+if {[cmpversion $tclsh_version 8.6] == -1} {
+    set custom "    invoked from within
+\"if \{\[info exists env(TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET1)\]\} \{
+    module-hide --not-group hide1/5.0
+\}\""
+    set linenum 97
+} else {
+    set custom {}
+    set linenum 98
+}
+set tserr2 [msg_moderr {No module specified in argument} {module-hide --not-group hide1/5.0} $mp/hide1/.modulerc $linenum {  } {} {} $custom]
+
+if {[cmpversion $tclsh_version 8.6] == -1} {
+    set custom "    invoked from within
+\"if \{\[info exists env(TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET2)\]\} \{
+    module-hide --not-group hide1/5.0 --not-user
+\}\""
+    set linenum 100
+} else {
+    set custom {}
+    set linenum 101
+}
+set tserr3 [msg_moderr {Missing value for '--not-user' option} {module-hide --not-group hide1/5.0 --not-user} $mp/hide1/.modulerc $linenum {  } {} {} $custom]
+
+if {[cmpversion $tclsh_version 8.6] == -1} {
+    set custom "    invoked from within
+\"if \{\[info exists env(TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET3)\]\} \{
+    module-hide --not-group
+\}\""
+    set linenum 103
+} else {
+    set custom {}
+    set linenum 104
+}
+set tserr4 [msg_moderr {Missing value for '--not-group' option} {module-hide --not-group} $mp/hide1/.modulerc $linenum {  } {} {} $custom]
+
+# test erroneous specification of --not-user and --not-group options
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET1 1
+testouterr_cmd sh {load hide1@5:} $ans $tserr2
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET1
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET2 1
+testouterr_cmd sh {load hide1@5:} $ans $tserr3
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET2
+
+setenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET3 1
+testouterr_cmd sh {load hide1@5:} $ans $tserr4
+testouterr_cmd sh {avail -t hide1@5:} OK $tserr1
+unsetenv_var TESTSUITE_HIDE_ALLOW_USER_GROUP_ERR_SET3
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

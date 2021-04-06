@@ -22,6 +22,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set break4 "break/4.0"
 set cont4 "continue/4.0"
 set break6 "break/6.0"
@@ -113,19 +116,4 @@ test_cmd "ALL" "load $cont6" $ans
 #  Cleanup
 #
 
-unsetenv_loaded_module
-
-unset ans
-
-unset modulefile
-unset module
-
-unset break4
-unset cont4
-unset break4p
-unset cont4p
-unset break6
-unset cont6
-unset break6p
-unset cont6p
-
+reset_test_env

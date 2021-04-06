@@ -1,0 +1,6 @@
+#%Module
+# Dummy modulefile for openmpi
+
+set version 4.0
+set moduledir [file dirname $ModulesCurrentModulefile]
+source $moduledir/common

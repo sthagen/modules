@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "foo 2.4 (pgi/19.4, nompi)"

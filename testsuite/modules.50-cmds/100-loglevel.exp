@@ -24,6 +24,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 #
 #  Variables. This test forces a module load command. It will result in the
 #    environment variables "_LMFILES_", "LOADEDMODULES" and "testsuite" to
@@ -85,15 +88,4 @@ testouterr_cmd "csh" "load $module4" $ans [msg_load $module4 $err_log]
 #  Cleanup
 #
 
-unset err_log
-
-unset ans
-
-unset modulefile1
-unset module1
-unset modulefile2
-unset module2
-unset modulefile3
-unset module3
-unset modulefile4
-unset module4
+reset_test_env

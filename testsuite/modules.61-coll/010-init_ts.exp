@@ -82,6 +82,18 @@ set coll13fpre "$homewithcollre/$coll13"
 set coll14 "coll14"
 set coll14fp "$homewithcoll/$coll14"
 set coll14fpre "$homewithcollre/$coll14"
+set coll15 "coll15"
+set coll15f "coll15.$colltarget"
+set coll15fp "$homewithcoll/$coll15"
+set coll15fpre "$homewithcollre/$coll15"
+set coll16 "coll16"
+set coll16f "coll16.$colltarget"
+set coll16fp "$homewithcoll/$coll16"
+set coll16fpre "$homewithcollre/$coll16"
+set coll17 coll17
+set coll17f coll17.$colltarget
+set coll17fp $hometestdotmod/$coll17f
+set coll17fpre [escre $coll17fp]
 
 set cdmodpath1 "$modpath"
 set cdmodpath1re "$modpathre"
@@ -142,13 +154,38 @@ set c11mod2 m2
 set c12modpath1 $modpath.deps
 set c12mod1 f4
 set c12mod2 f5
+set c15modpath1 "$modpath wspace"
+set c15modpath1re "$modpathre wspace"
+set c15mod1 {space yc/4}
+set c15mod2 foo/1
+set c15mod3 {space y /1 }
+set c16modpath1 "$modpath wspace"
+set c16modpath1re "$modpathre wspace"
+set c16mod1 {space yc/4}
+set c16mod2 {space yc/5}
+set c16mod3 foo/1
+set c16mod4 bar/2
+set c16mod5 {space y /1 }
+set c17modpath1 {$TESTSUITEDIR/modulefiles}
+set c17modpath1re [escre $c17modpath1]
+set c17modpath1res $modpath
+set c17mod1 loc_rc1/1.0
+set c17mod2 load/15
 
 set cdlmf "$cdmodpath1/$cdmod1:$cdmodpath1/$cdmod2:$cdmodpath1/$cdmod3:$cdmodpath1/$cdmod4:$cdmodpath1/$cdmod5"
 set cdlm "$cdmod1:$cdmod2:$cdmod3:$cdmod4:$cdmod5"
-set cdlmalt "$cdmod1&loc_rc1/foo:$cdmod5&loc_dv2/default&loc_dv2"
+if {[is_conf_enabled advversspec implicitdefault]} {
+    set cdlmalt "$cdmod1&loc_rc1/foo:$cdmod3&as|verssort/default&as|verssort/latest:$cdmod5&loc_dv2/default&loc_dv2"
+} else {
+    set cdlmalt "$cdmod1&loc_rc1/foo:$cdmod5&loc_dv2/default&loc_dv2"
+}
 set cdlmf_part "$cdmodpath1/$cdmod1:$cdmodpath1/$cdmod2:$cdmodpath1/$cdmod3:$cdmodpath1/$cdmod4:$cdmodpath1/$cdmod5n/2.0"
 set cdlm_part "$cdmod1:$cdmod2:$cdmod3:$cdmod4:$cdmod5n/2.0"
-set cdlmalt_part "$cdmod1&loc_rc1/foo"
+if {[is_conf_enabled advversspec implicitdefault]} {
+    set cdlmalt_part "$cdmod1&loc_rc1/foo:$cdmod3&as|verssort/default&as|verssort/latest"
+} else {
+    set cdlmalt_part "$cdmod1&loc_rc1/foo"
+}
 set cdmodpath "$cdmodpath1"
 set c1lmf "$c1modpath1/$cdmod1:$c1modpath1/$cdmod2:$c1modpath1/$cdmod3:$c1modpath1/$cdmod4:$c1modpath1/$c1mod5:$c1modpath1/$c1mod6"
 set c1lm "$cdmod1:$cdmod2:$cdmod3:$cdmod4:$c1mod5:$c1mod6"
@@ -167,7 +204,11 @@ set c6lmf "$c6mod1f:$c6mod2f:$c6mod3f:$c6mod4f"
 set c6lm "$c6mod1:$c6mod2:$c6mod3:$c6mod4"
 set c6lmfnodefault "$c6mod2f:$c6mod3f:$c6mod4f"
 set c6lmnodefault "$c6mod2:$c6mod3:$c6mod4"
-set c6lmalt "$c6mod2\&dcross/dir1/aft"
+if {[is_conf_enabled advversspec implicitdefault]} {
+    set c6lmalt "$c6mod1&as|dvcross/default&as|dvcross/latest&as|dvcross/dir1/default&as|dvcross/dir1/latest:$c6mod2&dcross/dir1/aft&as|dcross/default&as|dcross/latest&as|dcross/dir1/default&as|dcross/dir1/latest"
+} else {
+    set c6lmalt "$c6mod2\&dcross/dir1/aft"
+}
 set c7modpath ""
 set c7lmf "$c7mod1:$c7mod2:$c7mod3"
 set c7lm "$c7mod1:$c7mod2:$c7mod3"
@@ -187,8 +228,23 @@ set c12lmf $c12modpath1/$c12mod1:$c12modpath1/$c12mod2
 set c12lm $c12mod1:$c12mod2
 set c13lm $cdlm
 set c13lmf $cdlmf
-set c13lmalt $cdlmalt
+set c13lmalt $cdmod1&loc_rc1/foo:$cdmod5&loc_dv2/default&loc_dv2
 set c13modpath $cdmodpath
+set c15modpath $c15modpath1
+set c15lmf $c15modpath1/$c15mod1:$c15modpath1/$c15mod2:$c15modpath1/$c15mod3
+set c15lm $c15mod1:$c15mod2:$c15mod3
+set c15lmalt {space y /1 &space y /n &al|space y /a }
+set c16modpath $c16modpath1
+set c16lmf $c15modpath1/$c16mod1:$c16modpath1/$c16mod2:$c16modpath1/$c16mod3:$c16modpath1/$c16mod4:$c16modpath1/$c16mod5
+set c16lm $c16mod1:$c16mod2:$c16mod3:$c16mod4:$c16mod5
+if {[is_conf_enabled advversspec implicitdefault]} {
+    set c16lmalt "$c16mod2&as|space yc/default&as|space yc/latest:$c16mod4&as|bar/default&as|bar/latest:space y /1 &space y /n &al|space y /a "
+} else {
+    set c16lmalt {space y /1 &space y /n &al|space y /a }
+}
+set c17lmf "$c17modpath1res/$c17mod1:$c17modpath1res/$c17mod2"
+set c17lm "$c17mod1:$c17mod2"
+set c17modpath "$c17modpath1"
 
 set mlu "module use --append"
 set mll "module load"
@@ -208,4 +264,15 @@ set c7contre "$mll $c7mod1rel\n$mll $c7mod2rel\n$mll $c7mod3rel\n"
 set c8cont "$mlu $c8modpath1\n$mll $c8mod1\n$mll $c8mod2\n$mll $c8mod3\n"
 set c9cont "$mlu $c9modpath1\n$mll $c9mod1\n$mll --notuasked $c9mod2\n$mll $c9mod3\n"
 set c11cont "$mlu $c11modpath1\n$mll --notuasked $c11mod1\n$mll $c11mod2\n"
+set c15cont "$mlu {$c15modpath1}\n$mll {$c15mod1}\n$mll $c15mod2\n$mll {$c15mod3}\n"
+set c15contre "$mlu {$c15modpath1re}\n$mll {$c15mod1}\n$mll $c15mod2\n$mll {$c15mod3}\n"
+set c16cont "$mlu {$c16modpath1}\n$mll {$c16mod1}\n$mll {$c16mod2}\n$mll $c16mod3\n$mll $c16mod4\n$mll {$c16mod4}\n"
+set c16contre "$mlu {$c16modpath1re}\n$mll {$c16mod1}\n$mll {$c16mod2}\n$mll $c16mod3\n$mll $c16mod4\n$mll {$c16mod5}\n"
+set c17cont "$mlu $c17modpath1\n$mll $c17mod1\n$mll $c17mod2\n"
+set c17contre "$mlu $c17modpath1re\n$mll $c17mod1\n$mll $c17mod2\n"
 
+# generate modulefiles that cannot be recorded in git repository
+create_endspace_test_modulefiles
+
+# save specific test env
+save_test_env

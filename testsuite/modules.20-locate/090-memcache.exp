@@ -34,6 +34,9 @@ setenv_var MODULES_IMPLICIT_DEFAULT 1
 # ensure regular avail search match is set for these tests
 setenv_var MODULES_SEARCH_MATCH starts_with
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set mp $modpath.memcache
 set mpre $modpathre.memcache
 
@@ -80,7 +83,7 @@ testouterr_cmd_re sh {avail -D -t foo foo} OK $tserr
 set tserr "(.*)+
 DEBUG \\\[#1:load:look/1\\\] findModules: finding 'foo1\\*' in $mpre .*
 (.*)+
-DEBUG \\\[#1:load:look/1\\\] findModules: found foo1\\S* foo1\\S* foo1\\S*
+DEBUG \\\[#1:load:look/1\\\] findModules: found foo1\\S* foo1\\S*
 DEBUG \\\[#1:load:look/1\\\] findModules: create cache entry .*
 (.*)+
 foo1/1  foo1/2  
@@ -88,7 +91,7 @@ foo1/1  foo1/2
 DEBUG \\\[#1:load:look/1\\\] findModules: finding 'foo\\*' in $mpre .*
 DEBUG \\\[#1:load:look/1\\\] checkValidModule: .*
 (.*)+
-DEBUG \\\[#1:load:look/1\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S* foo\\S* foo\\S*
+DEBUG \\\[#1:load:look/1\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S*
 DEBUG \\\[#1:load:look/1\\\] findModules: create cache entry .*
 (.*)+
 foo/1  foo/2  foo1/1  foo1/2  
@@ -98,41 +101,43 @@ testerr_cmd_re sh {load -D look/1} $tserr
 set tserr "(.*)+
 DEBUG \\\[#1:load:look/2\\\] findModules: finding 'foo\\*' in $mpre .*
 (.*)+
-DEBUG \\\[#1:load:look/2\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S* foo\\S* foo\\S*
+DEBUG \\\[#1:load:look/2\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S*
 DEBUG \\\[#1:load:look/2\\\] findModules: create cache entry .*
 (.*)+
 foo/1  foo/2  foo1/1  foo1/2  
 (.*)+
 DEBUG \\\[#1:load:look/2\\\] findModules: finding 'foo1\\*' in $mpre .*
 DEBUG \\\[#1:load:look/2\\\] findModules: use cache entry .*
-DEBUG \\\[#1:load:look/2\\\] getModules: got foo1\\S* foo1\\S* foo1\\S*
 (.*)+
 foo1/1  foo1/2  
+(.*)+
+  Get modules: {foo1/1 foo1/2} matching 'foo1' in.*
 (.*)+"
 testerr_cmd_re sh {load -D look/2} $tserr
 
 set tserr "(.*)+
-DEBUG \\\[#1:load:look/3\\\] findModules: finding '\\*\\*' in $mpre .*
+DEBUG \\\[#1:load:look/3\\\] findModules: finding '\\*' in $mpre .*
 (.*)+
 DEBUG \\\[#1:load:look/3\\\] findModules: create cache entry .*
 (.*)+
 DEBUG \\\[#1:load:look/3\\\] findModules: finding 'f\\*' in $mpre .*
 DEBUG \\\[#1:load:look/3\\\] findModules: use cache entry .*
-DEBUG \\\[#1:load:look/3\\\] getModules: got foo\\S* foo\\S* foo\\S* foo\\S* foo\\S* foo\\S*
 (.*)+
 foo/1  foo/2  foo1/1  foo1/2  
+(.*)+
+  Get modules: {foo\\S* foo\\S* foo\\S* foo\\S*} matching 'f' in.*
 (.*)+"
 testerr_cmd_re sh {load -D look/3} $tserr
 
 set tserr "(.*)+
 DEBUG \\\[#1:load:look/4\\\] findModules: finding 'f\\*' in $mpre .*
 (.*)+
-DEBUG \\\[#1:load:look/4\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S* foo\\S* foo\\S*
+DEBUG \\\[#1:load:look/4\\\] findModules: found foo\\S* foo\\S* foo\\S* foo\\S*
 DEBUG \\\[#1:load:look/4\\\] findModules: create cache entry .*
 (.*)+
 foo/1  foo/2  foo1/1  foo1/2  
 (.*)+
-DEBUG \\\[#1:load:look/4\\\] findModules: finding '\\*\\*' in $mpre .*
+DEBUG \\\[#1:load:look/4\\\] findModules: finding '\\*' in $mpre .*
 DEBUG \\\[#1:load:look/4\\\] checkValidModule: .*
 (.*)+
 DEBUG \\\[#1:load:look/4\\\] findModules: create cache entry .*
@@ -142,13 +147,13 @@ testerr_cmd_re sh {load -D look/4} $tserr
 set tserr "(.*)+
 DEBUG \\\[#1:load:look/5\\\] findModules: finding 'foo1' in $mpre .*
 (.*)+
-DEBUG \\\[#1:load:look/5\\\] findModules: found foo1\\S* foo1\\S* foo1\\S*
+DEBUG \\\[#1:load:look/5\\\] findModules: found foo1\\S* foo1\\S*
 DEBUG \\\[#1:load:look/5\\\] findModules: create cache entry .*
 (.*)+
 DEBUG \\\[#1:load:look/5\\\] findModules: finding 'foo' in $mpre .*
 DEBUG \\\[#1:load:look/5\\\] checkValidModule: .*
 (.*)+
-DEBUG \\\[#1:load:look/5\\\] findModules: found foo\\S* foo\\S* foo\\S*
+DEBUG \\\[#1:load:look/5\\\] findModules: found foo\\S* foo\\S*
 DEBUG \\\[#1:load:look/5\\\] findModules: create cache entry .*
 (.*)+"
 testerr_cmd_re sh {load -D look/5} $tserr
@@ -156,25 +161,26 @@ testerr_cmd_re sh {load -D look/5} $tserr
 set tserr "(.*)+
 DEBUG \\\[#1:load:look/6\\\] findModules: finding 'foo' in $mpre .*
 (.*)+
-DEBUG \\\[#1:load:look/6\\\] findModules: found foo\\S* foo\\S* foo\\S*
+DEBUG \\\[#1:load:look/6\\\] findModules: found foo\\S* foo\\S*
 DEBUG \\\[#1:load:look/6\\\] findModules: create cache entry .*
 (.*)+
 DEBUG \\\[#1:load:look/6\\\] findModules: finding 'foo1' in $mpre .*
 DEBUG \\\[#1:load:look/6\\\] checkValidModule: .*
 (.*)+
-DEBUG \\\[#1:load:look/6\\\] findModules: found foo1\\S* foo1\\S* foo1\\S*
+DEBUG \\\[#1:load:look/6\\\] findModules: found foo1\\S* foo1\\S*
 DEBUG \\\[#1:load:look/6\\\] findModules: create cache entry .*
 (.*)+"
 testerr_cmd_re sh {load -D look/6} $tserr
 
 set tserr "(.*)+
-DEBUG \\\[#1:load:look/7\\\] findModules: finding '\\*\\*' in $mpre .*
+DEBUG \\\[#1:load:look/7\\\] findModules: finding '\\*' in $mpre .*
 (.*)+
 DEBUG \\\[#1:load:look/7\\\] findModules: create cache entry .*
 (.*)+
 DEBUG \\\[#1:load:look/7\\\] findModules: finding 'foo' in $mpre .*
 DEBUG \\\[#1:load:look/7\\\] findModules: use cache entry .*
-DEBUG \\\[#1:load:look/7\\\] getModules: got foo\\S* foo\\S* foo\\S*
+(.*)+
+  Get modules: {foo foo/1 foo/2} matching 'foo' in.*
 (.*)+"
 testerr_cmd_re sh {load -D look/7} $tserr
 
@@ -183,13 +189,14 @@ set tserr "(.*)+
 DEBUG \\\[#1:load:look/8\\\] findModules: finding 'sp cial\\*' in $mpre .*
 (.*)+
 DEBUG \\\[#1:load:look/8\\\] findModules: create cache entry .*
-DEBUG \\\[#1:load:look/8\\\] getModules: got {sp cial\\S*} {sp cial\\S*}
 (.*)+
 sp cial/1  
 (.*)+
 DEBUG \\\[#1:load:look/8\\\] getModules: use cache entry .*
 (.*)+
 sp cial/1  
+(.*)+
+  Get modules: {{sp cial/1}} matching '{sp cial}' in.*
 (.*)+"
 testerr_cmd_re sh {load -D look/8} $tserr
 
@@ -198,16 +205,6 @@ testerr_cmd_re sh {load -D look/8} $tserr
 #  Cleanup
 #
 
-# restore environment
-setenv_path_var MODULEPATH $modpath
-unsetenv_var MODULES_AVAIL_INDEPTH
-unsetenv_var MODULES_IMPLICIT_DEFAULT
-unsetenv_var MODULES_SEARCH_MATCH
-
-unset mp
-unset mpre
-
-unset tsdisp
-unset tserr
+reset_test_env
 
 }

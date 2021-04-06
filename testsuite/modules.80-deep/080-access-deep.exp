@@ -35,6 +35,9 @@ if {!$is_file_perms_editable} {
 # ensure avail tests are made using in depth mode
 setenv_var MODULES_AVAIL_INDEPTH 1
 
+# ensure regular avail search match is set for these tests
+setenv_var MODULES_SEARCH_MATCH starts_with
+
 #
 # Variables for this test
 #
@@ -164,13 +167,13 @@ restore_file_perms $lmf4
 
 change_file_perms $lmf5 $hide_perms
 
-lappend ans [list set _LMFILES__modshare "$rlmf5:1"]
-lappend ans [list set LOADEDMODULES_modshare "$rlm5:1"]
 lappend ans [list set TEST $rlm5]
-lappend ans [list set MODULES_LMCONFLICT_modshare "$rlm5&$m5:1"]
-lappend ans [list set _LMFILES_ $rlmf5]
-lappend ans [list set LOADEDMODULES $rlm5]
-lappend ans [list set MODULES_LMCONFLICT "$rlm5&$m5"]
+lappend ans [list setpath LOADEDMODULES $rlm5]
+lappend ans [list setpath _LMFILES_ $rlmf5]
+lappend ans [list setpath MODULES_LMCONFLICT "$rlm5&$m5"]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm5&as|plain/default&as|plain/latest&as|$m5/default&as|$m5/latest]
+}
 
 # another implicit default is chosen
 testouterr_cmd "sh" "load $m5" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m5'"]
@@ -247,11 +250,12 @@ restore_file_perms $lmrc9
 change_file_perms $lmrc10 $hide_perms
 
 set ans [list]
-lappend ans [list set _LMFILES__modshare "$rlmf10:1"]
-lappend ans [list set LOADEDMODULES_modshare "$rlm10:1"]
 lappend ans [list set TEST $rlm10]
-lappend ans [list set _LMFILES_ $rlmf10]
-lappend ans [list set LOADEDMODULES $rlm10]
+lappend ans [list setpath LOADEDMODULES $rlm10]
+lappend ans [list setpath _LMFILES_ $rlmf10]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME $rlm10&as|moddef/default&as|moddef/latest&as|moddef/dir2/default&as|moddef/dir2/latest]
+}
 
 # another implicit default is chosen
 testouterr_cmd "sh" "load $m10" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m10'"]
@@ -396,15 +400,15 @@ restore_file_perms $lmd19
 change_file_perms $lmfh21 $hide_perms
 
 set ans [list]
-lappend ans [list set _LMFILES__modshare "$lmf21:1"]
-lappend ans [list set LOADEDMODULES_modshare "$lm21:1"]
 lappend ans [list set TEST $lm21]
-lappend ans [list set MODULES_LMALTNAME_modshare "$lm21&modsym/dir2/3.0:1"]
-lappend ans [list set MODULES_LMCONFLICT_modshare "$lm21&$m21:1"]
-lappend ans [list set _LMFILES_ $lmf21]
-lappend ans [list set LOADEDMODULES $lm21]
-lappend ans [list set MODULES_LMALTNAME "$lm21&modsym/dir2/3.0"]
-lappend ans [list set MODULES_LMCONFLICT "$lm21&$m21"]
+lappend ans [list setpath LOADEDMODULES $lm21]
+lappend ans [list setpath _LMFILES_ $lmf21]
+lappend ans [list setpath MODULES_LMCONFLICT "$lm21&$m21"]
+if {[is_conf_enabled advversspec implicitdefault]} {
+    lappend ans [list setpath MODULES_LMALTNAME "$lm21&modsym/dir2/3.0&as|modsym/default&as|modsym/latest&as|modsym/dir2/default&as|modsym/dir2/latest"]
+} else {
+    lappend ans [list setpath MODULES_LMALTNAME "$lm21&modsym/dir2/3.0"]
+}
 
 # implicit default is not impacted
 testouterr_cmd "sh" "load $m21" [if_implicitdefault $ans ERR] [if_implicitdefault {} "$err_nodefault'$m21'"]
@@ -419,68 +423,6 @@ restore_file_perms $lmfh21
 # Cleanup
 #
 
-unsetenv_var MODULES_AVAIL_INDEPTH
-
-unset ans
-
-unset pheader
-unset theader
-unset hide_perms
-
-unset m1
-unset lm1
-unset lmf1
-unset m2
-unset lm2
-unset lmf2
-unset m3
-unset lm3
-unset lmf3
-unset m4
-unset lm4
-unset lmf4
-unset m5
-unset lm5
-unset lmf5
-unset rlm5
-unset rlmf5
-unset rlmfre5
-unset m6
-unset lm6
-unset lmf6
-unset m7
-unset lm7
-unset lmf7
-unset m8
-unset lmrc8
-unset m9
-unset lmrc9
-unset m10
-unset lmrc10
-unset rlm10
-unset rlmf10
-unset rlmfre10
-unset m12
-unset lmd12
-unset m13
-unset lmd13
-unset m14
-unset lmd14
-unset m15
-unset lmd15
-unset m16
-unset lmd16
-unset m17
-unset lmd17
-unset m18
-unset lmd18
-unset m19
-unset lmd19
-unset m20
-unset m21
-unset lm21
-unset lmf21
-unset lmfre21
-unset lmfh21
+reset_test_env
 
 }

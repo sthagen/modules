@@ -34,3 +34,6 @@ unset version5
 unset version6
 unset module6
 unset modulefile6
+
+# restore orig saved test env
+save_test_env

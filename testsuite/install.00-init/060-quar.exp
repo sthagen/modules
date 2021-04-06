@@ -29,6 +29,12 @@ if {$install_quarantinevars ne ""} {
 set ans [list]
 set ansr [list]
 
+# if test set LD_PRELOAD to a non-existent lib, ld will shout error
+if {[lsearch -exact $install_quarlist LD_PRELOAD] != -1} {
+   lappend ans "(ERROR: ld.so: object 'foo'.*)*"
+   lappend ansr "(ERROR: ld.so: object 'foo'.*)*"
+}
+
 set quar [join $install_quarlist " "]
 if { $verbose > 0 } {
    send_user "\tAlready configured MODULES_RUN_QUARANTINE = '$quar'\n"
@@ -58,6 +64,13 @@ foreach vname [lsort $install_quarlist] {
    }
 }
 
+# if test set LD_PRELOAD to a non-existent lib, ld will shout error
+if {[lsearch -exact $install_quarlist LD_PRELOAD] != -1} {
+   set postmsg "(\nERROR: ld.so: object 'foo'.*)*"
+} else {
+   set postmsg {}
+}
+
 #
 # The tests
 #
@@ -69,8 +82,11 @@ foreach shell $shell_list {
             send_user "\tskip test for $shell, no quarantine support\n"
          }
       }
+      fish {
+         testall_cmd_re "$shell" "module source $modfile" "" [join $ans "\n"]$postmsg 0
+      }
       default {
-         testall_cmd "$shell" "module source $modfile" "" [join $ans "\n"] 0
+         testall_cmd_re "$shell" "module source $modfile" "" [join $ans "\n"] 0
       }
    }
 }
@@ -78,10 +94,10 @@ foreach shell $othlang_list {
    switch -- $shell {
       {r} {
          # specific result for R as LD_LIBRARY_PATH value is altered by R on the way
-         testall_cmd_re "$shell" "source,$modfile" "" [join $ansr "\n"] 0
+         testall_cmd_re "$shell" "source,$modfile" "" [join $ansr "\n"]$postmsg 0
       }
       default {
-         testall_cmd "$shell" "source,$modfile" "" [join $ans "\n"] 0
+         testall_cmd_re "$shell" "source,$modfile" "" [join $ans "\n"] 0
       }
    }
 }
@@ -90,9 +106,15 @@ foreach shell $othlang_list {
 #  Clean up variables used in this test case
 #
 
+foreach vname $install_quarlist {
+   unset env($vname)
+}
+
 if {[info exists vname]} {
    unset vname
 }
+
+unset postmsg
 
 # if quarantine has not been configured at build time, check the
 # whole mechanism in various conditions
@@ -363,49 +385,11 @@ if {[info exists testlibfile] && [file exists $testlibfile]} {
       send_user "\tDelete fake library $testlibfile\n"
    }
    file delete $testlibfile
-   unset testlibfile
-}
-
-if {[info exists libtclname]} {
-   unset libtclname
-   unset fid
-}
-
-# restore environment
-if { $verbose > 0 } {
-    send_user "\tUnset MODULES_RUN_QUARANTINE\n"
-    send_user "\tUnset LD_LIBRARY_PATH\n"
-    send_user "\tUnset BAR\n"
-    send_user "\tUnset FOO\n"
-    send_user "\tUnset MODULES_RUNENV_LD_LIBRARY_PATH\n"
-    send_user "\tUnset MODULES_RUNENV_FOO\n"
-}
-unset env(MODULES_RUN_QUARANTINE)
-unset env(LD_LIBRARY_PATH)
-unset env(BAR)
-unset env(FOO)
-unset env(MODULES_RUNENV_LD_LIBRARY_PATH)
-unset env(MODULES_RUNENV_FOO)
-
-unset quar
-unset env1r
-unset env1
-unset env2
-unset runenv1
-unset runenv2
-unset ifs
-
-unset anscsh
-if {[info exists ansexit]} {
-   unset ansexit
 }
 
 }
 
-unset ans
-unset ansr
-
-unset modfile
+reset_test_env
 
 } elseif {$verbose > 0} {
    send_user "\tSkipping quarantine mechanism checks\n"

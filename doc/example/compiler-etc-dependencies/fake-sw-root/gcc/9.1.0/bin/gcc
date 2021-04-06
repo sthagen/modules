@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "gcc 9.1.0"

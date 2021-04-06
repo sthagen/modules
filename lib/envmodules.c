@@ -1,11 +1,11 @@
 /*************************************************************************
  *
  * ENVMODULES.C, Modules Tcl extension library
- * Copyright (C) 2018-2019 Xavier Delaruelle
+ * Copyright (C) 2018-2021 Xavier Delaruelle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -18,15 +18,33 @@
  *
  ************************************************************************/
 
+#define _ISOC99_SOURCE
+#define _XOPEN_SOURCE
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <pwd.h>
+#include <grp.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 #include "config.h"
 #include "envmodules.h"
+
+
+/*	Utility function to compare 2 integers for qsort function. */
+int
+__Envmodules_IntCmp(
+   const void* i,
+   const void* j)
+{
+   return (i > j) - (i < j);
+}
 
 /*----------------------------------------------------------------------
  *
@@ -51,7 +69,6 @@ Envmodules_GetFilesInDirectoryObjCmd(
    int objc,               /* Number of arguments. */
    Tcl_Obj *const objv[])  /* Argument objects. */
 {
-   int fetch_hidden;
    int fetch_dotversion;
    const char *dir;
    int dirlen;
@@ -60,22 +77,18 @@ Envmodules_GetFilesInDirectoryObjCmd(
    struct dirent *direntry;
    int have_modulerc = 0;
    int have_version = 0;
+   int is_hidden;
    char path[PATH_MAX];
 
    /* Parse arguments. */
-   if (objc == 4) {
-      /* fetch_hidden */
-      if (Tcl_GetBooleanFromObj(interp, objv[2], &fetch_hidden) != TCL_OK) {
-         Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
-         return TCL_ERROR;
-      }
+   if (objc == 3) {
       /* fetch_dotversion */
-      if (Tcl_GetBooleanFromObj(interp, objv[3], &fetch_dotversion)!=TCL_OK) {
+      if (Tcl_GetBooleanFromObj(interp, objv[2], &fetch_dotversion)!=TCL_OK) {
          Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
          return TCL_ERROR;
       }
    } else {
-      Tcl_WrongNumArgs(interp, 1, objv, "dir fetch_hidden fetch_dotversion");
+      Tcl_WrongNumArgs(interp, 1, objv, "dir fetch_dotversion");
       return TCL_ERROR;
    }
 
@@ -111,15 +124,10 @@ Envmodules_GetFilesInDirectoryObjCmd(
          if (fetch_dotversion && !access(path, R_OK)) {
             have_version = 1;
          }
-      } else if (direntry->d_name[0] == '.') {
-         /* add hidden file if enabled */
-         if (fetch_hidden) {
-            Tcl_ListObjAppendElement(interp, ltmp, Tcl_NewStringObj(path, -1));
-            Tcl_ListObjAppendElement(interp, ltmp, Tcl_NewIntObj(1));
-         }
       } else {
          Tcl_ListObjAppendElement(interp, ltmp, Tcl_NewStringObj(path, -1));
-         Tcl_ListObjAppendElement(interp, ltmp, Tcl_NewIntObj(0));
+         is_hidden = (direntry->d_name[0] == '.') ? 1 : 0;
+         Tcl_ListObjAppendElement(interp, ltmp, Tcl_NewIntObj(is_hidden));
       }
    }
    /* Do not treat error happening during read to send list of valid files. */
@@ -186,24 +194,37 @@ Envmodules_ReadFileObjCmd(
    Tcl_Obj *const objv[])  /* Argument objects. */
 {
    int firstline;
+   int must_have_cookie;
    const char *filename;
    int filenamelen;
    int fid;
+   int firstread;
    ssize_t len;
    char buf[READ_BUFFER_SIZE];
    Tcl_Obj *res;
 
    /* Parse arguments. */
-   if (objc == 2) {
-      firstline = 0;
-   } else if (objc == 3) {
+   if (objc < 2 || objc > 4) {
+      Tcl_WrongNumArgs(interp, 1, objv,
+         "filename ?firstline? ?must_have_cookie?");
+      return TCL_ERROR;
+   }
+   if (objc > 2) {
       if (Tcl_GetBooleanFromObj(interp, objv[2], &firstline) != TCL_OK) {
          Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
          return TCL_ERROR;
       }
    } else {
-      Tcl_WrongNumArgs(interp, 1, objv, "filename ?firstline?");
-      return TCL_ERROR;
+      firstline = 0;
+   }
+   if (objc > 3) {
+      if (Tcl_GetBooleanFromObj(interp, objv[3], &must_have_cookie) !=
+         TCL_OK) {
+         Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
+         return TCL_ERROR;
+      }
+   } else {
+      must_have_cookie = 0;
    }
 
    filename = Tcl_GetStringFromObj(objv[1], &filenamelen);
@@ -230,8 +251,18 @@ Envmodules_ReadFileObjCmd(
          Tcl_AppendToObj(res, buf, len);
       }
    } else {
+      firstread = 1;
       while ((len = read(fid, buf, READ_BUFFER_SIZE)) > 0) {
          Tcl_AppendToObj(res, buf, len);
+         /* Stop reading if magic cookie is mandatory but not found at the
+          * beginning of file. */
+         if (firstread == 1) {
+            firstread = 0;
+            if (must_have_cookie == 1 && strncmp(buf, MODULES_MAGIC_COOKIE, 8)
+               != 0) {
+               break;
+            }
+         }
       }
    }
    /* Error during read. */
@@ -254,6 +285,313 @@ Envmodules_ReadFileObjCmd(
 
    Tcl_SetObjResult(interp, res);
    Tcl_DecrRefCount(res);
+   return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Envmodules_InitStateUsernameObjCmd --
+ *
+ *	 This function is invoked to return the username of user running
+ *	 current process.
+ *
+ * Results:
+ *	 A standard Tcl result.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *---------------------------------------------------------------------*/
+
+int
+Envmodules_InitStateUsernameObjCmd(
+   ClientData dummy,       /* Not used. */
+   Tcl_Interp *interp,     /* Current interpreter. */
+   int objc,               /* Number of arguments. */
+   Tcl_Obj *const objv[])  /* Argument objects. */
+{
+   uid_t uid;
+   struct passwd *pwd;
+   char uidstr[16];
+   Tcl_Obj *res;
+
+   /* Get current user id */
+   uid = getuid();
+
+   /* Fetch corresponding passwd entry */
+   if ((pwd = getpwuid(uid)) == NULL) {
+      Tcl_SetErrno(errno);
+      sprintf (uidstr, "%d", uid);
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+      Tcl_AppendResult(interp, "couldn't find name for user id \"", uidstr,
+         "\": ", Tcl_PosixError(interp), (char *) NULL);
+#else
+      Tcl_SetObjResult(interp,
+         Tcl_ObjPrintf("couldn't find name for user id \"%s\": %s", uidstr,
+         Tcl_PosixError(interp)));
+#endif
+      return TCL_ERROR;
+   }
+
+   /* Set username as result */
+   res = Tcl_NewObj();
+   Tcl_IncrRefCount(res);
+   Tcl_AppendToObj(res, pwd->pw_name, strlen(pwd->pw_name));
+
+   Tcl_SetObjResult(interp, res);
+   Tcl_DecrRefCount(res);
+   return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Envmodules_InitStateUsergroupsObjCmd --
+ *
+ *	 This function is invoked to return all the groups the user running
+ *	 current process is member of.
+ *
+ * Results:
+ *	 A standard Tcl result.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *---------------------------------------------------------------------*/
+
+int
+Envmodules_InitStateUsergroupsObjCmd(
+   ClientData dummy,       /* Not used. */
+   Tcl_Interp *interp,     /* Current interpreter. */
+   int objc,               /* Number of arguments. */
+   Tcl_Obj *const objv[])  /* Argument objects. */
+{
+   int maxgroups;
+   GETGROUPS_T *groups;
+   int ngroups = 0;
+   int egid_in_groups = 0;
+   GETGROUPS_T egid;
+   int i, j;
+   struct group *grp;
+   char gidstr[16];
+   Tcl_Obj *lres;
+
+   /* Get actually configured number of groups */
+#if defined(HAVE_SYSCONF) && defined(_SC_NGROUPS_MAX)
+   maxgroups = sysconf(_SC_NGROUPS_MAX);
+#else
+#  if defined(NGROUPS_MAX)
+   maxgroups = NGROUPS_MAX;
+#  else
+   maxgroups = DEFAULT_MAXGROUPS;
+#  endif
+#endif
+
+   /* Fetch supplementary group list unless getgroups not supported */
+   groups = (GETGROUPS_T *) ckalloc(maxgroups * sizeof(GETGROUPS_T));
+
+#if defined (HAVE_GETGROUPS)
+   if ((ngroups = getgroups(maxgroups, groups)) == -1) {
+      Tcl_SetErrno(errno);
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+      Tcl_AppendResult(interp, "couldn't get supplementary groups: ",
+         Tcl_PosixError(interp), (char *) NULL);
+#else
+      Tcl_SetObjResult(interp,
+         Tcl_ObjPrintf("couldn't get supplementary groups: %s",
+         Tcl_PosixError(interp)));
+#endif
+      ckfree((char *) groups);
+      return TCL_ERROR;
+   }
+#endif
+
+   /* Sort then remove duplicates from getgroups result */
+   if (ngroups > 1) {
+      qsort(groups, ngroups, sizeof(GETGROUPS_T), __Envmodules_IntCmp);
+      j = 0;
+      for (i = 1; i < ngroups; i++) {
+         if (groups[i] != groups[j]) {
+            j++;
+            groups[j] = groups[i];
+         }
+      }
+      ngroups = j + 1;
+   }
+
+   /* Add primary group if not part of getgroups result (or if getgroups
+    * function is not available) */
+   egid = getegid();
+   for (i = 0; i < ngroups; i++) {
+      if (egid == groups[i]) {
+         egid_in_groups = 1;
+         break;
+      }
+   }
+   if (egid_in_groups == 0) {
+      groups[ngroups] = egid;
+      ngroups++;
+   }
+
+   /* Add group name of primary gid and each supplementatry gid to result
+    * list */
+   lres = Tcl_NewObj();
+   Tcl_IncrRefCount(lres);
+   for (i = 0; i < ngroups; i++) {
+      if ((grp = getgrgid(groups[i])) == NULL) {
+         Tcl_SetErrno(errno);
+         sprintf(gidstr, "%d", groups[i]);
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+         Tcl_AppendResult(interp, "couldn't find name for group id \"",
+            gidstr, "\": ", Tcl_PosixError(interp), (char *) NULL);
+#else
+         Tcl_SetObjResult(interp,
+            Tcl_ObjPrintf("couldn't find name for group id \"%s\": %s",
+            gidstr, Tcl_PosixError(interp)));
+#endif
+         ckfree((char *) groups);
+         return TCL_ERROR;
+      }
+      Tcl_ListObjAppendElement(interp, lres, Tcl_NewStringObj(grp->gr_name,
+         -1));
+   }
+
+   Tcl_SetObjResult(interp, lres);
+   Tcl_DecrRefCount(lres);
+   ckfree((char *) groups);
+   return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Envmodules_InitStateClockSecondsObjCmd --
+ *
+ *	 This function is invoked to return current Epoch time.
+ *
+ * Results:
+ *	 A standard Tcl result.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *---------------------------------------------------------------------*/
+
+int
+Envmodules_InitStateClockSecondsObjCmd(
+   ClientData dummy,       /* Not used. */
+   Tcl_Interp *interp,     /* Current interpreter. */
+   int objc,               /* Number of arguments. */
+   Tcl_Obj *const objv[])  /* Argument objects. */
+{
+   time_t now;
+
+   /* Fetch current Epoch time */
+   if ((now = time(NULL)) == -1) {
+      Tcl_SetErrno(errno);
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+      Tcl_AppendResult(interp, "couldn't get Epoch time: ",
+         Tcl_PosixError(interp), (char *) NULL);
+#else
+      Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't get Epoch time: %s",
+         Tcl_PosixError(interp)));
+#endif
+      return TCL_ERROR;
+   }
+
+   /* Set fetched time as result */
+   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now));
+   return TCL_OK;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Envmodules_ParseDateTimeArgObjCmd --
+ *
+ *	 This function is invoked to parse date time argument value and
+ *	 translate it into Epoch time.
+ *
+ * Results:
+ *	 A standard Tcl result.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *---------------------------------------------------------------------*/
+
+int
+Envmodules_ParseDateTimeArgObjCmd(
+   ClientData dummy,       /* Not used. */
+   Tcl_Interp *interp,     /* Current interpreter. */
+   int objc,               /* Number of arguments. */
+   Tcl_Obj *const objv[])  /* Argument objects. */
+{
+   const char *opt;
+   int optlen;
+   const char *datetime;
+   int datetimelen;
+   char dt[17];
+   int valid_dt = 0;
+   struct tm tm;
+   time_t epoch;
+
+   /* Parse arguments. */
+   if (objc != 3) {
+      Tcl_WrongNumArgs(interp, 1, objv, "opt datetime");
+      return TCL_ERROR;
+   }
+   opt = Tcl_GetStringFromObj(objv[1], &optlen);
+   datetime = Tcl_GetStringFromObj(objv[2], &datetimelen);
+
+   /* Normalize transmitted datetime */
+   switch (datetimelen) {
+      case 16:
+         strncpy(dt, datetime, 16);
+         dt[16] = '\0';
+         valid_dt = 1;
+         break;
+      case 10:
+         strncpy(dt, datetime, 10);
+         dt[10] = '\0';
+         strcat(dt, "T00:00");
+         valid_dt = 1;
+         break;
+   }
+
+   /* Break down datetime into a time struct */
+   memset(&tm, 0, sizeof(struct tm));
+   tm.tm_isdst = -1;
+   if (valid_dt && (strptime(dt, "%Y-%m-%dT%H:%M", &tm) == NULL)) {
+      valid_dt = 0;
+   }
+
+   /* Raise error if datetime format is invalid */
+   if (valid_dt == 0) {
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+      Tcl_AppendResult(interp, "Incorrect ", opt, " value '", datetime,
+         "' (valid date time format is 'YYYY-MM-DD[THH:MM]')", (char *) NULL);
+#else
+      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+         "Incorrect %s value '%s' (valid date time format is 'YYYY-MM-DD[THH:MM]')",
+         opt, datetime));
+#endif
+      Tcl_SetErrorCode(interp, "MODULES_ERR_KNOWN", NULL);
+      return TCL_ERROR;
+   }
+
+   /* Convert string date in Epoch time */
+   if ((epoch = mktime(&tm)) == -1) {
+      Tcl_SetErrno(errno);
+#if TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION < 5
+      Tcl_AppendResult(interp, "couldn't convert to Epoch time: ",
+         Tcl_PosixError(interp), (char *) NULL);
+#else
+      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+         "couldn't convert to Epoch time: %s", Tcl_PosixError(interp)));
+#endif
+      return TCL_ERROR;
+   }
+
+   /* Set converted Epoch time as result */
+   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) epoch));
    return TCL_OK;
 }
 
@@ -285,6 +623,18 @@ Envmodules_Init(
       (ClientData) NULL, (Tcl_CmdDeleteProc*) NULL);
    Tcl_CreateObjCommand(interp, "getFilesInDirectory",
       Envmodules_GetFilesInDirectoryObjCmd, (ClientData) NULL,
+      (Tcl_CmdDeleteProc*) NULL);
+   Tcl_CreateObjCommand(interp, "initStateUsername",
+      Envmodules_InitStateUsernameObjCmd, (ClientData) NULL,
+      (Tcl_CmdDeleteProc*) NULL);
+   Tcl_CreateObjCommand(interp, "initStateUsergroups",
+      Envmodules_InitStateUsergroupsObjCmd, (ClientData) NULL,
+      (Tcl_CmdDeleteProc*) NULL);
+   Tcl_CreateObjCommand(interp, "initStateClockSeconds",
+      Envmodules_InitStateClockSecondsObjCmd, (ClientData) NULL,
+      (Tcl_CmdDeleteProc*) NULL);
+   Tcl_CreateObjCommand(interp, "parseDateTimeArg",
+      Envmodules_ParseDateTimeArgObjCmd, (ClientData) NULL,
       (Tcl_CmdDeleteProc*) NULL);
 
    /* Provide the Envmodules package */

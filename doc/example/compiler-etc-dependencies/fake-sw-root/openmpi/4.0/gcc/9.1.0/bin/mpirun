@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "mpirun (openmpi/4.0, gcc/9.1.0)"

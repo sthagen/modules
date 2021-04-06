@@ -1,11 +1,15 @@
-Modules, provides dynamic modification of a user's environment
-==============================================================
-[![Linux/OS X Build Status](https://travis-ci.org/cea-hpc/modules.svg?branch=master)](https://travis-ci.org/cea-hpc/modules)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/cea-hpc/modules?svg=true&branch=master)](https://ci.appveyor.com/project/xdelaruelle/modules-a6nha/branch/master)
-[![FreeBSD Build Status](https://api.cirrus-ci.com/github/cea-hpc/modules.svg)](https://cirrus-ci.com/github/cea-hpc/modules)
+# <img src="https://raw.githubusercontent.com/cea-hpc/modules/master/doc/img/modules_red.svg" height="180" alt="Modules"/>
+
+[![Linux Build Status](https://github.com/cea-hpc/modules/workflows/linux-tests/badge.svg)](https://github.com/cea-hpc/modules/actions?query=workflow:linux-tests)
+[![Windows Build Status](https://github.com/cea-hpc/modules/workflows/windows-tests/badge.svg)](https://github.com/cea-hpc/modules/actions?query=workflow:windows-tests)
+[![FreeBSD/OS X/Linux Build Status](https://api.cirrus-ci.com/github/cea-hpc/modules.svg)](https://cirrus-ci.com/github/cea-hpc/modules)
 [![Coverage Status](https://codecov.io/gh/cea-hpc/modules/branch/master/graph/badge.svg)](https://codecov.io/gh/cea-hpc/modules)
 [![Documentation Status](https://readthedocs.org/projects/modules/badge/?version=latest)](https://modules.readthedocs.io/en/latest/?badge=latest)
 [![Packaging status](https://repology.org/badge/tiny-repos/environment-modules.svg)](https://repology.org/metapackage/environment-modules/versions)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/EnvModules.svg?style=social&label=Follow)](https://twitter.com/EnvModules)
+
+Modules, provides dynamic modification of a user's environment
+==============================================================
 
 The Modules package is a tool that simplify shell initialization and
 lets users easily modify their environment during the session with
@@ -82,8 +86,9 @@ Requirements
 License
 -------
 
-Modules is distributed under the GNU General Public License version 2 (GPL
-v2). Read the file `COPYING.GPLv2` for details.
+Modules is distributed under the GNU General Public License, either version 2
+or (at your option) any later version (GPL v2+). Read the file `COPYING.GPLv2`
+for details.
 
 
 Documentation
@@ -103,7 +108,7 @@ type:
 
 The following man pages are provided:
 
-    module(1), modulefile(4)
+    module(1), ml(1), modulefile(4)
 
 
 Test suite
@@ -141,7 +146,7 @@ shell function enables to swap from one module flavor to another.
 If you are moving from Modules 3.2 to 4.0 or later, please look at the
 MIGRATING document. It provides an outlook of what has changed between the 2
 versions. Both v3.2 and >=v4.0 are quite similar and transition to the new
-major version should be smooth. Slights differences may however be noticed
+major version should be smooth. Slight differences may however be noticed
 in a few use-cases and the migration guide provides details about them.
 
 
@@ -172,15 +177,15 @@ SourceForge project page:
 Authors
 -------
 
-Current core developers and maintainers are:
+Current core developer and maintainer is:
 
- * Xavier Delaruelle <xavier.delaruelle@cea.fr>
- * R.K. Owen <rk@owen.sj.ca.us>
- * Kent Mein <mein@cs.umn.edu>
+ * Xavier Delaruelle <xavier.delaruelle AT cea.fr>
 
 The following people have notably contributed to Modules and Modules would
 not be what it is without their contributions:
 
+ * R.K. Owen
+ * Kent Mein
  * Mark Lakata
  * Harlan Stenn
  * Leo Butler

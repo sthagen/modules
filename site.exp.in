@@ -12,6 +12,7 @@ set install_moduleshome "@moduleshome@"
 set install_versioning "@versioning@"
 
 set install_version "@VERSION@"
+set install_release "@RELEASE@"
 
 set install_modulepath {@modulepath@}
 set install_loadedmodules "@loadedmodules@"
@@ -25,6 +26,10 @@ set install_compatversion "@compatversion@"
 
 set install_libtclenvmodules "@libtclenvmodules@"
 set install_shlib_suffix "@SHLIB_SUFFIX@"
+
+set install_multilibsupport "@multilibsupport@"
+set install_libdir64 "@libdir64@"
+set install_libdir32 "@libdir32@"
 
 set install_setmanpath "@setmanpath@"
 set install_setbinpath "@setbinpath@"
@@ -50,6 +55,8 @@ set install_termbg "@termbg@"
 
 set install_autohandling "@autohandling@"
 
+set install_implicitrequirement "@implicitrequirement@"
+
 set install_availindepth "@availindepth@"
 
 set install_lockedconfigs "@lockedconfigs@"
@@ -72,5 +79,18 @@ set install_ml "@ml@"
 
 set install_windowssupport "@windowssupport@"
 
+set install_nearlyforbiddendays "@nearlyforbiddendays@"
+
+set install_tagabbrev "@tagabbrev@"
+set install_tagcolorname "@tagcolorname@"
+
+set install_mcookieversioncheck "@mcookieversioncheck@"
+
+set install_availoutput "@availoutput@"
+set install_availterseoutput "@availterseoutput@"
+set install_listoutput "@listoutput@"
+set install_listterseoutput "@listterseoutput@"
+
 # command location
 set install_tclsh "@TCLSH@"
+set install_python "@PYTHON@"

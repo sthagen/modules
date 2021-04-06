@@ -38,22 +38,14 @@ set modulefile_3 "$modpath/loc_rcv1/.common"
 set modulefilere_3 "$modpathre/loc_rcv1/.common"
 
 #
-#  Save the former rc file setup
-#
-
-if { [info exists env(MODULERCFILE) ] } {
-    set save_rc $env(MODULERCFILE)
-}
-
-#
 #  Only checked for the csh
 #
 
 set disp_csh "setenv\t\ttestsuite yes"
 set whatis_csh_1 "module-whatis\t$module_1"
 set disp_1 "$modlin\n$modulefilere_1:\n\n$whatis_csh_1\n$disp_csh\n$modlin"
-set avail_1_al "$modlin global/user modulerc $modlin\nsym_foo\\(special:@\\)\\s+"
-set avail_1 "$modlin $modpathre $modlin\n$module_1\\(foo:special\\)\\s+"
+set avail_1_al "$modlin global/user modulerc $modlin\nsym_foo\\(special:@\\)\\s+\n\nKey:\n\\(@\\)=module-alias  \\(symbolic-version\\)  "
+set avail_1 "$modlin $modpathre $modlin\n$module_1\\(foo:special\\)\\s+\n\nKey:\n\\(symbolic-version\\)  "
 set what_1 "$modlin $modpathre $modlin\n         $module_1: $module_1"
 set whatis_csh_2 "module-whatis\t$module_2"
 set disp_2 "$modlin\n$modulefilere_2:\n\n$whatis_csh_2\n$disp_csh\n$modlin"
@@ -73,7 +65,7 @@ set env(MODULERCFILE) "$env(TESTSUITEDIR)/etc/modulerc"
 lappend ans [list set testsuite yes]
 lappend ans [list setpath LOADEDMODULES $module_1]
 lappend ans [list setpath _LMFILES_ $modulefile_1]
-lappend ans [list setpath MODULES_LMALTNAME $module_1&loc_rc1/foo&sym_foo&sym_foo/special&loc_rc1/special]
+lappend ans [list setpath MODULES_LMALTNAME $module_1&loc_rc1/foo&sym_foo/special&loc_rc1/special&al|sym_foo]
 lappend anspa [list text $modulefile_1]
 test_cmd "csh" "load sym_foo" $ans
 testouterr_cmd_re "sh" "display sym_foo" "OK" "$disp_1"
@@ -111,7 +103,7 @@ set ans [list]
 lappend ans [list set testsuite yes]
 lappend ans [list setpath LOADEDMODULES $module_2]
 lappend ans [list setpath _LMFILES_ $modulefile_2]
-lappend ans [list setpath MODULES_LMALTNAME $module_2&loc_rc2/foo&sym_foo&sym_foo/special2&loc_rc2/special2&loc_rc2/bar&loc_rc2/blah]
+lappend ans [list setpath MODULES_LMALTNAME $module_2&loc_rc2/foo&sym_foo/special2&loc_rc2/special2&loc_rc2/bar&loc_rc2/blah&al|sym_foo]
 set anspa [list]
 lappend anspa [list text $modulefile_2]
 test_cmd "csh" "load sym_foo" $ans
@@ -130,7 +122,7 @@ test_cmd "sh" "paths sym_foo/special2" $anspa
 set ans [list]
 lappend ans [list setpath LOADEDMODULES $module_3]
 lappend ans [list setpath _LMFILES_ $modulefile_3]
-lappend ans [list setpath MODULES_LMALTNAME $module_3&sym_bar&sym_bar/special3&virt_bar/special3&sym_bar_load&sym_bar_0]
+lappend ans [list setpath MODULES_LMALTNAME $module_3&sym_bar/special3&virt_bar/special3&al|sym_bar&al|sym_bar_load&al|sym_bar_0]
 set anspa [list]
 lappend anspa [list text $modulefile_3]
 test_cmd "csh" "load sym_bar" $ans
@@ -150,52 +142,13 @@ setenv_loaded_module [list $module_2] [list $modulefile_2]
 set ans [list]
 lappend ans [list setpath LOADEDMODULES $module_2:$module_3]
 lappend ans [list setpath _LMFILES_ $modulefile_2:$modulefile_3]
-lappend ans [list setpath MODULES_LMALTNAME $module_3&sym_bar&sym_bar/special3&virt_bar/special3&sym_bar_load&sym_bar_1]
+lappend ans [list setpath MODULES_LMALTNAME $module_3&sym_bar/special3&virt_bar/special3&al|sym_bar&al|sym_bar_load&al|sym_bar_1]
 test_cmd_re "csh" "load sym_bar_1" $ans
 unsetenv_loaded_module
 
 
 #
-#  Restore the former rc file setup
-#
-
-if { [info exists save_rc ] } {
-    set env(MODULERCFILE) $save_rc
-    unset save_rc
-} else {
-    unset env(MODULERCFILE)
-}
-
-#
 #  Cleanup
 #
 
-unset ans
-unset anspa
-
-unset disp_csh
-unset whatis_csh_1
-unset disp_1
-unset avail_1_al
-unset avail_1
-unset what_1
-unset whatis_csh_2
-unset disp_2
-unset what_2
-unset whatis_csh_3
-unset disp_3
-unset what_3
-
-unset locate_msg
-
-unset modulefile_1
-unset modulefilere_1
-unset module_1
-
-unset modulefile_2
-unset modulefilere_2
-unset module_2
-
-unset modulefile_3
-unset modulefilere_3
-unset module_3
+reset_test_env

@@ -1,0 +1,244 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.70-maint/%M%
+#   Revision:		%I%
+#   First Edition:	2021/01/22
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:
+#   Modulefiles:    foo
+#   Sub-Command:    list
+#
+#   Comment:	%C{
+#           Test output customization on list sub-command
+#		}C%
+#
+##############################################################################
+
+set mp $modpath.3
+set mpre [regsub -all "\(\[.+?\]\)" $mp {\\\1}]
+
+# setup specific environment
+setenv_path_var MODULEPATH $mp
+
+# ensure advanced version specifiers are enabled
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
+# ensure regular avail search match is set for these tests
+setenv_var MODULES_SEARCH_MATCH starts_with
+
+# ensure avail tests are made using in depth mode
+setenv_var MODULES_AVAIL_INDEPTH 1
+
+
+#
+# -o/--output options test
+#
+
+setenv_loaded_module [list foo/1.0] [list $mp/foo/1.0]
+setenv_path_var MODULES_LMALTNAME foo/1.0&foo/bar
+
+set tserr_list_foo "foo/1.0(bar)  "
+set tserr_list_terse_foo "foo/1.0(bar)"
+testouterr_cmd sh {list -o sym} OK $tserr_list_foo
+testouterr_cmd sh {list -o} ERR "$error_msgs: Missing value for '-o' option\n$err_typehelp"
+testouterr_cmd sh {list --output=sym} OK $tserr_list_foo
+testouterr_cmd sh {list --output} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+testouterr_cmd sh {--output list} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+
+# mix with --terse/--long/--json
+testouterr_cmd sh {list -o sym --terse} OK $tserr_list_terse_foo
+testouterr_cmd sh {list --long --output=sym} ERR "$error_msgs: Unsupported option '--output' on long output mode"
+testouterr_cmd sh {list -j --output=sym} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '--output' on json output mode\" \] } \]\n}"
+
+# test with ml shortcut command
+testouterr_cmd sh {ml -o sym} OK $tserr_list_foo
+testouterr_cmd sh {ml -o} ERR "$error_msgs: Missing value for '-o' option\n$err_typehelp"
+testouterr_cmd sh {ml --output=sym} OK $tserr_list_foo
+testouterr_cmd sh {--output ml} ERR "$error_msgs: Missing value for '--output' option\n$err_typehelp"
+testouterr_cmd sh {ml -l --output=sym} ERR "$error_msgs: Unsupported option '--output' on long output mode"
+testouterr_cmd sh {ml -o sym --json} ERR "{\"errors\": \[\n{ \"severity\": \"ERROR\", \"message\": \[ \"Unsupported option '-o' on json output mode\" \] } \]\n}"
+
+# invalid value set
+set tserr_invalid_output_val "$error_msgs: Invalid element in value list for '--output' option on list sub-command
+  Allowed elements are: header idx sym tag key (separated by ':')"
+set tserr_invalid_o_val "$error_msgs: Invalid element in value list for '-o' option on list sub-command
+  Allowed elements are: header idx sym tag key (separated by ':')"
+testouterr_cmd sh {list --output=foo} ERR $tserr_invalid_output_val
+testouterr_cmd sh {list --output=sym,alias} ERR $tserr_invalid_output_val
+testouterr_cmd sh {list --output="sym alias"} ERR $tserr_invalid_output_val
+testouterr_cmd sh {list -o foo} ERR $tserr_invalid_o_val
+testouterr_cmd sh {list -o sym,alias} ERR $tserr_invalid_o_val
+testouterr_cmd sh {list -o "sym alias"} ERR $tserr_invalid_o_val
+testouterr_cmd sh {list -o foo -l} ERR "$error_msgs: Unsupported option '-o' on long output mode"
+testouterr_cmd sh {ml -o foo} ERR $tserr_invalid_o_val
+
+# test value accepted on 'avail' but not on list
+testouterr_cmd sh {list -o modulepath} ERR $tserr_invalid_o_val
+testouterr_cmd sh {list --output=alias} ERR $tserr_invalid_output_val
+testouterr_cmd sh {list --output=dirwsym:key} ERR $tserr_invalid_output_val
+
+# test usage in modulefile
+set ans [list]
+lappend ans [list setpath LOADEDMODULES foo/1.0:output/1.0]
+lappend ans [list setpath _LMFILES_ $mp/foo/1.0:$mp/output/1.0]
+set tserr_list_foo "foo/1.0\\(bar\\)  "
+set tserr_list_terse_foo "foo/1.0\\(bar\\)"
+
+if {[cmpversion $tclsh_version 8.6] == -1} {
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 11
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 12
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Missing value for '-o' option} {module list -o<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 13
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 14
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module list --output<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 15
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_terse_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 16
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on long output mode} {module list -o sym -l<EXM>} $mp/output/1.0 3]]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 22
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr "Invalid element in value list for '--output' option on list sub-command\nAllowed elements are: header idx sym tag key (separated by ':')" {module list --output=modulepath<EXM>} $mp/output/1.0 3]]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 23
+    testouterr_cmd_re sh {load output/1.0} ERR [escre [msg_load output/1.0 [msg_moderr "Invalid element in value list for '-o' option on list sub-command\nAllowed elements are: header idx sym tag key (separated by ':')" {module list -o sym,alias<EXM>} $mp/output/1.0 3]]]
+
+} else {
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 11
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 12
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Missing value for '-o' option} {module list -o} $mp/output/1.0 18]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 13
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 14
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Missing value for '--output' option} {module list --output} $mp/output/1.0 20]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 15
+    testouterr_cmd_re sh {load output/1.0} $ans $tserr_list_terse_foo
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 16
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr {Unsupported option '-o' on long output mode} {module list -o sym -l} $mp/output/1.0 22]]
+
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 22
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr "Invalid element in value list for '--output' option on list sub-command\nAllowed elements are: header idx sym tag key (separated by ':')" {module list --output=modulepath} $mp/output/1.0 26]]
+    setenv_var TESTSUITE_OUTPUT_INMODFILE 23
+    testouterr_cmd sh {load output/1.0} ERR [msg_load output/1.0 [msg_moderr "Invalid element in value list for '-o' option on list sub-command\nAllowed elements are: header idx sym tag key (separated by ':')" {module list -o sym,alias} $mp/output/1.0 27]]
+
+}
+
+unsetenv_var TESTSUITE_OUTPUT_INMODFILE
+
+
+#
+# MODULES_LIST_OUTPUT/MODULES_LIST_TERSE_OUTPUT tests
+#
+
+setenv_var MODULES_LIST_OUTPUT header
+setenv_var MODULES_LIST_TERSE_OUTPUT header
+
+testouterr_cmd_re sh {list} OK "$cur_loaded\nfoo/1.0  "
+testouterr_cmd sh {list -t} OK $cur_loaded\nfoo/1.0
+
+# no impact on -l/-j
+set tserr_list_long "- Package $modlin.- Versions $modlin.- Last mod. $modlin\n$cur_loaded\nfoo/1.0\\s+bar\\s+\[0-9:\/ ]*"
+testouterr_cmd_re sh {list -l} OK $tserr_list_long
+set tserr_list_json "{\"foo/1.0\": { \"name\": \"foo/1.0\", \"type\": \"modulefile\", \"symbols\": \[ \"bar\" \], \"tags\": \[\], \"pathname\": \"$mp/foo/1.0\"}}"
+testouterr_cmd sh {list -j} OK $tserr_list_json
+
+# invalid value set (ignored)
+setenv_var MODULES_LIST_OUTPUT foo
+setenv_var MODULES_LIST_TERSE_OUTPUT foo
+
+testouterr_cmd_re sh {list} OK "$cur_loaded\n 1\\) $tserr_list_foo\n\nKey:\n\\(symbolic-version\\)  "
+testouterr_cmd sh {list -t} OK $cur_loaded\nfoo/1.0
+testouterr_cmd_re sh {list -o sym} OK $tserr_list_foo
+testouterr_cmd_re sh {list -t --output=sym} OK $tserr_list_terse_foo
+testouterr_cmd sh {list -o foo} ERR $tserr_invalid_o_val
+
+
+#
+# header test
+#
+
+testouterr_cmd sh {list -t --output=header} OK $cur_loaded\nfoo/1.0
+testouterr_cmd sh {list -o header} OK "$cur_loaded\nfoo/1.0  "
+
+unsetenv_loaded_module
+testouterr_cmd sh {list -o header} OK $no_loaded
+testouterr_cmd sh {list --output=header} OK $no_loaded
+setenv_var MODULES_LIST_OUTPUT header
+testouterr_cmd sh {list} OK $no_loaded
+setenv_var MODULES_LIST_TERSE_OUTPUT header
+testouterr_cmd sh {list -t} OK $no_loaded
+setenv_var MODULES_LIST_OUTPUT {}
+testouterr_cmd sh {list} OK {}
+setenv_var MODULES_LIST_TERSE_OUTPUT {}
+testouterr_cmd sh {list -t} OK {}
+unsetenv_var MODULES_LIST_OUTPUT
+unsetenv_var MODULES_LIST_TERSE_OUTPUT
+testouterr_cmd sh {list -o } OK {}
+testouterr_cmd sh {list --output=} OK {}
+
+setenv_loaded_module [list foo/1.0] [list $mp/foo/1.0]
+
+testouterr_cmd sh {list -t --output=sym:header} OK $cur_loaded\nfoo/1.0(bar)
+setenv_var MODULES_LIST_OUTPUT sym:header
+testouterr_cmd sh {list} OK "$cur_loaded\nfoo/1.0(bar)  "
+
+unsetenv_var MODULES_LIST_OUTPUT
+
+
+#
+# key test
+#
+
+testouterr_cmd sh {list -t --output=key:sym:header} OK "$cur_loaded\nfoo/1.0(bar)\n\nKey:\n(symbolic-version)  "
+testouterr_cmd sh {list -o sym:key} OK "foo/1.0(bar)  \n\nKey:\n(symbolic-version)  "
+setenv_var MODULES_LIST_TERSE_OUTPUT key:sym
+testouterr_cmd sh {list -t} OK "foo/1.0(bar)\n\nKey:\n(symbolic-version)  "
+unsetenv_var MODULES_LIST_TERSE_OUTPUT
+
+
+#
+# idx test
+#
+
+testouterr_cmd sh {list --output=sym:idx} OK " 1) foo/1.0(bar)  "
+testouterr_cmd sh {list -t -o idx:sym:key:header} OK "$cur_loaded\n 1) foo/1.0(bar) \n\nKey:\n(symbolic-version)  "
+
+
+#
+# sym test
+#
+
+testouterr_cmd sh {list --output=idx} OK " 1) foo/1.0  "
+testouterr_cmd sh {list -t -o idx:key:header} OK "$cur_loaded\n 1) foo/1.0 "
+setenv_var MODULES_LIST_OUTPUT idx:key
+testouterr_cmd sh {list} OK " 1) foo/1.0  "
+unsetenv_var MODULES_LIST_OUTPUT
+
+
+#
+# tag test
+#
+
+setenv_path_var MODULES_LMTAG foo/1.0&baz
+testouterr_cmd sh {list --output=tag:idx} OK " 1) foo/1.0 <baz>  "
+testouterr_cmd sh {list -t -o key:tag:header} OK "$cur_loaded\nfoo/1.0 <baz>\n\nKey:\n<module-tag>  "
+setenv_var MODULES_LIST_TERSE_OUTPUT idx:tag
+testouterr_cmd sh {list -t} OK " 1) foo/1.0 <baz> "
+unsetenv_var MODULES_LIST_TERSE_OUTPUT
+unsetenv_path_var MODULES_LMTAG
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

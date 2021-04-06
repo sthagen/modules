@@ -23,6 +23,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set mod1 "chdir/1.0"
 set mod2 "chdir/2.0"
 set mod3 "chdir/3.0"
@@ -101,17 +104,4 @@ testouterr_cmd_re "ALL" "load $mod2 $mod1" $ans [msg_load $mod2 $err_chdir]
 #  Cleanup
 #
 
-unsetenv_loaded_module
-
-unset ans
-
-unset mod1
-unset mod2
-unset mod3
-unset mod4
-unset mod1p
-unset mod2p
-unset mod3p
-unset mod4p
-
-unset err_chdir
+reset_test_env

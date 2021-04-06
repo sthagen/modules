@@ -39,8 +39,10 @@ set module3 "test/2.0"
 set modulefile3 "$modpathre/$module3"
 set module4 "bad"
 set modulefile4 "$modpathre/$module4"
+set modulefile4nore "$modpath/$module4"
 set module5 "bad2"
 set modulefile5 "$modpathre/$module5"
+set modulefile5nore "$modpath/$module5"
 set modulefile5_full "$modpath/$module5/proc"
 set modulefile5_reld "$reldmodpath/$module5/proc"
 set modulefile5_reldd "$relddmodpath/$module5/proc"
@@ -50,13 +52,19 @@ set missing_test "$warn_msgs: Unable to find ModulesTest in "
 set fail_test "Test result: FAIL"
 set ok_test "Test result: PASS"
 
-set mod4_interr "$moderr_msgs: invalid command name \"bad-command\"\n  In '$modulefile4/.modulerc'\n$err_contact
+set custom {    (procedure "ModulesTest" line 2)
+    invoked from within
+"ModulesTest"}
+if {[cmpversion $tclsh_version 8.5] == -1} {
+    append custom {<EXM>}
+}
+set mod5_interr [escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modulefile5nore/proc {} {  } {} {} $custom]]
+set mod4_interr "[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modulefile4nore/.modulerc 28 {  }]]
 $modlin
 $lin_test$modulefile4/before:
 
-$moderr_msgs: invalid command name \"bad-command\"\n  In '$modulefile4/before'\n$err_contact
+[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modulefile4nore/before 26 {  }]]
 $modlin"
-set mod5_interr "$moderr_msgs: invalid command name \"bad-command\"\n  In '$modulefile5/proc'\n$err_contact"
 
 set module6 "NonExistant"
 set mod6_err "$err_path'$module6'"
@@ -109,33 +117,6 @@ setenv_var MODULES_IMPLICIT_DEFAULT 1
 #  Cleanup
 #
 
-unsetenv_var MODULES_IMPLICIT_DEFAULT
-
-unset module
-unset modulefile
-unset modulefile_full
-unset modulefile_reld
-unset modulefile_reldd
-unset module2
-unset modulefile2
-unset module3
-unset modulefile3
-unset module4
-unset modulefile4
-unset module5
-unset modulefile5
-unset modulefile5_full
-unset modulefile5_reld
-unset modulefile5_reldd
-unset module6
-
-unset mod4_interr
-unset mod5_interr
-unset mod6_err
-
-unset lin_test
-unset missing_test
-unset ok_test
-unset fail_test
+reset_test_env
 
 }

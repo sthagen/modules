@@ -21,31 +21,46 @@
 
 proc test_getSiteConfig {siteconfig isvalid islocked} {
     set siteconfigre [regsub -all "\(\[.+?\]\)" $siteconfig {\\\1}]
-    set siteconfigdbg [expr {$isvalid && !$islocked ? "DEBUG sourceSiteConfig: Source site configuration \\($siteconfigre\\)\\n" : {}}]
+    set siteconfigdbg [expr {$isvalid && !$islocked ? "DEBUG sourceSiteConfig: Source site configuration \\($siteconfigre\\)\\nDEBUG setState: extra_siteconfig_loaded set to '1'\\n" : {}}]
     set getextrasiteconfigre [expr {!$islocked ? $siteconfigre : {}}]
-    set mainconfigdbg [expr {[file readable $::siteconfig_file] ? "DEBUG sourceSiteConfig: Source site configuration \\($::siteconfig_filere\\)\\n" : {}}]
+    if {[info exists ::env(TESTSUITE_ENABLE_SITECONFIG_NOEXTRASITECONFIG)]} {
+        set mainconfigdbg [expr {[file readable $::siteconfig_file] ? "DEBUG sourceSiteConfig: Source site configuration \\($::siteconfig_filere\\)\\n" : {}}]
+    } else {
+        set mainconfigdbg [expr {[file readable $::siteconfig_file] ? "DEBUG sourceSiteConfig: Source site configuration \\($::siteconfig_filere\\)\\nDEBUG setState: siteconfig_loaded set to '1'\\n" : {}}]
+    }
 
     set ans [list]
     if {$isvalid && !$islocked} {
         lappend ans "someUserProc"
     }
-    lappend ans "DEBUG CALLING $::MODULECMD sh --no-pager -D -V"
+    lappend ans "DEBUG setState: cmdline set to '$::MODULECMD sh --no-pager -D -V'"
     if {$::install_libtclenvmodules ne {n}} {
-        lappend ans "DEBUG setConf: tcl_ext_lib set to '$::tclextlib_file'(\\nDEBUG Load Tcl extension library \\(.+\\))?"
+        if {$::install_multilibsupport eq {y}} {
+            lappend ans "DEBUG setState: machine set to '$::tcl_platform(machine)'"
+        }
+        lappend ans "DEBUG setConf: tcl_ext_lib set to '$::tclextlib_file'(\\nDEBUG Load Tcl extension library \\(.+\\))?(\\nDEBUG setState: tcl_ext_lib_loaded set to '1')?"
     }
     lappend ans "DEBUG setConf: siteconfig set to '$::siteconfig_filere'"
     lappend ans "${mainconfigdbg}DEBUG setConf: locked_configs set to '$::install_lockedconfigs'"
     if {[info exists ::env(TESTSUITE_ENABLE_SITECONFIG_NOEXTRASITECONFIG)]} {
         lappend ans "DEBUG setConf: locked_configs set to 'extra_siteconfig'"
+        lappend ans "DEBUG setState: siteconfig_loaded set to '1'"
     } elseif {!$islocked} {
         lappend ans "DEBUG setConf: extra_siteconfig set to '$getextrasiteconfigre'"
     }
-    lappend ans "${siteconfigdbg}DEBUG setConf: pager set to '$::install_pagercmd'"
-    lappend ans "DEBUG initPager: no pager start \\(is_tty=$::is_stderr_tty, mod_cmd='', use_pager=0, asked_use_pager=0, cmd='$::install_pagercmd'\\)"
+    lappend ans "${siteconfigdbg}DEBUG setState: shell set to 'sh'"
+    lappend ans "DEBUG setState: shelltype set to 'sh'"
+    lappend ans "DEBUG setState: subcmd set to ''"
+    lappend ans "DEBUG setState: subcmd_args set to ''"
+    lappend ans "DEBUG setState: init_error_report set to '1'"
     lappend ans "DEBUG setConf: verbosity set to 'debug'"
     lappend ans "DEBUG setConf: term_background set to '$::install_termbg'"
     lappend ans "(DEBUG initConfColors: Ignore invalid default.*\\n)?DEBUG setConf: colors set to '.*'"
     lappend ans "DEBUG setConf: color set to '0'"
+    lappend ans "DEBUG setConf: pager set to '$::install_pagercmd'"
+    lappend ans "DEBUG setState: paginate set to '0'"
+    lappend ans "DEBUG setState: report_format set to 'regular'"
+    lappend ans "DEBUG setState: reportfd set to 'stderr'"
     lappend ans $::vers_reportre
 
     setenv_var MODULES_SITECONFIG $siteconfig
@@ -63,17 +78,29 @@ if {$is_stderr_tty} {
 setenv_var TESTSUITE_ENABLE_SITECONFIG_DEBUG 1
 
 set ans [list]
-lappend ans "DEBUG CALLING $MODULECMD sh -V"
-lappend ans "DEBUG setConf: tcl_ext_lib set to '$tclextlib_file'(\\nDEBUG Load Tcl extension library \\(.+\\))?"
+lappend ans "DEBUG setState: cmdline set to '$MODULECMD sh -V'"
+if {$::install_multilibsupport eq {y}} {
+    lappend ans "DEBUG setState: machine set to '$::tcl_platform(machine)'"
+}
+lappend ans "DEBUG setConf: tcl_ext_lib set to '$tclextlib_file'(\\nDEBUG Load Tcl extension library \\(.+\\))?(\\nDEBUG setState: tcl_ext_lib_loaded set to '1')?"
 lappend ans "DEBUG setConf: siteconfig set to '$siteconfig_filere'"
 lappend ans "DEBUG sourceSiteConfig: Source site configuration \\($siteconfig_filere\\)"
+lappend ans "DEBUG setState: siteconfig_loaded set to '1'"
 lappend ans "DEBUG setConf: locked_configs set to '$install_lockedconfigs'"
-lappend ans "DEBUG setConf: pager set to '$install_pagercmd'"
-lappend ans "DEBUG initPager: start pager \\(asked_use_pager=-, cmd='$install_pagercmd'\\)"
+lappend ans "DEBUG setState: shell set to 'sh'"
+lappend ans "DEBUG setState: shelltype set to 'sh'"
+lappend ans "DEBUG setState: subcmd set to ''"
+lappend ans "DEBUG setState: subcmd_args set to ''"
+lappend ans "DEBUG setState: init_error_report set to '1'"
 lappend ans "DEBUG setConf: verbosity set to 'debug'"
 lappend ans "DEBUG setConf: term_background set to '$install_termbg'"
 lappend ans "(DEBUG initConfColors: Ignore invalid default.*\\n)?DEBUG setConf: colors set to '.*'"
 lappend ans "DEBUG setConf: color set to '0'"
+lappend ans "DEBUG setConf: pager set to '$install_pagercmd'"
+lappend ans "DEBUG setState: is_stderr_tty set to '1'"
+lappend ans "DEBUG setState: paginate set to '1'"
+lappend ans "DEBUG setState: report_format set to 'regular'"
+lappend ans "DEBUG setState: reportfd set to 'file\\d'"
 lappend ans $vers_reportre
 testouterr_cmd_re "sh" "-V" "" [join $ans "\n"]
 
@@ -96,7 +123,28 @@ set env(TESTSUITE_ENABLE_SITECONFIG_BROKEN) 1
 
 set ans [list]
 lappend ans "$error_msgs: Site configuration source failed"
-lappend ans "invalid command name \"unk_foo\""
+lappend ans {  invalid command name "unk_foo"}
+lappend ans {      while executing}
+lappend ans {  "unk_foo"}
+lappend ans "      invoked from within
+  \"if {\[info exists env(TESTSUITE_ENABLE_SITECONFIG)\]} \{
+  
+  # force stderr terminal attachement state
+  proc initStateIsStderrTty {} {
+     return 1
+  }
+  
+  # enabl...\"
+      (file \"$siteconfig_file\" line 2)"
+if {[info exists env(COVERAGE)]} {
+    lappend ans "      invoked from within
+  \"::_instrument_::source $siteconfig_file\"
+      (\"uplevel\" body line 1)
+      invoked from within
+  \"uplevel 1 \$args\"
+      (procedure \"source\" line 16)
+      (file \"$siteconfig_file\")"
+}
 testouterr_cmd "sh" "-V" "ERR" [join $ans "\n"]
 
 # restore environment
@@ -104,6 +152,28 @@ if { $verbose > 0 } {
     send_user "\tUnset TESTSUITE_ENABLE_SITECONFIG_BROKEN\n"
 }
 unset env(TESTSUITE_ENABLE_SITECONFIG_BROKEN)
+
+
+# test siteconfig that breaks modulecmd.tcl code
+setenv_var TESTSUITE_ENABLE_SITECONFIG_BROKEN2 1
+set ans [list]
+lappend ans "$error_msgs: invalid command name \"unk_foo\""
+lappend ans {      while executing}
+lappend ans {  "unk_foo"}
+lappend ans {      (procedure "lappendState" line 2)}
+lappend ans {      invoked from within}
+lappend ans {  "lappendState modulefile {}"}
+lappend ans {  Please report this issue at https://github.com/cea-hpc/modules/issues}
+testouterr_cmd sh {foo} ERR [join $ans \n]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_BROKEN2
+setenv_var TESTSUITE_ENABLE_SITECONFIG_BROKEN3 1
+set ans [list]
+lappend ans "$error_msgs: invalid command name \"lappendState\""
+lappend ans {      while executing}
+lappend ans {  "lappendState modulefile {}"}
+lappend ans {  Please report this issue at https://github.com/cea-hpc/modules/issues}
+testouterr_cmd sh {foo} ERR [join $ans \n]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_BROKEN3
 
 
 # test siteconfig file raising error
@@ -115,7 +185,28 @@ set env(TESTSUITE_ENABLE_SITECONFIG_ACCESSERR) 1
 
 set ans [list]
 lappend ans "$error_msgs: Site configuration source failed"
-lappend ans "Cannot access 'foo'"
+lappend ans {  Cannot access 'foo'}
+lappend ans {      while executing}
+lappend ans {  "error [parseAccessIssue "foo"]"}
+lappend ans "      invoked from within
+  \"if {\[info exists env(TESTSUITE_ENABLE_SITECONFIG)\]} \{
+  
+  # force stderr terminal attachement state
+  proc initStateIsStderrTty {} {
+     return 1
+  }
+  
+  # enabl...\"
+      (file \"$siteconfig_file\" line 2)"
+if {[info exists env(COVERAGE)]} {
+    lappend ans "      invoked from within
+  \"::_instrument_::source $siteconfig_file\"
+      (\"uplevel\" body line 1)
+      invoked from within
+  \"uplevel 1 \$args\"
+      (procedure \"source\" line 16)
+      (file \"$siteconfig_file\")"
+}
 testouterr_cmd "sh" "-V" "ERR" [join $ans "\n"]
 
 # restore environment
@@ -227,7 +318,6 @@ if { $verbose > 0 } {
 }
 set env(TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM) 1
 
-set ORIG_PATH $env(PATH)
 set env(PATH) "/path/to/dir1"
 set env(PATH_modshare) "/path/to/dir1;1"
 set module "append/2.0"
@@ -265,13 +355,17 @@ unsetenv_var TESTSUITE_ENABLE_SITECONFIG_GETDIFFBETWEENLIST
 
 
 # test clear sub-command confirmation message without waiting indefinitely
-setenv_var TESTSUITE_ENABLE_SITECONFIG_EXITONGETSSTDIN 1
+if {$is_stdin_tty} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_EXITONGETSSTDIN 1
 
-testouterr_cmd sh clear {} {Are you sure you want to clear all loaded modules!? [n] }
+    set tserr "(Are you sure you want to clear all loaded modules\\!\\? \\\[n\\\] )"
+    testouterr_cmd_re sh clear {} $tserr
 
-# restore environment
-unsetenv_var TESTSUITE_ENABLE_SITECONFIG_EXITONGETSSTDIN
-
+    # restore environment
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_EXITONGETSSTDIN
+} elseif {$verbose > 0} {
+    send_user "\tSkip tests relying on a stdin channel attached to a tty\n"
+}
 
 # test extra siteconfig disablement
 setenv_var TESTSUITE_ENABLE_SITECONFIG_NOEXTRASITECONFIG 1
@@ -285,7 +379,32 @@ unsetenv_var TESTSUITE_ENABLE_SITECONFIG_NOEXTRASITECONFIG
 # test tcl ext lib load on an incompatible interp if available
 if {[info exists tclextlib_file] && [file executable ./tclsh83]} {
     setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBLOAD83 1
-    testouterr_cmd sh -V ERR "$error_msgs: Site configuration source failed\nversion conflict for package \"Tcl\": have 8.3, need 8.4"
+    set ans [list]
+    lappend ans "$error_msgs: Site configuration source failed"
+    lappend ans {  version conflict for package "Tcl": have 8.3, need 8.4}
+    lappend ans {      while executing}
+    lappend ans {  "exec ./tclsh83 << "load [getConf tcl_ext_lib] Envmodules""}
+    lappend ans "      invoked from within
+  \"if {\[info exists env(TESTSUITE_ENABLE_SITECONFIG)\]} \{
+  
+  # force stderr terminal attachement state
+  proc initStateIsStderrTty {} {
+     return 1
+  }
+  
+  # enabl...\"
+      (file \"$siteconfig_file\" line 2)"
+    if {[info exists env(COVERAGE)]} {
+        lappend ans "      invoked from within
+  \"::_instrument_::source $siteconfig_file\"
+      (\"uplevel\" body line 1)
+      invoked from within
+  \"uplevel 1 \$args\"
+      (procedure \"source\" line 16)
+      (file \"$siteconfig_file\")"
+    }
+
+    testouterr_cmd sh -V ERR [join $ans "\n"]
     # restore environment
     unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBLOAD83
 } elseif {$verbose > 0} {
@@ -296,10 +415,11 @@ if {[info exists tclextlib_file] && [file executable ./tclsh83]} {
 if {[info exists tclextlib_file]} {
     setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBBADCALL 1
     set ans [list]
-    lappend ans "$error_msgs: wrong # args: should be \"readFile filename \\?firstline\\?\""
+    lappend ans "$error_msgs: wrong # args: should be \"readFile filename \\?firstline\\? \\?must_have_cookie\\?\""
     lappend ans "$error_msgs: expected boolean value but got \"bar\""
-    lappend ans "$error_msgs: wrong # args: should be \"getFilesInDirectory dir fetch_hidden fetch_dotversion\""
     lappend ans "$error_msgs: expected boolean value but got \"bar\""
+    lappend ans "$error_msgs: wrong # args: should be \"readFile filename \\?firstline\\? \\?must_have_cookie\\?\""
+    lappend ans "$error_msgs: wrong # args: should be \"getFilesInDirectory dir fetch_dotversion\""
     lappend ans "$error_msgs: expected boolean value but got \"bar\""
     lappend ans $vers_reportre
     testouterr_cmd_re sh -V OK [join $ans \n]
@@ -324,11 +444,131 @@ if {[info exists closedirlib_file]} {
     send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
 }
 
+# test tcl ext lib procedures against a failed getpwuid call
+if {[info exists getpwuidlib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETPWUID 1
+    setenv_var LD_PRELOAD $getpwuidlib_file
+    set ans [list]
+    lappend ans "$error_msgs: couldn't find name for user id \"$userid\": .*"
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETPWUID
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures against a failed getgroups call
+if {[info exists getgroupslib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETGROUPS 1
+    setenv_var LD_PRELOAD $getgroupslib_file
+    set ans [list]
+    lappend ans "$error_msgs: couldn't get supplementary groups: .*"
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETGROUPS
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures against a zero result getgroups call
+if {[info exists 0getgroupslib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIB0GETGROUPS 1
+    setenv_var LD_PRELOAD $0getgroupslib_file
+    set ans [list]
+    lappend ans [exec id -g -n]
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIB0GETGROUPS
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures against a duplicate entries in result getgroups call
+if {[info exists dupgetgroupslib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBDUPGETGROUPS 1
+    setenv_var LD_PRELOAD $dupgetgroupslib_file
+    set ans [list]
+    lappend ans [exec id -g -n]
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBDUPGETGROUPS
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures against a failed getgrgid call
+if {[info exists getgrgidlib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETGRGID 1
+    setenv_var LD_PRELOAD $getgrgidlib_file
+    set ans [list]
+    lappend ans "$error_msgs: couldn't find name for group id \".*\": .*"
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDGETGRGID
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures against a failed time call
+if {[info exists timelib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDTIME 1
+    setenv_var LD_PRELOAD $timelib_file
+    set ans [list]
+    lappend ans "$error_msgs: couldn't get Epoch time: .*"
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDTIME
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures called without argument
+setenv_var TESTSUITE_ENABLE_SITECONFIG_PARSEDATETIMEARG_NOARG 1
+set ans [list]
+lappend ans "$error_msgs: wrong # args: should be \"parseDateTimeArg opt datetime\""
+lappend ans $vers_reportre
+testouterr_cmd_re sh -V OK [join $ans \n]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_PARSEDATETIMEARG_NOARG
+
+# test tcl ext lib procedures against a failed mktime call
+if {[info exists mktimelib_file]} {
+    setenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDMKTIME 1
+    setenv_var LD_PRELOAD $mktimelib_file
+    set ans [list]
+    lappend ans "$error_msgs: couldn't convert to Epoch time: .*"
+    lappend ans $vers_reportre
+    testouterr_cmd_re sh -V OK [join $ans \n]
+
+    unsetenv_var TESTSUITE_ENABLE_SITECONFIG_TCLEXTLIBFAILEDMKTIME
+    unsetenv_var LD_PRELOAD
+} elseif {$verbose > 0} {
+    send_user "\tSkip tcl ext lib erroneous procedure calls as ext lib is not available\n"
+}
+
+# test tcl ext lib procedures called with badly formatted date
+setenv_var TESTSUITE_ENABLE_SITECONFIG_PARSEDATETIMEARG_BADDATE 1
+set ans [list]
+lappend ans "$error_msgs: Incorrect --before value '2020-09-19U20:00' \\\(valid date time format is 'YYYY-MM-DD\\\[THH:MM\\\]'\\\)"
+lappend ans $vers_reportre
+testouterr_cmd_re sh -V OK [join $ans \n]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_PARSEDATETIMEARG_BADDATE
+
 # specific tests to improve modEq procs coverage
 setenv_var TESTSUITE_ENABLE_SITECONFIG_MODEQ 1
 setenv_var MODULES_ADVANCED_VERSION_SPEC 1
 set ans [list]
-lappend ans 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0
 lappend ans 1 0 1 1 0 1 1 0 1 1 0 1
 lappend ans 1 0 0 1 0 0 1 0 0 1 0 0
 lappend ans 1 0 1 1 0 1 1 0 1 1 0 1
@@ -340,23 +580,36 @@ unsetenv_var TESTSUITE_ENABLE_SITECONFIG_MODEQ
 # test redefinition of on-the-fly procedures
 setenv_var TESTSUITE_ENABLE_SITECONFIG_REDEFONTHEFLYPROCS 1
 set ans [list]
-lappend ans -1 0 -1 -1 0 -1 -1 0 0 -1 0 0
+lappend ans 0 1 0 0 1 0 0 1 1 0 1 1
 lappend ans 1 0 0 1 0 0 1 0 1 1 0 1
 lappend ans 1 0 0 1 0 0 1 0 1 1 0 1
 lappend ans $vers_reportre
 testouterr_cmd_re sh -V OK [join $ans \n]
 unsetenv_var TESTSUITE_ENABLE_SITECONFIG_REDEFONTHEFLYPROCS
 
+# specific tests to improve formatErrStackTrace proc coverage
+setenv_var TESTSUITE_ENABLE_SITECONFIG_FORMATERRSTACKTRACE 1
+set ans [list]
+lappend ans {error message
+    while executing
+foo call
+    invoked from within
+foo
+    \(file "foo"\)}
+lappend ans $vers_reportre
+testouterr_cmd_re sh -V OK [join $ans \n]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_FORMATERRSTACKTRACE
 
-#
-#  Clean up variables used in this test case
-#
-
-unset ans
-
-unset module
-unset modulefile
-unset ORIG_PATH
+# produce an unknown error in a modulecmd.tcl procedure during a modulefile evaluation
+setenv_var TESTSUITE_ENABLE_SITECONFIG_UNKINTERRDURINGMODEVAL 1
+set ans [msg_moderr {invalid command name "foo"} {foo} $modpath/setenv/1.0 30 {} {} {} {    (procedure "getModshareVarName" line 2)
+    invoked from within
+"getModshareVarName $var"
+    (procedure "setenv" line 5)
+    invoked from within
+"setenv testsuite "yes""}]
+testouterr_cmd sh {load setenv/1.0} ERR [msg_load setenv/1.0 $ans]
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_UNKINTERRDURINGMODEVAL
 
 } elseif {$verbose > 0} {
     send_user "\tSkip tests relying on an excepted siteconfig file installed\n"
@@ -375,7 +628,7 @@ test_getSiteConfig testsuite/example/siteconfig.tcl-2 1 [is_config_locked extra_
 #  Clean up variables used in this test case
 #
 
-unset is_stderr_tty
+reset_test_env
 
 # remove test procedure
 rename test_getSiteConfig {}

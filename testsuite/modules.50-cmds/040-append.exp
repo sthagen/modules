@@ -31,7 +31,6 @@ set module "append/2.0"
 set modulefile "$modpath/$module"
 
 # complexify PATH value with space an parenthesis
-set ORIG_PATH $env(PATH)
 set env(PATH) "$ORIG_PATH:/path/to/dir (stuff)"
 
 set old_path $env(PATH)
@@ -86,7 +85,7 @@ set modulefile "$modpath/$module"
 # different behavior than C-version: on Tcl-version adding a bare colon
 # to a path produces an error since this colon cannot be distinguished
 # from the colon used for path separator
-set ts_err "$moderr_msgs: add-path cannot handle path equals to separator string\nIn '$modulefile'\n$err_contactns"
+set ts_err [msg_moderr "add-path $msg_patheqsep" "append-path\tPATH\t\t:" $modulefile 24]
 
 #
 #  The tests
@@ -100,7 +99,7 @@ testouterr_cmd "ALL" "load $module" "ERR" [msg_load $module $ts_err]
 
 set module "append/0.3"
 set modulefile "$modpath/$module"
-set ts_err "$moderr_msgs: add-path should get an environment variable name\nIn '$modulefile'\n$err_contactns"
+set ts_err [msg_moderr "add-path $msg_needenvvarname" {append-path } $modulefile 24]
 testouterr_cmd "sh" "load $module" "ERR" [msg_load $module $ts_err]
 
 #
@@ -109,7 +108,7 @@ testouterr_cmd "sh" "load $module" "ERR" [msg_load $module $ts_err]
 
 set module "append/0.4"
 set modulefile "$modpath/$module"
-set ts_err "$moderr_msgs: add-path should get a value for environment variable PATH\nIn '$modulefile'\n$err_contactns"
+set ts_err [msg_moderr "add-path $msg_needenvvarval PATH" {append-path PATH } $modulefile 24]
 testouterr_cmd "sh" "load $module" "ERR" [msg_load $module $ts_err]
 
 #
@@ -118,7 +117,7 @@ testouterr_cmd "sh" "load $module" "ERR" [msg_load $module $ts_err]
 
 set module "append/0.5"
 set modulefile "$modpath/$module"
-set ts_err "$moderr_msgs: add-path should get a valid environment variable name\nIn '$modulefile'\n$err_contactns"
+set ts_err [msg_moderr "add-path $msg_validenvvarname" {append-path {} /path/to } $modulefile 24]
 testouterr_cmd "sh" "load $module" "ERR" [msg_load $module $ts_err]
 
 #
@@ -388,25 +387,4 @@ testouterr_cmd "sh" "unload $module" $ans {}
 #  Cleanup
 #
 
-unsetenv_loaded_module
-set env(PATH) $ORIG_PATH
-unset ORIG_PATH
-
-unset env(FOO_modshare)
-unset env(BAR_modshare)
-unset env(BAR)
-
-unset new_path
-unset ts_path
-unset old_path
-unset ts_err
-unset bigval
-unset bigpathval
-unset charlist
-unset bigpathvalesc
-unset bigpathtrunclen
-
-unset ans
-
-unset modulefile
-unset module
+reset_test_env

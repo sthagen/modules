@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "mpirun (mvapich/2.1, intel/2018)"

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # CONFIGURE, check requirements then set variables and create Makefiles
-# Copyright (C) 2017 CEA/DAM
+# Copyright (C) 2017-2021 Xavier Delaruelle
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -26,16 +26,19 @@ prog=${progpath##*/}
 targetlist="${progdir}/Makefile.inc ${progdir}/site.exp"
 
 # argument list
-arglist="TCLSH SPHINXBUILD PS BASENAME RMDIR_IGN_NON_EMPTY VERSION \
-baseprefix prefix bindir libdir libexecdir etcdir initdir datarootdir mandir \
-docdir vimdatadir modulefilesdir setmanpath appendmanpath setbinpath \
-appendbinpath setdotmodulespath docinstall vimaddons examplemodulefiles \
-builddoc gitworktree usemanpath compatversion EXEEXT libtclenvmodules \
-SHLIB_SUFFIX versioning silentshdbgsupport setshellstartup quarantinesupport \
-autohandling availindepth implicitdefault extendeddefault moduleshome \
-initconfin pager pageropts verbosity color darkbgcolors lightbgcolors termbg \
-lockedconfigs icase unloadmatchorder searchmatch modulepath loadedmodules \
-quarantinevars wa277 advversspec ml windowssupport"
+arglist="TCLSH PYTHON SPHINXBUILD PS BASENAME RMDIR_IGN_NON_EMPTY SED_ERE \
+VERSION RELEASE baseprefix prefix bindir libdir libexecdir etcdir initdir \
+datarootdir mandir docdir vimdatadir modulefilesdir setmanpath appendmanpath \
+setbinpath appendbinpath setdotmodulespath docinstall vimaddons \
+examplemodulefiles builddoc gitworktree usemanpath compatversion EXEEXT \
+libtclenvmodules SHLIB_SUFFIX multilibsupport libdir64 libdir32 versioning \
+silentshdbgsupport setshellstartup quarantinesupport autohandling \
+availindepth implicitdefault extendeddefault moduleshome initconfin pager \
+pageropts verbosity color darkbgcolors lightbgcolors termbg lockedconfigs \
+icase unloadmatchorder searchmatch modulepath loadedmodules quarantinevars \
+wa277 advversspec ml windowssupport nearlyforbiddendays implicitrequirement \
+tagabbrev tagcolorname mcookieversioncheck availoutput availterseoutput \
+listoutput listterseoutput"
 compatarglist=
 libarglist=
 
@@ -57,15 +60,19 @@ setdotmodulespath=n
 docinstall=y
 vimaddons=y
 examplemodulefiles=y
-compatversion=y
+compatversion=n
 EXEEXT=
 libtclenvmodules=y
 SHLIB_SUFFIX='.so'
+multilibsupport=n
+libdir64=undefined
+libdir32=undefined
 versioning=n
 silentshdbgsupport=y
 setshellstartup=y
 quarantinesupport=y
 autohandling=n
+implicitrequirement=y
 availindepth=y
 implicitdefault=y
 extendeddefault=n
@@ -76,6 +83,7 @@ loadedmodules=
 quarantinevars=
 binsearchpath=/usr/bin:/bin:/usr/local/bin
 TCLSH=tclsh
+PYTHON=python
 SPHINXBUILD=sphinx-build
 builddoc=y
 gitworktree=y
@@ -83,14 +91,16 @@ usemanpath=y
 PS=ps
 BASENAME=basename
 RMDIR_IGN_NON_EMPTY=rmdir
+SED_ERE='sed -E'
 VERSION=
+RELEASE=
 initconfin=initdir
 pager=less
 pageropts='-eFKRX'
 verbosity=normal
 color=n
-darkbgcolors='hi=1:db=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:sy=95:de=4:cm=92'
-lightbgcolors='hi=1:db=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:sy=35:de=4:cm=32'
+darkbgcolors='hi=1:db=2:tr=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:sy=95:de=4:cm=92:aL=100:L=90;47:H=2:F=41:nF=43:S=46:sS=44'
+lightbgcolors='hi=1:db=2:tr=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:sy=35:de=4:cm=32:aL=107:L=47:H=2:F=101:nF=103:S=106:sS=104'
 termbg=dark
 lockedconfigs=
 unloadmatchorder=returnlast
@@ -111,20 +121,62 @@ modulefilesdir=
 moduleshome=
 modulepath=
 windowssupport=n
+nearlyforbiddendays=14
+tagabbrev='auto-loaded=aL:loaded=L:hidden=H:hidden-loaded=H:forbidden=F:nearly-forbidden=nF:sticky=S:super-sticky=sS'
+tagcolorname=
+mcookieversioncheck=y
+availoutput='modulepath:alias:dirwsym:sym:tag:key'
+availterseoutput='modulepath:alias:dirwsym:sym:tag'
+listoutput='header:idx:sym:tag:key'
+listterseoutput='header'
 
 # git branch to use to build compat version
 compatbranch='c-3.2'
 
 
+# check if output/error channels are attached to terminal
+for i in 1 2; do
+   if [ -t $i ]; then
+      fdisterm[$i]=1
+   else
+      fdisterm[$i]=0
+   fi
+done
+
+# apply SGR code to message if output channel is attached to terminal
+sgr() {
+   local fd=$1
+   local code=$2
+   local msg=$3
+   if [ ${fdisterm[$fd]} -eq 1 ]; then
+      local out="\033[${code}m${msg}\033[0m"
+   else
+      local out=$msg
+   fi
+   echo $out
+}
+
 # print message on stderr then exit
 echo_error() {
-   echo -e "ERROR: $1" >&2
+   local firstln=1
+   while [ $# -gt 0 ]; do
+      if [ $firstln -eq 1 ]; then
+         local msg="$(sgr 2 31 ERROR): $1"
+         firstln=0
+      elif [ "$1" = 'tryhelp' ]; then
+         msg="${msg}\n  Try \`$progpath --help' for more information"
+      else
+         msg="${msg}\n  $1"
+      fi
+      shift
+   done
+   echo -e "${msg}" >&2
    exit 1
 }
 
 # print message on stderr then exit
 echo_warning() {
-   echo -e "WARNING: $1"
+   echo -e "$(sgr 1 33 WARNING): $1"
 }
 
 
@@ -182,10 +234,14 @@ Optional Features:
                           provided as examples [yes]
   --enable-compat-version also build and install Modules compatibility (C)
                           version and enable switching capabilities between
-                          the two versions [yes]
+                          the two versions [no]
   --enable-libtclenvmodules
                           build and install the Modules Tcl extension library
                           and enable its load in modulecmd.tcl [yes]
+  --enable-multilib-support
+                          support multilib systems by looking at an alternative
+                          location where to find the Modules Tcl extension
+                          library depending on current machine architecture.
   --enable-versioning     append modules version to installation prefix and
                           deploy a \`versions' modulepath, shared between all
                           versioning enabled Modules installation, containing
@@ -207,6 +263,10 @@ Optional Features:
                           modulefiles handling actions, like loading the
                           pre-requisites of a modulefile when loading this
                           modulefile [no]
+  --enable-implicit-requirement
+                          implicitly define a requirement toward modules
+                          specified on ``module load`` or ``module unload``
+                          commands in modulefile [yes]
   --enable-avail-indepth  control whether \`avail' search results should
                           recursively include or not modulefiles from
                           directories matching search query [yes]
@@ -225,6 +285,14 @@ Optional Features:
   --enable-wa-277         activate workaround for Tcsh history issue [no]
   --enable-windows-support
                           install all required files for Windows platform [no]
+  --enable-new-features   enable all new features that are disabled by default
+                          due to substantial behavior changes they imply on
+                          Modules 4 [no]
+  --enable-mcookie-version-check
+                          enable check of the version specified right after
+                          Modules magic cookie in modulefiles, which defines
+                          the minimal version of the Modules tool to use to
+                          evaluate the modulefile [yes]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -233,7 +301,7 @@ Optional Packages:
                           list of paths to look at when searching the location
                           of tools required to build and configure Modules
                           [$binsearchpath]
-  --with-moduleshome      location of the master Modules package file
+  --with-moduleshome      location of the main Modules package file
                           directory [$prefix]
   --with-initconf-in=VALUE
                           location where to install Modules initialization
@@ -246,8 +314,9 @@ Optional Packages:
   --with-pager-opts=OPTLIST
                           settings to apply to default pager program [$pageropts]
   --with-verbosity=VALUE  specify default message verbosity. accepted values
-                          are \`silent', \`concise', \`normal', \`verbose' and
-                          \`debug' [$verbosity]
+                          are \`silent', \`concise', \`normal', \`verbose',
+                          \`verbose2', \`trace', \`debug' and \`debug2'
+                          [$verbosity]
   --with-dark-background-colors=SGRLIST
                           default color set to apply if terminal background
                           color is defined to \`dark'. Each element in SGRLIST
@@ -285,6 +354,44 @@ Optional Packages:
                           (\`search'), on all sub-commands and modulefile Tcl
                           commands (\`always') or disable case insensitive
                           match (\`never') [$icase]
+  --with-nearly-forbidden-days=VALUE
+                          define the number of days a module is considered
+                          nearly forbidden prior reaching its expiry date [$nearlyforbiddendays]
+  --with-tag-abbrev=ABBRVLIST
+                          define the abbreviation to use when reporting each
+                          module tag. Each element in ABBRVLIST is a tag name
+                          associated to an abbreviation string (elements in
+                          ABBRVLIST are separated by \`:')
+                          [$tagabbrev]
+  --with-tag-color-name=TAGLIST
+                          define the tags whose graphical rendering should be
+                          applied over their name instead of over the name of
+                          the module they are attached to. Each element in
+                          TAGLIST is a tag name or abbreviation (elements in
+                          TAGLIST are separated by \`:') [$tagcolorname]
+  --with-avail-output=LIST
+                          specify content to report on avail sub-command
+                          regular output. elements accepted in LIST are:
+                          \`modulepath', \`alias', \`dirwsym', \`sym', \`tag'
+                          and \`key' (elements in LIST are separated by \`:')
+                          [$availoutput]
+  --with-avail-terse-output=LIST
+                          specify content to report on avail sub-command
+                          terse output. elements accepted in LIST are:
+                          \`modulepath', \`alias', \`dirwsym', \`sym', \`tag'
+                          and \`key' (elements in LIST are separated by \`:')
+                          [$availterseoutput]
+  --with-list-output=LIST
+                          specify content to report on list sub-command
+                          regular output. elements accepted in LIST are:
+                          \`header', \`idx', \`sym', \`tag' and \`key'
+                          (elements in LIST are separated by \`:')
+                          [$listoutput]
+  --with-list-terse-output=LIST
+                          specify content to report on list sub-command terse
+                          output. elements accepted in LIST are: \`header',
+                          \`idx', \`sym', \`tag' and \`key' (elements in LIST
+                          are separated by \`:') [$listterseoutput]
   --with-modulepath=PATHLIST
                           default modulepaths to set in default configuration
                           file to be enabled (each path in PATHLIST should
@@ -304,6 +411,8 @@ Optional Packages:
   --with-tcl              directory containing the Tcl configuration script
                           tclConfig.sh.
   --with-tclinclude       directory containing the Tcl header files.
+  --with-python=BIN       name or full path of Python interpreter command to
+                          use as shebang for helper scripts [$PYTHON]
 
 Depending on the above configuration options the files are approximately
 placed in the following directory structure:
@@ -356,7 +465,8 @@ check_requirement() {
    if [ -z "$reqpath" ]; then
       if [ -z "$optmesg" ]; then
          echo_error "$req could not be found"
-      else
+      # no message output if message set to '-'
+      elif [ "$optmesg" != '-' ]; then
          echo_warning "$optmesg"
       fi
    fi
@@ -380,43 +490,84 @@ get_feature_value() {
 # parse optional argument to find package is set or disabled
 get_package_value() {
    typeset val="${1#*=}"
+   typeset valifunset="$2"
 
+   # use fallback value 'valifunset' when no specific value given
    if [ "${1//--with-/}" != "$1" ]; then
-      if [ "$val" = 'no' ]; then
-        echo ''
+      if [ "$val" = 'no' ] || [ "$val" = "$1" ]; then
+        echo "$valifunset"
       else
         echo "$val"
       fi
    else
-      echo ''
+      echo "$valifunset"
    fi
 }
 
 # parse arguments
 for arg in "$@"; do
+   # set argument value defined with "--arg val" form
+   if [ -n "${nextargisval+x}" ]; then
+      declare $nextargisval=$arg
+      unset nextargisval
+      continue
+   # set compat and lib argument value defined with "--arg val" form
+   elif [ -n "${nextargiscompatlibarg+x}" ]; then
+      compatarglist+="$arg "
+      libarglist+="$arg " ;
+      unset nextargiscompatlibarg
+      continue
+   # current arg should be skipped
+   elif [ -n "${nextargisign+x}" ]; then
+      unset nextargisign
+      continue
+   fi
+
    case "$arg" in
    --prefix=*)
       prefix="${arg#*=}" ;;
+   --prefix)
+      nextargisval=prefix ;;
    --bindir=*)
       bindir="${arg#*=}" ;;
+   --bindir)
+      nextargisval=bindir ;;
    --libdir=*)
       libdir="${arg#*=}" ;;
+   --libdir)
+      nextargisval=libdir ;;
    --libexecdir=*)
       libexecdir="${arg#*=}" ;;
+   --libexecdir)
+      nextargisval=libexecdir ;;
    --etcdir=*)
       etcdir="${arg#*=}" ;;
+   --etcdir)
+      nextargisval=etcdir ;;
    --initdir=*)
       initdir="${arg#*=}" ;;
+   --initdir)
+      nextargisval=initdir ;;
    --datarootdir=*)
       datarootdir="${arg#*=}" ;;
+   --datarootdir)
+      nextargisval=datarootdir ;;
    --mandir=*)
       mandir="${arg#*=}" ;;
+   --mandir)
+      nextargisval=mandir ;;
    --docdir=*)
       docdir="${arg#*=}" ;;
+   --docdir)
+      nextargisval=docdir ;;
    --vimdatadir=*)
       vimdatadir="${arg#*=}" ;;
+   --vimdatadir)
+      nextargisval=vimdatadir ;;
    --modulefilesdir=*)
       modulefilesdir="${arg#*=}" ;;
+   --modulefilesdir)
+      nextargisval=modulefilesdir ;;
    --enable-set-manpath*|--disable-set-manpath)
       setmanpath=$(get_feature_value "$arg") ;;
    --enable-append-manpath*|--disable-append-manpath)
@@ -442,6 +593,8 @@ for arg in "$@"; do
       defcompatversion=0 ;;
    --enable-libtclenvmodules*|--disable-libtclenvmodules)
       libtclenvmodules=$(get_feature_value "$arg") ;;
+   --enable-multilib-support*|--disable-multilib-support)
+      multilibsupport=$(get_feature_value "$arg") ;;
    --enable-versioning*|--disable-versioning)
       versioning=$(get_feature_value "$arg") ;;
    --enable-silent-shell-debug-support*|--disable-silent-shell-debug-support)
@@ -452,6 +605,8 @@ for arg in "$@"; do
       quarantinesupport=$(get_feature_value "$arg") ;;
    --enable-auto-handling*|--disable-auto-handling)
       autohandling=$(get_feature_value "$arg") ;;
+   --enable-implicit-requirement*|--disable-implicit-requirement)
+      implicitrequirement=$(get_feature_value "$arg") ;;
    --enable-avail-indepth*|--disable-avail-indepth)
       availindepth=$(get_feature_value "$arg") ;;
    --enable-implicit-default*|--disable-implicit-default)
@@ -466,6 +621,8 @@ for arg in "$@"; do
       wa277=$(get_feature_value "$arg") ;;
    --enable-windows-support*|--disable-windows-support)
       windowssupport=$(get_feature_value "$arg") ;;
+   --enable-mcookie-version-check*|--disable-mcookie-version-check)
+      mcookieversioncheck=$(get_feature_value "$arg") ;;
    --with-bin-search-path=*|--without-bin-search-path)
       binsearchpath=$(get_package_value "$arg") ;;
    --with-moduleshome=*|--without-moduleshome)
@@ -474,7 +631,8 @@ for arg in "$@"; do
       initconfin=$(get_package_value "$arg") ;
       allowedval=" initdir etcdir " ;
       if [ "${allowedval// $initconfin /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-initconf-in', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-initconf-in'"\
+            "Allowed values are:$allowedval"
       fi ;;
    --with-tclsh=*|--without-tclsh)
       tclshbin=$(get_package_value "$arg") ;;
@@ -485,12 +643,23 @@ for arg in "$@"; do
       defpageropts=0 ;;
    --with-verbosity=*|--without-verbosity)
       verbosity=$(get_package_value "$arg")
-      allowedval=" silent concise normal verbose debug " ;
+      allowedval=" silent concise normal verbose trace debug debug2 " ;
       if [ "${allowedval// $verbosity /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-verbosity', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-verbosity'"\
+            "Allowed values are:$allowedval"
       fi ;;
    --enable-color*|--disable-color)
       color=$(get_feature_value "$arg") ;;
+   --enable-new-features*|--disable-new-features)
+      val=$(get_feature_value "$arg") ;
+      echo "TOTO: $val"
+      if [ "$val" = 'y' ]; then
+         autohandling=y ;
+         color=auto ;
+         icase=search ;
+         extendeddefault=y ;
+         advversspec=y ;
+      fi ;;
    --with-dark-background-colors=*|--without-dark-background-colors)
       darkbgcolors=$(get_package_value "$arg") ;;
    --with-light-background-colors=*|--without-light-background-colors)
@@ -499,34 +668,98 @@ for arg in "$@"; do
       termbg=$(get_package_value "$arg") ;
       allowedval=" dark light " ;
       if [ "${allowedval// $termbg /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-terminal-background', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-terminal-background'"\
+            "Allowed values are:$allowedval"
       fi ;;
    --with-locked-configs*|--disable-locked-configs)
       lockedconfigs=$(get_package_value "$arg") ;
       allowedval=" extra_siteconfig implicit_default " ;
       for val in $lockedconfigs; do
          if [ "${allowedval// $val /}" = "$allowedval" ]; then
-            echo_error "Bad value for option \`--with-locked-configs', allowed values are:$allowedval"
+            echo_error "Bad value for option \`--with-locked-configs'"\
+               "Allowed values are:$allowedval"
          fi ;
       done ;;
    --with-unload-match-order*|--without-unload-match-order)
       unloadmatchorder=$(get_package_value "$arg") ;
       allowedval=" returnlast returnfirst " ;
       if [ "${allowedval// $unloadmatchorder /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-unload-match-order', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-unload-match-order'"\
+            "Allowed values are:$allowedval"
       fi ;;
    --with-search-match*|--without-search-match)
       searchmatch=$(get_package_value "$arg") ;
       allowedval=" starts_with contains " ;
       if [ "${allowedval// $searchmatch /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-search-match', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-search-match'"\
+            "Allowed values are:$allowedval"
       fi ;;
    --with-icase*|--without-icase)
       icase=$(get_package_value "$arg") ;
       allowedval=" never search always " ;
       if [ "${allowedval// $icase /}" = "$allowedval" ]; then
-         echo_error "Bad value for option \`--with-icase', allowed values are:$allowedval"
+         echo_error "Bad value for option \`--with-icase'"\
+            "Allowed values are:$allowedval"
       fi ;;
+   --with-nearly-forbidden-days*|--without-nearly-forbidden-days)
+      nearlyforbiddendays=$(get_package_value "$arg") ;
+      if [ -z "$nearlyforbiddendays" ] || ! [ "$nearlyforbiddendays" -eq "$nearlyforbiddendays" ] 2>/dev/null\
+         || ! [ "$nearlyforbiddendays" -ge 0 ] || ! [ "$nearlyforbiddendays" -le 365 ]; then
+         echo_error "Bad value for option \`--with-nearly-forbidden-days'"\
+            "Value should be an integer comprised between 0 and 365"
+      fi ;;
+   --with-tag-abbrev*|--without-tag-abbrev)
+      tagabbrev=$(get_package_value "$arg") ;;
+   --with-tag-color-name*|--without-tag-color-name)
+      tagcolorname=$(get_package_value "$arg") ;;
+   --with-avail-output*|--without-avail-output)
+      availoutput=$(get_package_value "$arg" "$availoutput") ;
+      allowedval=" modulepath alias dirwsym sym tag key " ;
+      ORIG_IFS=$IFS ;
+      IFS=: ;
+      for val in $availoutput; do
+         if [ "${allowedval// $val /}" = "$allowedval" ]; then
+            echo_error "Bad value '$val' set in option \`--with-avail-output'"\
+               "Values allowed in list are:$allowedval"
+         fi ;
+      done ;
+      IFS=$ORIG_IFS ;;
+   --with-avail-terse-output*|--without-avail-terse-output)
+      availterseoutput=$(get_package_value "$arg" "$availterseoutput") ;
+      allowedval=" modulepath alias dirwsym sym tag key " ;
+      ORIG_IFS=$IFS ;
+      IFS=: ;
+      for val in $availterseoutput; do
+         if [ "${allowedval// $val /}" = "$allowedval" ]; then
+            echo_error "Bad value '$val' set in option \`--with-avail-terse-output'"\
+               "Values allowed in list are:$allowedval"
+         fi ;
+      done ;
+      IFS=$ORIG_IFS ;;
+   --with-list-output*|--without-list-output)
+      listoutput=$(get_package_value "$arg" "$listoutput") ;
+      allowedval=" header idx sym tag key " ;
+      ORIG_IFS=$IFS ;
+      IFS=: ;
+      for val in $listoutput; do
+         if [ "${allowedval// $val /}" = "$allowedval" ]; then
+            echo_error "Bad value '$val' set in option \`--with-list-output'"\
+               "Values allowed in list are:$allowedval"
+         fi ;
+      done ;
+      IFS=$ORIG_IFS ;;
+   --with-list-terse-output*|--without-list-terse-output)
+      listterseoutput=$(get_package_value "$arg" "$listterseoutput") ;
+      allowedval=" header idx sym tag key " ;
+      ORIG_IFS=$IFS ;
+      IFS=: ;
+      for val in $listterseoutput; do
+         if [ "${allowedval// $val /}" = "$allowedval" ]; then
+            echo_error "Bad value '$val' set in option \`--with-list-terse-output'"\
+               "Values allowed in list are:$allowedval"
+         fi ;
+      done ;
+      IFS=$ORIG_IFS ;;
    --with-modulepath=*|--without-modulepath)
       modulepath=$(get_package_value "$arg") ;;
    --with-loadedmodules=*|--without-loadedmodules)
@@ -545,16 +778,72 @@ for arg in "$@"; do
    --without-tclinclude|--without-tcl-inc)
       compatarglist+="--without-tcl-inc " ;
       libarglist+="--without-tclinclude " ;;
+   --with-python=*|--without-python)
+      pythonbin=$(get_package_value "$arg") ;;
    --with-module-path=*)
       echo_warning "Option \`--with-module-path' ignored, use \`--modulepath' instead" ;;
    -h|--help)
       echo_usage
       exit 0
       ;;
-   *)
+   --build|--host|--target)
+      # pass argument supported by compat version anb lib to their ./configure
+      # script
+      compatarglist+="$arg " ;
+      libarglist+="$arg " ;
+      # and set next arg should also be send to compat version and lib scripts
+      nextargiscompatlibarg=y ;;
+   --build=*|--host=*|--target=*)
+      # pass argument supported by compat version anb lib to their ./configure
+      # script
+      compatarglist+="$arg " ;
+      libarglist+="$arg " ;;
+   --with-tcl-lib=*|--without-tcl-lib|--with-tcl-ver=*|--without-tcl-ver|\
+   --with-tclx=*|--without-tclx|--with-tclx-ver=*|--without-tclx-ver|\
+   --with-tclx-lib=*|--without-tclx-lib|--with-tclx-inc=*|--without-tclx-inc|\
+   --with-x|--without-x|--enable-dependency-tracking*|\
+   --disable-dependency-tracking)
+      # pass argument supported by compat version to its ./configure script
       compatarglist+="$arg " ;;
+   --program-prefix|--program-suffix|--program-transform-name|--exec-prefix|\
+   --sbindir|--sysconfdir|--datadir|--includedir|--localstatedir|\
+   --sharedstatedir|--infodir|--runstatedir|--oldincludedir|--localedir|\
+   --htmldir|--dvidir|--pdfdir|--psdir)
+      # ignore standard configure option and value which has no meaning here
+      echo_warning "Option \`$arg' ignored" ;
+      nextargisign=y ;;
+   --program-prefix=*|--program-suffix=*|--program-transform-name=*|\
+   --exec-prefix=*|--sbindir=*|--sysconfdir=*|--datadir=*|--includedir=*|\
+   --localstatedir=*|--sharedstatedir=*|--infodir=*|--runstatedir=*|\
+   --oldincludedir=*|--localedir=*|--htmldir=*|--dvidir=*|--pdfdir=*|\
+   --psdir=*)
+      # ignore standard configure option which has no meaning here
+      echo_warning "Option \`$arg' ignored" ;;
+   --enable-*|--disable-*|--with-*|--without-*)
+      # ignore --enable-*/--with-* options not supported here to comply with
+      # GNU Configuration specification
+      # (https://www.gnu.org/prep/standards/html_node/Configuration.html)
+      echo_warning "Option \`$arg' ignored" ;;
+   -*)
+      echo_error "Unrecognized option \`$arg'" tryhelp;;
+   *=*)
+      echo -e "Export \`$arg' in environment" ;
+      export $arg ;;
+   *)
+      # type of system to build the program for (not needed here but useful
+      # for true autoconf configure scripts below
+      compatarglist+="$arg " ;
+      libarglist+="$arg " ;;
    esac
 done
+
+# disable compat version build if not explicitely enabled, compat source not
+# available and not working from git repository
+if [ ! -d '.git' -a ! -d 'compat' -a $defcompatversion -eq 1 ]; then
+   echo_warning "\`compat' directory cannot be found, disabling compatibility \
+version build"
+   compatversion=n
+fi
 
 # test requirements availability
 check_requirement uname
@@ -565,7 +854,7 @@ kernelname=$(uname -s)
 # Make whereas on other system it is not the default make flavor, so 'gmake'
 # should be checked
 case "$kernelname" in
-   Linux|Darwin|CYGWIN*|MSYS_NT*) make='make' ;;
+   Linux|Darwin|CYGWIN*|MINGW*|MSYS_NT*) make='make' ;;
    *) make='gmake'
 esac
 check_requirement $make
@@ -582,15 +871,32 @@ else
     RMDIR_IGN_NON_EMPTY='rmdir'
 fi
 
-# if we install from git repository, must have sphinx to build doc and git to
-# fetch current release number
+# sed -E option may not be availble, use -r option otherwise
+if [ "$(echo foo | $SED_ERE 's|foo|bar|' 2>/dev/null)" != 'bar' ]; then
+   SED_ERE='sed -r'
+fi
+
+# if we install from git repository, must have git to fetch current release number
 if [ -d '.git' ]; then
+   check_requirement git
+fi
+
+# if pre-built docs are available (but not from a previous make run), no doc
+# build but install pre-built files
+oldbuilddoc=$(sed -n '/^builddoc/{s/.*:= //p;q;}' Makefile.inc 2>/dev/null)
+if [ -e 'doc/build/diff_v3_v4.txt' ] && [ -e 'doc/build/MIGRATING.txt' ] \
+   && [ -e 'doc/build/INSTALL.txt' ] && [ -e 'doc/build/INSTALL-win.txt' ] \
+   && [ -e 'doc/build/NEWS.txt' ] && [ -e 'doc/build/CONTRIBUTING.txt' ] \
+   && [ -e 'doc/build/module.1.in' ] && [ -e 'doc/build/ml.1' ] \
+   && [ -e 'doc/build/modulefile.4' ] && [ "$oldbuilddoc" != 'y' ]; then
+   builddoc=p
+# test sphinx availability otherwise
+else
    # pass even if sphinx not there but no doc will be built
    check_requirement sphinx-build "Install \`sphinx-build' if you want to \
 build the documentation" '' 'sphinx-1.0-build'
    SPHINXBUILD=$reqpath
    [ -z "$reqpath" ] && builddoc=n
-   check_requirement git
 fi
 
 # get tclsh location from standard PATHs or /usr/local/bin
@@ -602,6 +908,34 @@ else
    check_requirement $TCLSH '' "PATH=$binsearchpath" 'tclsh8.6' 'tclsh8.5' 'tclsh8.4'
 fi
 TCLSH=$reqpath
+
+# python is mandatory if installing from git repository to build ChangeLog
+if [ -d '.git' ]; then
+   missmsg=''
+elif [ -n "$pythonbin" ]; then
+   missmsg="Specified Python command \`$pythonbin' cannot be found"
+else
+   missmsg='-'
+fi
+# only look at --with-python specification if set
+if [ -n "$pythonbin" ]; then
+   check_requirement $pythonbin "$missmsg" "PATH=$binsearchpath"
+else
+   check_requirement $PYTHON "$missmsg" "PATH=$binsearchpath" 'python3' 'python2'
+fi
+# define a generic launching name if command not found at build time
+if [ -z "$reqpath" ]; then
+   # use --with-python specification if set
+   if [ "${pythonbin:0:1}" = '/' ]; then
+      PYTHON="$pythonbin"
+   elif [ -n "$pythonbin" ]; then
+      PYTHON="/usr/bin/env $pythonbin"
+   else
+      PYTHON="/usr/bin/env $PYTHON"
+   fi
+else
+   PYTHON=$reqpath
+fi
 
 # get location of commands used 'fullpath' in init scripts
 check_requirement 'ps' '' "PATH=$binsearchpath"
@@ -621,12 +955,25 @@ if [ $defpageropts -eq 1 -a "${pager##*/}" != 'less' ]; then
     echo_warning "As chosen pager is not \`less', default pager options are cleared"
 fi
 
-# fetch modules version from git repository tags
+# fetch modules version from version.inc.in file (which may be raw data to
+# refine or exact values if dist has been built by `git archive`)
+if [ -r ${progdir}/version.inc.in ]; then
+  release=$(sed -n '/^MODULES_RELEASE/{s/.*= //p;q;}' ${progdir}/version.inc.in)
+  build_hash=$(sed -n '/^MODULES_BUILD_HASH/{s/.*= //p;q;}' \
+     ${progdir}/version.inc.in)
+  build_refs=$(sed -n '/^MODULES_BUILD_REFS/{s/.*= //p;q;}' \
+     ${progdir}/version.inc.in)
+  build_refs=${build_refs//,}
+  build_refs=${build_refs//origin\/}
+else
+   echo_error "${progdir}/version.inc.in is missing"
+fi
+
+# refine build number if working from git repository
 if [ -d '.git' ]; then
   gitcurtag=$(git describe --tags --abbrev=0)
   gitcurdesc=$(git describe --tags)
   gitcurbranch=$(git rev-parse --abbrev-ref HEAD)
-  release=${gitcurtag#v}
   if [ "$gitcurtag" = "$gitcurdesc" ]; then
      build=''
   elif [ "$gitcurbranch" = 'master' ]; then
@@ -634,12 +981,22 @@ if [ -d '.git' ]; then
   else
      build="+${gitcurbranch}${gitcurdesc#${gitcurtag}}"
   fi
-# elsewhere fetch modules version from version.inc file
-elif [ -r ${progdir}/version.inc ]; then
-  release=$(sed -n '/^MODULES_RELEASE/{s/.*= //p;q;}' ${progdir}/version.inc)
-  build=$(sed -n '/^MODULES_BUILD/{s/.*= //p;q;}' ${progdir}/version.inc)
+# set a recognizable build number if one found in version.inc.in is raw data
+elif [ "$build_hash" = '$Format:%h' ]; then
+   build='+XX-gffffffff'
+# or compute it from these information as if working from git repository
+elif [[ " $build_refs " =~ " v$release " ]]; then
+   build=''
+elif [[ " $build_refs " =~ " master " ]]; then
+   build="+XX-g$build_hash"
+# %D placeholder may not be known by old version of git
+elif [ "$build_refs" = "%D" ]; then
+   build="+XX-g$build_hash"
+else
+   build="+${build_refs##* }-XX-g$build_hash"
 fi
 VERSION=$release$build
+RELEASE=$release
 
 if [ -z "$VERSION" ]; then
    echo_error "Cannot fetch modules version"
@@ -648,7 +1005,7 @@ fi
 # refer to binary exes and libs to build with the appropriate extension
 case "$kernelname" in
    CYGWIN*) EXEEXT='.exe'; SHLIB_SUFFIX='.dll' ;;
-   MSYS_NT*) SHLIB_SUFFIX='.dll' ;;
+   MINGW*|MSYS_NT*) SHLIB_SUFFIX='.dll' ;;
    Darwin) SHLIB_SUFFIX='.dylib' ;;
 esac
 
@@ -675,6 +1032,18 @@ fi
 [ -z "$modulepath" -a "$versioning" = 'y' ] && modulepath=${modulefilesdir/#$prefix/$baseprefix\/\$MODULE_VERSION}
 [ -z "$modulepath" ] && modulepath=$modulefilesdir
 
+# define libdir64 and libdir32 based on libdir if multilib support enabled
+if [ "$multilibsupport" = 'y' ]; then
+   case "$libdir" in
+      *64)
+         libdir64=$libdir ;
+         libdir32=${libdir%64} ;;
+      *)
+         libdir64=${libdir}64 ;
+         libdir32=$libdir ;;
+   esac
+fi
+
 # check feature requirements are met
 if [ "$setdotmodulespath" = 'y' -a -n "$loadedmodules" ]; then
    featmesg="As \`setdotmodulespath' is enabled beware that \`loadedmodules' may be ignored by init scripts"
@@ -692,7 +1061,7 @@ if [ ! -e 'lib/configure' ]; then
    checkedautoreconf=0
    echo "--- preparing extension library sources ----------"
    pushd lib
-   autoreconf || exit 1
+   autoreconf -i || exit 1
    popd
    echo "--------------------------------------------------"
 fi
@@ -767,6 +1136,7 @@ done
 # configure extension library sources
 if [ "$libtclenvmodules" = 'y' ]; then
    echo "--- configuring extension library sources --------"
+   echo "libarglist = $libarglist"
    pushd lib
    ./configure $libarglist || exit 1
    popd
@@ -776,6 +1146,7 @@ fi
 # configure compat version sources
 if [ "$compatversion" = 'y' ]; then
    echo "--- configuring compatibility version sources ----"
+   echo "compatarglist = $compatarglist"
    pushd compat
    # unknown arguments for this configure script are passed down to the
    # compatibility version configure script (which raise error if arg unknown)
@@ -784,8 +1155,8 @@ if [ "$compatversion" = 'y' ]; then
    # keep versioning disabled for compat version to get expected paths defined
    ./configure --prefix=$prefix --bindir=$bindir --libdir=$libdir \
       --libexecdir=$libexecdir --datarootdir=$datarootdir --mandir=$mandir \
-      --docdir=$docdir --with-module-path=$modulepath --disable-versioning \
-      $compatarglist || exit 1
+      --docdir=$docdir --with-module-path=$modulepath --with-python="$PYTHON" \
+      --disable-versioning $compatarglist || exit 1
    popd
    echo "--------------------------------------------------"
 fi

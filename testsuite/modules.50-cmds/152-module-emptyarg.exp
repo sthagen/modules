@@ -23,6 +23,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set module "modemptyarg"
 set modulepath "$modpath.2"
 set modulepathre "$modpathre.2"
@@ -39,7 +42,7 @@ setenv_path_var MODULEPATH $modulepath
 
 # wrong arg number if command does not accept any argument
 foreach cmd [list list purge reload aliases savelist] {
-    testouterr_cmd "sh" "load $module/$cmd" "ERR" [msg_load $module/$cmd "$moderr_msgs: Unexpected number of args for '$cmd' command\nIn '$modulepath/$module/$cmd'\n$err_contactns"]
+    testouterr_cmd "sh" "load $module/$cmd" "ERR" [msg_load $module/$cmd [msg_moderr "Unexpected number of args for '$cmd' command" "module $cmd {}" $modulepath/$module/$cmd 27]]
 }
 
 # on most module commands, empty arg leads to error
@@ -83,9 +86,19 @@ foreach cmd [list use unuse] {
 
 # or error is reported as modulefile error rather global error
 foreach cmd [list save restore saveshow saverm] {
-    testouterr_cmd "sh" "load $module/$cmd" "ERR" [msg_load $module/$cmd "$moderr_emptycollname'$modulepath/$module/$cmd'\n$err_contactns"]
+    if {[cmpversion $tclsh_version 8.5] == -1} {
+        set custom [msg_moderr $msg_collnameempty "<EXM>module $cmd {}" $modulepath/$module/$cmd 27]
+        testouterr_cmd_re "sh" "load $module/$cmd" "ERR" [escre [msg_load $module/$cmd $custom]]
+    } else {
+        testouterr_cmd "sh" "load $module/$cmd" "ERR" [msg_load $module/$cmd [msg_moderr $msg_collnameempty "module $cmd {}" $modulepath/$module/$cmd 27]]
+    }
 }
-testouterr_cmd "sh" "load $module/source" "ERR" [msg_load $module/source "$moderr_emptyfilename'$modulepath/$module/source'\n$err_contactns"]
+if {[cmpversion $tclsh_version 8.5] == -1} {
+    set custom [msg_moderr $msg_filenameempty "<EXM>module source {}" $modulepath/$module/source 27]
+    testouterr_cmd_re "sh" "load $module/source" "ERR" [escre [msg_load $module/source $custom]]
+} else {
+    testouterr_cmd "sh" "load $module/source" "ERR" [msg_load $module/source [msg_moderr $msg_filenameempty "module source {}" $modulepath/$module/source 27]]
+}
 
 # empty string currently understood like wildcard
 foreach cmd [list whatis apropos] {
@@ -96,12 +109,12 @@ foreach cmd [list whatis apropos] {
     lappend ans [list set LOADEDMODULES "$module/$cmd"]
     # other evaluated modulefiles lead to an error result on stdout
     lappend ans [list ERR]
-    testouterr_cmd_re "sh" "load $module/$cmd" $ans {^.+$}
+    testouterr_cmd_re "sh" "load $module/$cmd" $ans {.+}
 }
 set ans [list]
 lappend ans [list setpath LOADEDMODULES "$module/avail"]
 lappend ans [list setpath _LMFILES_ "$modulepath/$module/avail"]
-testouterr_cmd_re "sh" "load $module/avail" $ans "^.+$"
+testouterr_cmd_re "sh" "load $module/avail" $ans ".+"
 
 
 #
@@ -111,7 +124,7 @@ testouterr_cmd_re "sh" "load $module/avail" $ans "^.+$"
 # wrong arg number if command does not accept any argument
 foreach cmd [list list purge reload aliases savelist] {
     setenv_loaded_module "$module/$cmd" "$modulepath/$module/$cmd"
-    testouterr_cmd "sh" "unload $module/$cmd" "ERR" [msg_unload $module/$cmd "$moderr_msgs: Unexpected number of args for '$cmd' command\nIn '$modulepath/$module/$cmd'\n$err_contactns"]
+    testouterr_cmd "sh" "unload $module/$cmd" "ERR" [msg_unload $module/$cmd [msg_moderr "Unexpected number of args for '$cmd' command" "module $cmd {}" $modulepath/$module/$cmd 27]]
 }
 
 # on most module commands, empty arg leads to error
@@ -151,11 +164,21 @@ foreach cmd [list use unuse] {
 # or error is reported as modulefile error rather global error
 foreach cmd [list save restore saveshow saverm] {
     setenv_loaded_module "$module/$cmd" "$modulepath/$module/$cmd"
-    testouterr_cmd "sh" "unload $module/$cmd" "ERR" [msg_unload $module/$cmd "$moderr_emptycollname'$modulepath/$module/$cmd'\n$err_contactns"]
+    if {[cmpversion $tclsh_version 8.5] == -1} {
+        set custom [msg_moderr $msg_collnameempty "<EXM>module $cmd {}" $modulepath/$module/$cmd 27]
+        testouterr_cmd_re "sh" "unload $module/$cmd" "ERR" [escre [msg_unload $module/$cmd $custom]]
+    } else {
+        testouterr_cmd "sh" "unload $module/$cmd" "ERR" [msg_unload $module/$cmd [msg_moderr $msg_collnameempty "module $cmd {}" $modulepath/$module/$cmd 27]]
+    }
 }
 setenv_loaded_module "$module/source" "$modulepath/$module/source"
 set env(_LMFILES_) "$modulepath/$module/source"
-testouterr_cmd "sh" "unload $module/source" "ERR" [msg_unload $module/source "$moderr_emptyfilename'$modulepath/$module/source'\n$err_contactns"]
+if {[cmpversion $tclsh_version 8.5] == -1} {
+    set custom [msg_moderr $msg_filenameempty "<EXM>module source {}" $modulepath/$module/source 27]
+    testouterr_cmd_re "sh" "unload $module/source" "ERR" [escre [msg_unload $module/source $custom]]
+} else {
+    testouterr_cmd "sh" "unload $module/source" "ERR" [msg_unload $module/source [msg_moderr $msg_filenameempty "module source {}" $modulepath/$module/source 27]]
+}
 
 # empty string currently understood like wildcard
 foreach cmd [list whatis apropos] {
@@ -167,13 +190,13 @@ foreach cmd [list whatis apropos] {
     lappend ans [list unset LOADEDMODULES]
     # other evaluated modulefiles lead to an error result on stdout
     lappend ans [list ERR]
-    testouterr_cmd_re "sh" "unload $module/$cmd" $ans {^.+$}
+    testouterr_cmd_re "sh" "unload $module/$cmd" $ans {.+}
 }
 setenv_loaded_module "$module/avail" "$modulepath/$module/avail"
 set ans [list]
 lappend ans [list unsetpath LOADEDMODULES]
 lappend ans [list unsetpath _LMFILES_]
-testouterr_cmd_re "sh" "unload $module/avail" $ans "^.+$"
+testouterr_cmd_re "sh" "unload $module/avail" $ans ".+"
 
 # restore environment
 unsetenv_loaded_module
@@ -259,14 +282,7 @@ testouterr_cmd "sh" "whatis $module" "OK" ""
 #  Cleanup
 #
 
-# restore MODULEPATH
-setenv_path_var MODULEPATH $modpath
-
-unset module
-unset modulepath
-unset modulepathre
-unset ans
-unset cmd
+reset_test_env
 
 # remove procs
 rename display_stderr_content {}

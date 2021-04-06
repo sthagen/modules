@@ -24,6 +24,9 @@
 # enable auto_handling with environment variable
 setenv_var MODULES_AUTO_HANDLING 1
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set mp $modpath.deps
 
 # setup specific environment
@@ -392,14 +395,4 @@ testouterr_cmd_re sh {unload --auto ih/1} $ans [join $tserr \n]
 #  Cleanup
 #
 
-# restore environment
-setenv_path_var MODULEPATH $modpath
-
-unsetenv_loaded_module
-unsetenv_path_var MODULES_LMPREREQ
-unsetenv_path_var MODULES_LMCONFLICT
-unsetenv_var MODULES_AUTO_HANDLING
-
-unset mp
-unset ans
-unset tserr
+reset_test_env

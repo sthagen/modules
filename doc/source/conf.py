@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Modules'
-copyright = '1996-1999 John L. Furlani & Peter W. Osel, 1998-2017 R.K.Owen, 2002-2004 Mark Lakata, 2004-2017 Kent Mein, 2016-2020 Xavier Delaruelle'
+copyright = '1996-1999 John L. Furlani & Peter W. Osel, 1998-2017 R.K.Owen, 2002-2004 Mark Lakata, 2004-2017 Kent Mein, 2016-2021 Xavier Delaruelle'
 author = ''
 
 # The version info for the project you're documenting, acts as replacement for
@@ -79,7 +79,7 @@ def get_version_release_from_git():
             else:
                 return version, version + '+' + branch + '-' + tags
     else:
-        return 'X.Y', ''
+        return '4.7.1', ''
 
 # The short X.Y version.
 # The full version, including alpha/beta/rc tags.
@@ -118,20 +118,50 @@ todo_include_todos = False
 #
 os_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if os_rtd:
-    html_theme = 'default'
+    html_theme = 'sphinx_rtd_theme'
+    # override wide tables in RTD theme
+    # colorize terminal output
+    html_context = {
+        'css_files': [
+            '_static/rtd_theme_overrides.css',
+            '_static/rtd_literal_block.css',
+            '_static/terminal_output.css',
+            ],
+         }
 else:
     html_theme = 'bizstyle'
+    # colorize terminal output
+    html_context = {
+        'css_files': [
+            '_static/literal_block.css',
+            '_static/terminal_output.css',
+            ],
+         }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 # html_theme_options = {}
+if os_rtd:
+    html_theme_options = { 'logo_only' : True }
+
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+if os_rtd:
+    html_logo = '../img/modules_white.svg'
+else:
+    html_logo = '../img/modules_red.svg'
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large.
+html_favicon = '../img/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # ensure quotes and dashes are preserved and not converted to lang-specific
 # entities (fix issue#250). done by disabling `html_use_smartypants` on Sphinx
@@ -189,7 +219,7 @@ else:
     prefix = '/usr/share/Modules'
     bindir = prefix + '/bin'
     libexecdir = prefix + '/libexec'
-    etcdir = prefix + '/etc'
+    etcdir = '/etc/environment-modules'
     initdir = prefix + '/init'
     modulefilesdir = prefix + '/modulefiles'
 
@@ -211,6 +241,7 @@ rst_epilog += '.. |emph etcdir| replace:: *%s*\n' % etcdir
 rst_epilog += '.. |bold etcdir| replace:: **%s**\n' % etcdir
 rst_epilog += '.. |file etcdir_rc| replace:: :file:`%s/rc`\n' % etcdir
 rst_epilog += '.. |file etcdir_siteconfig| replace:: :file:`%s/siteconfig.tcl`\n' % etcdir
+rst_epilog += '.. |file etcdir_initrc| replace:: :file:`%s/initrc`\n' % etcdir
 rst_epilog += '.. |initdir| replace:: %s\n' % initdir
 rst_epilog += '.. |emph initdir| replace:: *%s*\n' % initdir
 rst_epilog += '.. |bold initdir| replace:: **%s**\n' % initdir
@@ -220,6 +251,32 @@ rst_epilog += '.. |modulefilesdir| replace:: %s\n' % modulefilesdir
 rst_epilog += '.. |emph modulefilesdir| replace:: *%s*\n' % modulefilesdir
 rst_epilog += '.. |bold modulefilesdir| replace:: **%s**\n' % modulefilesdir
 rst_epilog += '.. |file modulefilesdir| replace:: :file:`%s`\n' % modulefilesdir
+rst_epilog += '.. |code version| replace:: ``%s``\n' % version
+rst_epilog += '.. |gh_tgz_dl_url| replace:: https://github.com/cea-hpc/modules/releases/download/v%s/modules-%s.tar.gz\n' % (version, version)
+
+# define roles used to color text in parsed-literal to render output like in terminal
+rst_epilog += """.. role:: noparse
+.. role:: ps
+.. role:: sgrhi
+.. role:: sgrer
+.. role:: sgrwa
+.. role:: sgrin
+.. role:: sgrtr
+.. role:: sgrse
+.. role:: sgrcm
+.. role:: sgrme
+.. role:: sgrmp
+.. role:: sgrdi
+.. role:: sgrali
+.. role:: sgrsy
+.. role:: sgrde
+.. role:: sgrh
+.. role:: sgral
+.. role:: sgrl
+.. role:: sgrf
+.. role:: sgrnf
+.. role:: sgrs
+.. role:: sgrss"""
 
 
 # -- Options for manual page output ---------------------------------------
@@ -257,8 +314,24 @@ def parse_cmd_args_node(env, sig, signode):
         signode += addnodes.desc_addname(args, args)
     return cmd
 
-# define new directive/role that can be used as .. subcmd::/:subcmd: and
-# .. mfcmd::/:mfcmd:
+def parse_opt_args_node(env, sig, signode):
+    if (sig.strip().find('=') != -1):
+        sep = '='
+    else:
+        sep = ', '
+    try:
+        opt, args = sig.strip().split(sep, 1)
+    except ValueError:
+        opt, args = sig, None
+    # distinguish opt from its args
+    signode += addnodes.desc_name(opt, opt)
+    if args:
+        args = sep + args
+        signode += addnodes.desc_addname(args, args)
+    return opt
+
+# define new directive/role that can be used as .. subcmd::/:subcmd:,
+# .. mfcmd::/:mfcmd: and .. mfvar::/:mfvar:
 def setup(app):
     app.add_object_type('subcmd', 'subcmd',
                         objname='module sub-command',
@@ -268,3 +341,15 @@ def setup(app):
                         objname='modulefile command',
                         indextemplate='%s (modulefile command)',
                         parse_node=parse_cmd_args_node)
+    app.add_object_type(directivename='mfvar', rolename='mfvar',
+                        objname='modulefile variable',
+                        indextemplate='%s (modulefile variable)',
+                        parse_node=parse_cmd_args_node)
+    app.add_object_type('instopt', 'instopt',
+                        objname='installation option',
+                        indextemplate='pair: %s; installation option',
+                        parse_node=parse_opt_args_node)
+    app.add_object_type('mconfig', 'mconfig',
+                        objname='module configuration option',
+                        indextemplate='pair: %s; module configuration option')
+

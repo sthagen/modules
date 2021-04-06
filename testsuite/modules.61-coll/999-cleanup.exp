@@ -24,6 +24,9 @@ if { $verbose > 1 } {
     send_user "\tCleaning up after collection tests ...\n"
 }
 
+# delete generated modulefiles
+delete_endspace_test_modulefiles
+
 # delete collections and associated dirs saved during this test
 set testcoll_list [glob -nocomplain -- "$hometestdotmod/*"]
 foreach testcoll $testcoll_list {
@@ -60,6 +63,12 @@ unset c7contre
 unset c8cont
 unset c9cont
 unset c11cont
+unset c15cont
+unset c15contre
+unset c16cont
+unset c16contre
+unset c17cont
+unset c17contre
 
 unset cdlmf
 unset cdlm
@@ -107,7 +116,35 @@ unset c13lmf
 unset c13lm
 unset c13lmalt
 unset c13modpath
+unset c15lmf
+unset c15lm
+unset c15lmalt
+unset c15modpath
+unset c16lmf
+unset c16lm
+unset c16lmalt
+unset c16modpath
+unset c17lmf
+unset c17lm
+unset c17modpath
 
+unset c17mod2
+unset c17mod1
+unset c17modpath1
+unset c17modpath1re
+unset c17modpath1res
+unset c16mod5
+unset c16mod4
+unset c16mod3
+unset c16mod2
+unset c16mod1
+unset c16modpath1
+unset c16modpath1re
+unset c15mod3
+unset c15mod2
+unset c15mod1
+unset c15modpath1
+unset c15modpath1re
 unset c12mod2
 unset c12mod1
 unset c12modpath1
@@ -131,6 +168,8 @@ unset c7mod1rel
 unset c6modpath3
 unset c6modpath2
 unset c6modpath1
+unset c6mod4f
+unset c6mod4
 unset c6mod3f
 unset c6mod3
 unset c6mod2f
@@ -138,7 +177,9 @@ unset c6mod2
 unset c6mod1f
 unset c6mod1n
 unset c6mod1
+unset c4modpath2re
 unset c4modpath2
+unset c4modpath1re
 unset c4modpath1
 unset c3modpath2
 unset c3modpath1
@@ -149,7 +190,9 @@ unset c2modpath2
 unset c2modpath1
 unset c1mod6
 unset c1mod5
+unset c1modpath2re
 unset c1modpath2
+unset c1modpath1re
 unset c1modpath1
 unset cdmod5
 unset cdmod5n
@@ -158,6 +201,7 @@ unset cdmod3
 unset cdmod3n
 unset cdmod2
 unset cdmod1
+unset cdmodpath1re
 unset cdmodpath1
 
 unset collemptytarget
@@ -206,6 +250,18 @@ unset coll13fpre
 unset coll14
 unset coll14fp
 unset coll14fpre
+unset coll15
+unset coll15f
+unset coll15fp
+unset coll15fpre
+unset coll16
+unset coll16f
+unset coll16fp
+unset coll16fpre
+unset coll17
+unset coll17f
+unset coll17fp
+unset coll17fpre
 
 unset nohomeerrmsg
 
@@ -215,3 +271,6 @@ unset homewithcolldotmod
 unset homewithcolldotmodre
 unset hometestcoll
 unset hometestdotmod
+
+# restore orig saved test env
+save_test_env

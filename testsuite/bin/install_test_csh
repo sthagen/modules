@@ -1,11 +1,11 @@
 #!/bin/csh -f
 #
 # INSTALL_TEST_CSH, csh-kind test launcher for install non-reg suite
-# Copyright (C) 2017 Xavier Delaruelle
+# Copyright (C) 2017-2021 Xavier Delaruelle
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -108,6 +108,21 @@ switch ($mode)
          module append-path -d ' ' FOO /path/to/dir2
          set ret=($ret + $status)
          module source $TESTSUITEDIR/modulefiles.2/putsvar
+         set ret=($ret + $status)
+         set hardcodetest=0
+      endif
+      if ( "$cmdlist" =~ "*module sh-to-mod *csh testsuite/example/sh-to-mod.csh*" ) then
+         module sh-to-mod csh testsuite/example/sh-to-mod.csh v\'l val\"e val\\\"e "" >& shtomod;
+         set ret=($ret + $status)
+         module load ./shtomod;
+         set ret=($ret + $status)
+         echo "${FOOCB}:${FOOEM}:${FOOSP}:${FOOARG1}:${FOOARG2}:${FOOARG3}:${FOOARG4}";
+         set ret=($ret + $status)
+         alfoo;
+         set ret=($ret + $status)
+         alcb;
+         set ret=($ret + $status)
+         alsp;
          set ret=($ret + $status)
          set hardcodetest=0
       endif

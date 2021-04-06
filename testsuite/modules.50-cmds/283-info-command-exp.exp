@@ -66,7 +66,6 @@ testouterr_cmd_re "sh" "search search" "ERR" "$header\n(\\s+\\S+: search\\n)*\\s
 testouterr_cmd "sh" "source $modulefile" "OK" "source"
 
 # set HOME to location containing collections
-set ORIG_HOME $env(HOME)
 set homewithcoll "$env(HOME)/home"
 if { $verbose > 0 } {
     send_user "\tSetup HOME = $homewithcoll\n"
@@ -110,16 +109,4 @@ testouterr_cmd_re "sh" "test $module" "OK" "$modlin\n$header_test\n\ntest\ntest\
 #  Cleanup
 #
 
-unset header_help
-unset header_test
-unset header
-
-unset modulefile
-unset modulefilere
-unset module
-
-unset ans
-unset ansun
-
-unset homewithcoll
-unset ORIG_HOME
+reset_test_env

@@ -6,7 +6,556 @@ Release notes
 This file describes changes in recent versions of Modules. It primarily
 documents those changes that are of interest to users and admins.
 
-Modules 4.5.0 (2020-XX-XX)
+.. _4.7 release notes:
+
+Modules 4.7.1 (2021-04-06)
+--------------------------
+
+* Doc: clarify the license terms used by the project. (fix issue #389)
+* Align all files from the Modules project under the GPLv2+ license. Scripts
+  and libraries that were previously licensed with GPLv3+ have been moved to
+  GPLv2+ with the consent of their respective copyright holders. (fix issue
+  #389)
+* Revert "Install: have :file:`configure` script assume the ``.`` dot
+  directory when invoked without the prepended ``./``" as consent was not
+  obtained from author to relicense the contribution to GPLv2+.
+* Doc: fixes few typos in :ref:`module(1)` and :ref:`modulefile(4)`.
+* Update the :subcmd:`sh-to-mod` mechanism to support version 3.2 of the fish
+  shell. Fish 3.2 introduces the ``.`` builtin command that should be
+  regexp-escaped when determining the shell functions or aliases defined by
+  the script analyzed by :subcmd:`sh-to-mod`.
+* Vim: update addon files to highlight modulefile variables
+  :mfvar:`ModuleTool`, :mfvar:`ModuleToolVersion` and
+  :mfvar:`ModulesCurrentModulefile`.
+* Doc: update the description and default value of the
+  :instopt:`--with-dark-background-colors` and
+  :instopt:`--with-light-background-colors` installation options.
+* Doc: add description of changes that occurred on versions 4.6 and 4.7 for
+  the :instopt:`--with-dark-background-colors` and
+  :instopt:`--with-light-background-colors` installation options and for the
+  :envvar:`MODULES_COLORS` environment variable.
+* Doc: correct the default value of the :instopt:`--with-tag-abbrev`
+  installation option.
+* Doc: add :ref:`sticky-modules-rcp` cookbook recipe.
+
+
+Modules 4.7.0 (2021-02-19)
+--------------------------
+
+* Doc: simplify TOC of :ref:`MIGRATING` document
+* Add the :mfvar:`ModuleTool` and :mfvar:`ModuleToolVersion` Modules
+  variables to determine during modulefile or modulerc evaluation the name and
+  version of the *module* implementation currently in use.
+* Introduce the :mfcmd:`versioncmp` modulefile command to compare two version
+  strings passed as argument.
+* Enable the use of wildcard character to designate multiple directories at
+  once in modulespath configuration file. (fix issue #125)
+* Distinguish aliases from symbolic versions in :envvar:`MODULES_LMALTNAME`
+  environment variable. Prefix these alias entries with the ``al|`` string.
+* Fetch modulefile modification time only if required by :subcmd:`list`
+  sub-command display format.
+* Use symbolic versions recorded in environment, with
+  :envvar:`MODULES_LMALTNAME` variable, to report the symbols applying to
+  loaded modules on :subcmd:`list` sub-command. Modulerc files are not
+  evaluated anymore when performing a module list.
+* Move the definition of the :envvar:`FPATH` environment variable for Modules
+  initialization on ksh shell from the initialization script of this shell to
+  the resulting output of the :subcmd:`autoinit` sub-command.
+* Introduce the :mconfig:`shells_with_ksh_fpath` configuration option to
+  define a list of shell where to ensure that any ksh sub-shell will get the
+  module function defined by use of the :envvar:`FPATH` environment variable.
+  When the :mconfig:`shells_with_ksh_fpath` option is set through the
+  :subcmd:`config` sub-command, the :envvar:`MODULES_SHELLS_WITH_KSH_FPATH`
+  environment variable is set. Accepted values are a list of shell among *sh*,
+  *bash*, *csh*, *tcsh* and *fish* separated by colon character (``:``).
+* Add the :mconfig:`implicit_requirement` configuration option to control
+  whether a prereq or a conflict requirement should be implicitly set onto
+  modules respectively specified on :mfcmd:`module load<module>` or
+  :mfcmd:`module unload<module>` commands in modulefile. Default value for
+  this option could be set at configure time with the
+  :instopt:`--enable-implicit-requirement` option (enabled by default). This
+  value could be superseded by setting up the :mconfig:`implicit_requirement`
+  option with :subcmd:`config` sub-command. Which sets the
+  :envvar:`MODULES_IMPLICIT_REQUIREMENT` environment variable. (fix issue
+  #260)
+* Add the ``--not-req`` option to the :mfcmd:`module` modulefile command to
+  inhibit for its ``load`` and ``unload`` sub-commands the definition of a
+  prereq or conflict requirement onto specified modules.
+* Add the ``lpopState`` and ``currentState`` procedures to respectively remove
+  or return the last entry from the list of values of a given state.
+* Add the ``topState`` and ``depthState`` procedures to respectively return
+  the first element from or the number of elements in the list of values of a
+  given state.
+* Remove the pre-definition of runtime states with no specific property. These
+  basic states are defined on-the-fly which implied they are not reported on a
+  :subcmd:`module config --dump-state<config>` command unless if instanciated.
+* Introduce the ``loaded`` symbolic version among advanced version specifiers
+  (e.g. ``foo@loaded``) to designate the currently loaded version of specified
+  module. (fix issue #366)
+* Doc: add *Module tags* design notes.
+* Report tags applying to the modules returned by the :subcmd:`avail`
+  sub-command. Adapt the regular, terse and JSON output styles to report these
+  tags along the module they are attached to (enclosed in ``<>``). Reported
+  tags currently are states that apply to modules: ``auto-loaded``,
+  ``forbidden``, ``hidden``, ``loaded``, ``nearly-forbidden``, ``sticky`` and
+  ``super-sticky``.
+* Record tags applying to each loaded module in the :envvar:`MODULES_LMTAG`
+  environment variable to make this information persist after module being
+  loaded.
+* Report tags applying to the loaded modules returned by the :subcmd:`list`
+  sub-command. Adapt the regular and JSON output styles to report these tags
+  along the module they are attached to (enclosed in ``<>``). Reported tags
+  currently are states applying to loaded modules: ``auto-loaded``,
+  ``hidden-loaded``, ``nearly-forbidden``, ``sticky`` and ``super-sticky``.
+* Introduce the :mfcmd:`module-info tags<module-info>` modulefile command to
+  query the tags that apply to the currently evaluated modulefile.
+* Add the :mfcmd:`module-tag` modulefile command to associate tag to
+  designated modulefile. Those tags are reported on :subcmd:`avail` and
+  :subcmd:`list` sub-commands along the module they are attached to.
+  :mfcmd:`module-tag` supports the advanced module version specifier syntax.
+* Add the :mconfig:`tag_abbrev` configuration option to define abbreviated
+  strings for module tags and use these abbreviations instead of tag names
+  when reporting tags on :subcmd:`avail` and :subcmd:`list` command results.
+  Default value for this option could be set at configure time with the
+  :instopt:`--with-tag-abbrev` option. By default the following abbreviations
+  are set: ``aL`` for *auto-loaded*, ``F`` for *forbidden*, ``H`` for
+  *hidden*, ``H`` for *hidden-loaded*, ``L`` for *loaded*, ``nF`` for
+  *nearly-forbidden*, ``S`` for *sticky*, ``sS`` for *super-sticky*. This
+  value could be superseded by setting up the :mconfig:`tag_abbrev` option
+  with :subcmd:`config` sub-command. Which sets the
+  :envvar:`MODULES_TAG_ABBREV` environment variable.
+* A Select Graphic Rendition (SGR) code can be associated to module tag names
+  or abbreviation strings in the color palette to graphically render these
+  tags over the module name they are associated to. The default light and dark
+  color palettes have been updated to set a color code for all basic module
+  tags. When a color code is set for a tag, it is then graphically rendered
+  over the module names and not reported along module name by its tag name or
+  abbreviation. When multiple colored tags apply to a given module, each tag
+  is graphically rendered over a sub-part of the module name.
+* Add the :mconfig:`tag_color_name` configuration option to designate module
+  tags whose graphical rendering should be applied to their own name or
+  abbreviation rather than over the module name they are attached to.
+  Default value for this option could be set at configure time with the
+  :instopt:`--with-tag-color-name` option (empty by default). This value could
+  be superseded by setting up the :mconfig:`tag_color_name` option with
+  :subcmd:`config` sub-command. Which sets the
+  :envvar:`MODULES_TAG_COLOR_NAME` environment variable.
+* Add the ``--hidden-loaded`` option to the :mfcmd:`module-hide` modulefile
+  command that indicates module should be hidden once loaded. When set, the
+  ``hidden-loaded`` module tag applies to module specification set on
+  :mfcmd:`module-hide` command.
+* Do not report on :subcmd:`list` sub-command results the loaded modules
+  associated with the ``hidden-loaded`` tag, unless if the :option:`--all`
+  option is set.
+* Doc: add an ``hidden-loaded`` example in the *Hide and forbid modules*
+  cookbook recipe.
+* Introduce the ``verbose2`` verbosity level between ``verbose`` and ``trace``
+  levels. Verbose2 mode can be enabled by setting the :mconfig:`verbosity`
+  config to the ``verbose2`` value or by using the :option:`-v` command-line
+  switch twice.
+* Do not report the load, unload or switch of modules set ``hidden-loaded`` if
+  these modules have been loaded, unloaded or switched automatically. Unless
+  the verbosity mode is set to ``verbose2`` or any higher level or if any
+  specific messages have to be reported for these module evaluations.
+* Report when trying to load a module which is already loaded or when trying
+  to unload a module which is not loaded in case the verbosity mode is set to
+  ``verbose2`` or any higher level. (fix issue #187)
+* Doc: improve readability of version 4 improvements in :ref:`diff_v3_v4`
+  document.
+* Introduce stickyness: module tagged ``sticky`` with :mfcmd:`module-tag`
+  command cannot be unloaded unless if the unload is forced or if the module
+  is reloaded. (fix issue #269)
+* Introduce super-stickyness: module tagged ``super-sticky`` with
+  :mfcmd:`module-tag` command cannot be unloaded even if the unload is forced
+  unless if the module is reloaded. (fix issue #269)
+* Allow swap of sticky or super-sticky modules by another modulefile version
+  if stickyness definition applies to module parent name. E.g., *foo/1.0* can
+  be swapped by *foo/2.0* if sticky tag applies to *foo*.
+* When forcing purge with a :subcmd:`purge --force<purge>` sub-command, also
+  unload the modules that are depended by unloadable modules.
+* Doc: improve readability of Modules installation configuration in
+  :ref:`INSTALL` document and enable hypertext reference to these elements.
+* Doc: improve readability of module command configuration option in
+  :ref:`module(1)` document and enable hypertext reference to these elements.
+* Doc: describe in HTML documentation when installation options, module
+  command configuration options and options of modulefile command or module
+  sub-command were introduced.
+* Doc: update HTML documentation Table Of Content.
+* Doc: improve markup of module sub-commands, modulefile commands,
+  installation option, module configuration option across documentation.
+* Doc: colorize terminal output examples in :ref:`MIGRATING` document.
+* Abort modulefile read if first file content chunk does not start with the
+  ``#%Module`` magic cookie. (fix issue #375)
+* Install: add installation option :instopt:`--enable-new-features` that
+  enables all at once the installation options that are disabled by default
+  due to the substantial behavior changes they imply.
+* Add a *Key* section at the end of :subcmd:`avail` and :subcmd:`list`
+  sub-commands to explain the meaning of graphical renditions or of elements
+  set in parentheses or chevrons along module name.
+* Fix output of :subcmd:`avail` and :subcmd:`list` sub-commands on very small
+  termminal width. (fix issue #378)
+* Add :mconfig:`mcookie_version_check` configuration to define if version set
+  in modulefile magic cookie should be checked against :command:`module`
+  current version to determine if modulefile can be evaluated. The new
+  configuration, which is enabled by default, can be set at installation time
+  with configure option :instopt:`--enable-mcookie-version-check` or can be
+  superseded later on with the :envvar:`MODULES_MCOOKIE_VERSION_CHECK`
+  environment variable. (fix issue #377)
+* Fix output of modulefile evaluation error stack trace on very small terminal
+  width. (fix issues #379 and #381)
+* Correct :subcmd:`config` sub-command to set :mconfig:`nearly_forbidden_days`
+  configuration. (fix issue #380)
+* Init: reduce usage of helper variables in :file:`bash_completion` and
+  :file:`tcsh_completion` that are showing up in the output of the shell's
+  ``set`` command. (fix issue #382 with contribution from Colin Marquardt)
+* Consider modulepath starting with a reference to an environment variable as
+  absolute. (fix issue #376)
+* Consider the :subcmd:`module load<load>` performed in the user or the global
+  RC file like load commands issued from initialization RC file. (fix issue
+  #372)
+* Install: have :file:`configure` script assume the ``.`` dot directory when
+  invoked without the prepended ``./``. (contribution from R.K. Owen)
+* Install: disable the Makefile rules to build the HTML documentation in case
+  if the documentation is found pre-built in the dist archive.
+* Install: do not flag documentation as pre-built if :file:`configure` script
+  is ran another time after building docs.
+* Restrict the value accepted by :mconfig:`nearly_forbidden_days`
+  configuration and :instopt:`--with-nearly-forbidden-days` installation
+  option to integers comprised between 0 and 365.
+* Install: color *ERROR* and *WARNING* message headers produced by
+  file:`configure` script if output is sent to a terminal.
+* Install: split error messages produced by file:`configure` script over an
+  additional line when too long.
+* Doc: add *Output configuration* design notes.
+* Introduce the :mconfig:`avail_output` and :mconfig:`avail_terse_output`
+  configuration options to define the content to report in addition to the
+  available module names respectively for :subcmd:`avail` sub-command regular
+  and terse output modes. Excepted value for these configuration options is a
+  colon separated list of elements to report. Default value is
+  ``modulepath:alias:dirwsym:sym:tag:key`` for :mconfig:`avail_output` and
+  ``modulepath:alias:dirwsym:sym:tag`` for :mconfig:`avail_terse_output`.
+  These values can be changed at installation time respectively with the
+  :instopt:`--with-avail-output` and :instopt:`--with-avail-terse-output`
+  options. These values can then be superseded by using the :subcmd:`config`
+  sub-command which sets the :envvar:`MODULES_AVAIL_OUTPUT` and
+  :envvar:`MODULES_AVAIL_TERSE_OUTPUT` environment variables.
+* Introduce the :mconfig:`list_output` and :mconfig:`list_terse_output`
+  configuration options to define the content to report in addition to the
+  available module names respectively for :subcmd:`list` sub-command regular
+  and terse output modes. Excepted value for these configuration options is a
+  colon separated list of elements to report. Default value is
+  ``header:idx:sym:tag:key`` for :mconfig:`list_output` and ``header`` for
+  :mconfig:`list_terse_output`. These values can be changed at installation
+  time respectively with the :instopt:`--with-list-output` and
+  :instopt:`--with-list-terse-output` options. These values can then be
+  superseded by using the :subcmd:`config` sub-command which sets the
+  :envvar:`MODULES_LIST_OUTPUT` and :envvar:`MODULES_LIST_TERSE_OUTPUT`
+  environment variables.
+* Add the :option:`--output`/:option:`-o` command-line switches to supersede
+  the output configuration of :subcmd:`avail` or :subcmd:`list` sub-commands
+  on their regular or terse output modes.
+* Remove the ``avail_report_dir_sym`` and ``avail_report_mfile_sym`` locked
+  configuration options whose behaviors can now be obtained by respectively
+  adding the ``dirwsym`` and ``sym`` elements to the :mconfig:`avail_output`
+  or :mconfig:`avail_terse_output` configuration options.
+* When ``modulepath`` is omitted from the content to report on :subcmd:`avail`
+  sub-command, available modules collected from global/user rc and enabled
+  modulepaths are aggregated and reported all together.
+* Install: print generated file names rather commands executed to generate
+  these files on Makefile build targets. Output obtained when building Modules
+  is this way simplified. When option ``V=1`` is passed to ``make``, the
+  verbose mode is enabled and run commands are shown. The simplified ``make``
+  output does not apply to the install, test and clean targets or any target
+  similar to them.
+* Install: fix configure and build files of Modules Tcl extension library to
+  make them compatible with autoconf >=2.69.
+* Script: correctly detect previous Modules version number released from a
+  side git branch on :command:`mpub` command.
+* Install: align RPM spec file syntax with spec file used on Fedora. Add
+  missing build dependency on ``make`` package. Also remove obsolete ``Group``
+  RPM tag.
+* Add the :mconfig:`term_width` configuration option to set the width of the
+  output. This configuration option is set to ``0`` by default, which means
+  that the output width is the full terminal width. The
+  :option:`--width`/:option:`-w` command line switches are added to supersede
+  the value of the configuration option. (fix issue #359 with contribution
+  from Anaïs Gaertner)
+* Doc: add a *Get Modules* section in :ref:`INSTALL` document to provide
+  download links for Modules' sources. (fix issue #387)
+
+
+.. _4.6 release notes:
+
+Modules 4.6.1 (2020-11-14)
+--------------------------
+
+* Lib: implement ``initStateClockSeconds`` as a Tcl command in
+  libtclenvmodules to provide an optimized way to retrieve current Epoch time.
+* Lib: implement ``parseDateTimeArg`` as a Tcl command in libtclenvmodules to
+  provide an optimized way to convert a datetime string into an Epoch time.
+* When full module specification is equal to ``@``, raise an error as no
+  module name is provided. (fix issue #362)
+* Optimize internal recording of hidden module and tag specification when
+  parsing modulerc files in order to reduce the time taken to test if a given
+  module is hidden or if a given tag applies to it.
+* Script: add the ability to select the benchmark test to perform on
+  :command:`mb` utility.
+* Doc: add *Use new features without breaking old module command* cookbook
+  recipe
+* Doc: rework option description for :mfcmd:`module-hide` and
+  :mfcmd:`module-forbid` commands in :ref:`modulefile(4)` document.
+* Doc: describe in :ref:`diff_v3_v4` document that shell special characters
+  like backticks are escaped when used in values starting Modules 4.0. (fix
+  issue #365)
+* Doc: make the ENVIRONMENT section from :ref:`modulefile(4)` man page point
+  to the ENVIRONMENT section of :ref:`module(1)` man page.
+* Fix :subcmd:`clear` sub-command to unset the :envvar:`MODULES_LMSOURCESH`
+  environment variable. (fix issue #367)
+* Correctly return on :subcmd:`avail` sub-command a symbolic version defined
+  in a global RC file when specifically searched. (fix issue #368)
+* Fix module hiding resolution for symbolic versions defined in a global RC
+  file when :mfcmd:`module-hide` statements are set in the modulepath where
+  the modulefiles targeted by these symbols are located. (fix issue #369)
+* When a module fails to unload during a :subcmd:`purge` sub-command, preserve
+  loaded the modules it requires to keep environment consistent. (fix issue
+  #370)
+* Doc: add *Hide and forbid modules* cookbook recipe.
+
+
+Modules 4.6.0 (2020-09-16)
+--------------------------
+
+* Rework internal state handling to gather all state definitions in a global
+  array and use the same initialization and retrieval procedure, named
+  ``getState``, for all these states.
+* Add the ``setState``, ``unsetState``, ``lappendState``, ``isStateDefined``
+  and ``isStateEqual`` procedures to provide unified ways to set or check the
+  value of state.
+* Introduce the :subcmd:`sh-to-mod` sub-command, to evaluate shell script and
+  determine the environment changes it does. Corresponding modulefile
+  content is outputted as a result. Changes on environment variables, shell
+  aliases, shell functions and current working directory are tracked. The
+  following shells are supported: sh, dash, csh, tcsh, bash, ksh, ksh93, zsh
+  and fish.
+* Doc: add *Source shell script in modulefile* design notes.
+* Introduce the :mfcmd:`source-sh` modulefile command, to evaluate shell
+  script and apply resulting environment changes through modulefile commands.
+  When a modulefile using :mfcmd:`source-sh` modulefile command is loaded, the
+  modulefile commands resulting from shell script evaluation are recorded in
+  the :envvar:`MODULES_LMSOURCESH` environment variable to be able to undo
+  these environment changes when modulefile is unloaded and to report the
+  modulefile commands used when modulefile is displayed. The same kind of
+  environment changes than the :subcmd:`sh-to-mod` sub-command are tracked.
+  The same list of shells than :subcmd:`sh-to-mod` sub-command are supported.
+  (fix issue #346)
+* Doc: add *Source shell script in modulefile* cookbook recipe.
+* Doc: embed new Modules logo on website, online README and documentation
+  portal.
+* Install: disable by default the build of Modules compatibility version. From
+  now on, option :instopt:`--enable-compat-version` has to be set to trigger
+  this build.
+* Introduce the ``username`` sub-command to the :mfcmd:`module-info`
+  modulefile command to get the username of the user currently running
+  :file:`modulecmd.tcl` or to test a string passed as argument corresponds to
+  this username.
+* Introduce the ``usergroups`` sub-command to the :mfcmd:`module-info`
+  modulefile command to get all the groups of the user currently running
+  :file:`modulecmd.tcl` or to test a string passed as argument corresponds to
+  one of these groups.
+* Doc: improve markup of :ref:`NEWS` and :ref:`MIGRATING` documents starting
+  from this 4.6 version to enable references to module sub-commands, command
+  line switches, environment variables and modulefile Tcl commands.
+* Use inclusive terminology to eliminate *master* and *slave* terms as much as
+  possible from code source and documentation.
+* Doc: use a versioned magic cookie in examples that demonstrate new
+  modulefile features. (fix issue #349)
+* Introduce the :instopt:`--enable-multilib-support` configure option to add
+  mechanism in :file:`modulecmd.tcl` to look at an alternative location to
+  find the Modules Tcl extension library in case this library cannot be found
+  at its main location.
+* Lib: remove *fetch_hidden* argument from ``getFilesInDirectory`` procedure
+  of Modules Tcl extension library.
+* Doc: add *Hide or forbid modulefile* design notes.
+* Add the :mfcmd:`module-hide` modulefile command, to dynamically hide
+  modulefile, module alias or symbolic version matching passed specification.
+  When hidden, a modulefile, an alias or a symbolic version is not reported
+  nor selected unless referred by its exact name, like for module whose name
+  or version starts with a dot character. :mfcmd:`module-hide` supports the
+  advanced module version specifiers. (fix issue #202)
+* Add option ``--soft`` to the :mfcmd:`module-hide` modulefile command to
+  introduce a soften level of camouflage: modules targeted by such hide
+  directive are made visible as soon as their root name is part of search
+  query.
+* Add option ``--hard`` to the :mfcmd:`module-hide` modulefile command to
+  introduce a hardened level of camouflage: modules targeted by such hide
+  directive keep being hidden even if they are fully matched by search query.
+* Do not report among :subcmd:`whatis` search result the modulefiles with
+  version name prefixed by a dot character and targeted by a symbolic version
+  unless if they are precisely searched.
+* When a loading module has hidden alternative names (hidden due to their
+  name or version starting with a dot character or because they match a
+  :mfcmd:`module-hide` statement), these alternative names are not recorded in
+  environment unless if they are not hard-hidden and if they have been used in
+  query to select loading module.
+* On :subcmd:`avail` sub-command, remove hidden symbolic versions from the
+  list to display along modulefile or directory they target, unless these
+  symbols are not hard-hidden and are used in query to search modules.
+* When the :option:`--default` filter of :subcmd:`avail` sub-command is set,
+  unhide all the *default* symbolic versions or modules targeted by these
+  symbols unless if they are hard-hidden.
+* Define the *default* and *latest* automatic symbolic versions only if
+  relative module name matches search query to ensure all elements for this
+  module have been processed prior assigning the symbols.
+* In case a symbolic version is transitively applied toward a modulefile, like
+  for instance when this symbol is first set onto a directory, record the
+  resolution of each transitively applied symbol. By doing so, a module
+  :subcmd:`load` tentative using the transitively applied symbolic version
+  will now correctly resolve to the modulefile targeted by symbol.
+* Fix use of the advanced version specifiers in arguments to the
+  :mfcmd:`is-avail` modulefile command.
+* Introduce the :option:`--all`/:option:`-a` option for :subcmd:`avail`,
+  :subcmd:`aliases`, :subcmd:`whatis` and :subcmd:`search` sub-commands, to
+  include in the search process all hidden modulefiles, module aliases or
+  symbolic versions. Hard-hidden modules stay hidden even if
+  :option:`--all`/:option:`-a` option is used.
+* Add the :mfcmd:`module-forbid` modulefile command, to dynamically forbid
+  evaluation of modulefile matching passed specification. When forbidden, a
+  module cannot be loaded and an access error is obtained when trying to
+  evaluate them. :mfcmd:`module-forbid` supports the advanced module version
+  specifiers.
+* Add ``--not-user`` and ``--not-group`` options to :mfcmd:`module-hide` and
+  :mfcmd:`module-forbid` modulefile commands to ignore hiding or forbidding
+  definition if current user is respectively part of specified username list
+  or member of one of specified group list.
+* Add ``--before`` and ``--after`` options to :mfcmd:`module-hide` and
+  :mfcmd:`module-forbid` modulefile commands to ignore hiding or forbidding
+  definition respectively after and before a specified date time. Accepted
+  date time format is ``YYYY-MM-DD[THH:MM]``.
+* Add ``--message`` option to :mfcmd:`module-forbid` modulefile command to
+  supplement the error message obtained when trying to evaluate a forbidden
+  module.
+* When a module that will soon be forbidden (as the date limit specified on
+  the ``--after`` option of a matching :mfcmd:`module-forbid` command is near)
+  is evaluated, warn user this module access will soon be denied.
+* The range of time the above warning appears can be controlled with the
+  :mconfig:`nearly_forbidden_days` configuration option, whose value equals to
+  the number of days prior the module starts to be forbidden. This
+  configuration is set to ``14`` (days) by default and this value can be
+  controlled at :file:`configure` time with
+  :instopt:`--with-nearly-forbidden-days` option. When the
+  :mconfig:`nearly_forbidden_days` configuration is set through the
+  :subcmd:`config` sub-command, the :envvar:`MODULES_NEARLY_FORBIDDEN_DAYS`
+  environment variable is set.
+* Add ``--nearly-message`` option to :mfcmd:`module-forbid` modulefile command
+  to supplement the warning message obtained when evaluating a nearly
+  forbidden module.
+* Add the ``debug2`` verbosity level, to report each call of
+  :file:`modulecmd.tcl` internal procedures in addition to debug messages.
+  Debug2 mode can be enabled by setting the :mconfig:`verbosity` config to the
+  ``debug2`` value or by using the :option:`-D` command-line switch twice.
+* Install: look for ``make`` rather ``gmake`` on MinGW and build library with
+  a ``.dll`` extension on this platform.
+* Add the ``trace`` verbosity level, to report details on module searches,
+  resolutions, selections and evaluations. Trace mode can be enabled by
+  setting the ``verbosity`` config to the ``trace`` value or by using the
+  :option:`-T`/:option:`--trace` command-line switches.
+* Introduce the ``tr`` key in the color palette to specifically render trace
+  messages. Default value for ``tr`` key is ``2`` (decreased intensity).
+* When trying to set an environment variable to an empty value on the Windows
+  platform, unset this environment variable instead to cope with the
+  underlying OS behavior.
+
+
+.. _4.5 release notes:
+
+Modules 4.5.3 (2020-08-31)
+--------------------------
+
+* Install: take into account the ``--build``, ``--host``, ``--target``,
+  ``--enable-dependency-tracking`` and ``--disable-dependency-tracking``
+  configure options to transmit them to the :file:`configure` scripts of
+  Modules Tcl extension library and Modules compatibility version. (fix issue
+  #354)
+* Install: ignore some regular options of an Autoconf :file:`configure` script
+  that are useless for this project but usually implied in build macros (like
+  RPM ``%configure`` macro).
+* Install: ignore unsupported ``--enable-*`` and ``--with-*`` options on
+  :file:`configure` script rather raise an error and add support to define
+  environment variable and build system type as :file:`configure` script
+  arguments to comply with `GNU configuration recommendations`_.
+* Install: fix :file:`modulecmd` pre-alternatives check in RPM spec file.
+* Install: use ``%make_build`` and ``%make_install`` macros in RPM spec file.
+* When :mfcmd:`module switch<module>` command is used in modulefile, do not
+  state when processing it a conflict over switched-off module if its
+  specification on the ``module switch`` command also matches switched-on
+  module's specification. Allow this way the replacement of any loaded version
+  of a module for a specific one required by currently loading module. (fix
+  issue #355)
+* Correctly report failed attempts to load module requirements expressed with
+  advanced version specifiers. (fix issue #356)
+
+.. _GNU configuration recommendations: https://www.gnu.org/prep/standards/html_node/Configuration.html
+
+
+Modules 4.5.2 (2020-07-30)
+--------------------------
+
+* Init: :subcmd:`list` and :subcmd:`source` sub-commands do not take available
+  modules as argument in fish completion script.
+* Init: fix option list for :subcmd:`search` sub-command in bash completion
+  script.
+* Fix double error counter increase when modulefile evaluation breaks.
+* Install: adapt :file:`configure` script to pass to the :file:`configure`
+  script of Modules compatibility version only a subset of the options it
+  supports (most commonly used options).
+* Install: raise an error when an unknown option is passed to
+  :file:`configure` script rather silently ignore it. (fix issue #348)
+* Install: enable the definition of installation directory options of
+  :file:`configure` script with the ``--option value`` syntax in addition to
+  the ``--option=value`` syntax. (fix issue #348)
+* Doc: alphabetically sort sub-commands of :mfcmd:`module-info` modulefile Tcl
+  command in :ref:`modulefile(4)` document.
+* Script: clean previously built environment-modules RPMs in :command:`mrel`.
+* Clearly separate quarantine variable definition from tclsh binary on
+  :file:`modulecmd.tcl` evaluated command call in ``_module_raw`` function for
+  *sh*, *bash*, *ksh* and *zsh* shells. (fix issue #350)
+* Doc: clarify in documentation index that Environment Modules should not be
+  confused with language-specific modules. (contribution from Rob Hurt)
+* Adapt conflict detection tests to ensure a module loaded by its full
+  pathname will not detect itself as a conflict when declaring a reflexive
+  conflict. (fix issue #352)
+* Adapt the :command:`mrel` and :command:`mpub` commands to produce new
+  Modules release from a *vZ.Y.x* git branch rather than from the repository
+  main branch.
+
+
+Modules 4.5.1 (2020-06-01)
+--------------------------
+
+* Install: consistently output Makefile warning messages on stderr.
+* Script: add the ``mrel`` script, that automates build of the Modules release
+  files and performs tests over these distribution files to guaranty their
+  correctness.
+* Script: add the ``mpub`` script, that automates Modules new release
+  publishing over git repositories and websites.
+* Install: remove project-specific tools from git repository export thus from
+  release distribution files.
+* Disable pager when ``clear`` sub-command is called from ``ml`` shortcut
+  command. (fix issue #338)
+* In case a modulefile evaluation fails, environment context prior this failed
+  evaluation is restored. Fix environment variable restoration mechanism to
+  keep the link that monitors and updates environment variable array ``env``
+  in every Tcl sub-interpreters. (fix issue #340)
+* Ensure environment variable change at the Tcl interpreter level is
+  propagated to every sub-interpreters used to evaluate modulefiles or
+  modulercs. (fix issue #342)
+* Use absolute path to load Modules Tcl extension library. (fix issue #344
+  with contribution from Roy Storey)
+* Fix formatting of error stack trace not to look for internal commands to
+  withdraw if start-up stack pattern cannot be matched.
+
+
+Modules 4.5.0 (2020-04-07)
 --------------------------
 
 * Doc: fix typos and grammar mistakes on :ref:`module(1)`,
@@ -28,9 +577,9 @@ Modules 4.5.0 (2020-XX-XX)
   modules to either load or unload can be combined on a single command. ``ml``
   accepts all command-line switches and sub-commands accepted by ``module``
   command. ``ml`` command is defined by default. Its definition can be
-  controlled at ``./configure`` time with ``--enable-ml`` option or later on
-  with ``ml`` configuration option (which defines ``MODULES_ML`` environment
-  variable when set).
+  controlled at ``./configure`` time with :instopt:`--enable-ml` option or
+  later on with :mconfig:`ml` configuration option (which defines
+  ``MODULES_ML`` environment variable when set).
 * Fix module sub-command abbreviation match to ensure passed abbreviated
   form fully match sub-command, not only its minimal abbreviated form. As an
   example, ``lod`` or ``loda`` do not match anymore the ``load``
@@ -43,14 +592,140 @@ Modules 4.5.0 (2020-XX-XX)
 * Script: gather all distributed and maintained scripts in a ``script``
   directory at the root of the project repository tree.
 * Install: provide Windows-specific batch files when ``./configure`` option
-  ``--enable-windows-support`` is set. module command wrapper ``module.cmd``
-  is installed in ``bindir`` and initialization script ``cmd.cmd`` in
-  ``initdir``. Those batch files are relocatable and expect ``modulecmd.tcl``
-  in ``..\libexec`` directory. (fix issue #272 with contribution from Jacques
+  :instopt:`--enable-windows-support` is set. module command wrapper
+  ``module.cmd`` is installed in ``bindir`` and initialization script
+  ``cmd.cmd`` in ``initdir``. Those batch files are relocatable and expect
+  ``modulecmd.tcl`` in ``..\libexec`` directory. (fix issue #272 with
+  contribution from Jacques Raphanel)
+* Install: add ml command wrapper ``ml.cmd`` and install it in ``bindir`` when
+  ``./configure`` option :instopt:`--enable-windows-support` is set.
+* Install: introduce envml command wrapper ``envml.cmd`` for Windows ``cmd``
+  shell and install it in ``bindir`` when ``./configure`` option
+  :instopt:`--enable-windows-support` is set. (contribution from Jacques
   Raphanel)
+* Doc: improve documentation portal index.
+* Install: add ``dist-win`` target to Makefile in order to build a
+  distribution zipball containing the required files to run Modules on a
+  Windows platform. ``INSTALL.bat`` and ``UNINSTALL.bat`` Windows batch files
+  are introduced and shipped in the zipball to automate installation and basic
+  configuration of Modules on the Windows platform.
+* Doc: update :ref:`INSTALL-win` document to describe how to install Modules
+  with newly provided Windows-specific distribution zipball.
+* Install: enable build of Modules from ``git archive`` tarball or zipball
+  exports (like download source archives automatically provided on GitHub
+  project)
+* Install: ship reStructuredText and MarkDown source documents at the root of
+  Modules distribution tarball rather their built txt counterpart.
+* Script: fix ``createmodule.sh`` script to correctly analyses environment
+  when shell functions are found defined in it.
+* Script: inhibit output generated by scripts evaluated by ``createmodule.sh``
+  and ``createmodule.py`` to ensure these outputs will not get in the way when
+  analyzing the environment changes. (fix issue #309)
+* Correctly handle symbolic version target including a whitespace in their
+  name.
+* Testsuite: output test error details whatever the testsuite run verbose
+  mode.
+* Install: adapt configure script and Makefile to detect ``python`` command
+  location and set it as shebang for ``createmodule.py`` and
+  ``gitlog2changelog.py``. If ``python`` command is not found, ``python3``
+  then ``python2`` are searched.
+* Install: enable to pass a specific Python interpreter command name or
+  location at configure step with :instopt:`--with-python` option. Specified
+  command name or location should be found on build system only if building
+  from git repository.
+* Install: build ``createmodule.py`` script and install it in ``bindir``.
+* Install: update RPM spec file to explicitly define Python interpreter
+  location.
+* Script: fix ``createmodule.py`` script for Python3 (fix issue #315 with
+  contribution from Armin Wehrfritz)
+* Lift Perl variable strictness when defining ``_mlstatus`` variable in case
+  ``modulecmd.tcl`` output is directly evaluated without use of the ``module``
+  sub-routine in Perl script. (with contribution from Andrey Maslennikov)
+* Script: fix path de-duplication in ``createmodule.sh``. (fix issue #316)
+* Doc: add *Handling Compiler and other Package Dependencies* cookbook
+  recipe, which discusses various strategies for creating modulefiles for
+  packages with multiple builds depending on previously loaded compiler,
+  MPI libraries, etc. (contribution from Tom Payerle)
+* Init: test availability of ``compopt`` Bash builtin prior using it in
+  Bash completion script to avoid error with versions of this shell older
+  than 4.0. (fix issue #318)
+* Install: adapt configure step to detect if ``sed`` option ``-E`` is
+  supported and fallback to ``-r`` otherwise in shell completion scripts.
+  (fix issue #317)
+* Add support for the ``NO_COLOR`` environment variable
+  (https://no-color.org/) which when set (regardless of its value) prevents
+  the addition of ANSI color. When set, ``NO_COLOR`` prevails over
+  ``CLICOLOR`` and ``CLICOLOR_FORCE`` environment variables. ``MODULES_COLOR``
+  overrides these three variables. (fix issue #310)
+* Script: when analyzing environment variable changes in ``createmodule.sh``
+  applied by shell script passed as argument, produce a ``setenv`` modulefile
+  statement for any variable found set prior script evaluation and for which
+  value is completely changed after script evaluation. (fix issue #320)
+* When an error message is composed of multiple lines, render it in the same
+  way whether it is part of a block message or not: lines after the first one
+  are prepended with a 2-space padding. As a result error messages appear
+  clearly separated from each other.
+* Append to the error message the error stack trace when a general unknown
+  error occurs in ``modulecmd.tcl`` and provide a link to encourage users to
+  report such error to the GitHub project.
+* Add to the error message the error stack trace for errors occurring during
+  site-specific configuration evaluation. Error stack is expunged from the
+  ``modulecmd.tcl`` internals to only report information relevant to
+  site-specific configuration file.
+* When an error occurs during the evaluation of a modulefile or a modulerc,
+  report associated error stack trace expunged from ``modulecmd.tcl`` internal
+  references to only output useful information for users.
+* GitHub: add issue templates to guide people submitting a bug report or a
+  feature request.
+* Doc: provide a link toward issues that have been fixed between versions 3.2
+  and 4.0 in :ref:`diff_v3_v4` document.
+* Script: introduce ``envml.cmd`` script for Windows platform providing
+  similar behavior than ``envml`` Bash script. (contribution from Jacques
+  Raphanel)
+* Init: add Bash shell completion for the ``ml`` command. (contribution from
+  Adrien Cotte)
+* Fix Fish shell stderr redirection for newer Fish versions. (fix issue #325)
+* Correctly handle modulefiles and modulepaths containing a space character in
+  their name whether they are used from the command-line, in collections,
+  within modulefiles or from loaded environment definitions.
+* Doc: add *Default and latest version specifiers* design note.
+* An ``avail`` search over a symbolic version targeting a directory now
+  correctly returns the special modules (alias and virtual module) lying in
+  this directory. (fix issue #327)
+* ``whatis`` and ``paths`` searches only return special modules (symbolic
+  version, alias and virtual modules) that fully match search query, not
+  those that partially match it. (fix issue #328)
+* alias and virtual module whose name mention a directory that does not
+  exists are correctly handled. (fix issue #168)
+* Hide special modules (aliases, symbolic versions and virtual modules)
+  whose version name starts with a dot character (``.``) from ``avail``,
+  ``whatis`` and ``paths`` searches if their query does not fully match
+  special module name. (fix issue #329)
+* Filter-out from the output of the ``aliases`` sub-command all hidden
+  aliases, symbolic versions or hidden modules targeted by a non-hidden
+  symbolic version. (fix issue #330)
+* Enable resolution of default module in module sub-directory when this
+  default symbol targets a hidden directory (whose name starts with a dot
+  character). (fix issue #331)
+* Doc: clarify hidden module location in :ref:`modulefile(4)` man page.
+* Install: define ``LD_PRELOAD`` as quarantine var along with
+  ``LD_LIBRARY_PATH`` in RPM specfile.
+* When :mconfig:`implicit_default` and :mconfig:`advanced_version_spec`
+  configuration are enabled, automatically define a ``default`` and ``latest``
+  symbolic version for each module name (at each module depth for deep
+  modules) if those version names does not already exist. (fix issue #210)
+* Once a module is loaded, the automatically defined symbols associated to it
+  are recorded in loaded environment in the ``MODULES_LMALTNAME`` environment
+  variable. They are distinguished from the other alternative names applying
+  to the module by a ``as|`` prefix, which qualifies their *auto symbol* type.
+* When an advanced version specifier list contains symbolic version
+  references, fix resolving to honor default version if part of the specified
+  list. (fix issue #334)
 
 .. _JSON: https://tools.ietf.org/html/rfc8259
 
+
+.. _4.4 release notes:
 
 Modules 4.4.1 (2020-01-03)
 --------------------------
@@ -157,6 +832,8 @@ Modules 4.4.0 (2019-11-17)
 
 .. _Spack: https://github.com/spack/spack
 
+
+.. _4.3 release notes:
 
 Modules 4.3.1 (2019-09-21)
 --------------------------
@@ -406,6 +1083,8 @@ Modules 4.3.0 (2019-07-26)
   define color mode. (fix issue #279)
 
 
+.. _4.2 release notes:
+
 Modules 4.2.5 (2019-07-08)
 --------------------------
 
@@ -499,7 +1178,7 @@ Modules 4.2.4 (2019-04-26)
   ``:`` if found empty. (improve fix for issue #224)
 * Doc: provide a short installation guideline in README file. (fix issue #230)
 
- 
+
 Modules 4.2.3 (2019-03-23)
 --------------------------
 
@@ -620,7 +1299,7 @@ Modules 4.2.1 (2018-11-11)
   *zsh*, *tcsh* and *fish* shell completions.
 * Adapt ``system`` modulefile Tcl command to execute the command passed as
   argument through shell, like it is performed on compatibility version. (fix
-  issue#205) 
+  issue#205)
 * Correctly filter modulefile search memory cache entries when using a full
   search result to search later on a specific modulefile.
 * Prefix debug messages by information on the current modulefile or modulerc
@@ -700,7 +1379,7 @@ Modules 4.2.0 (2018-10-18)
   so it can be queried during their evaluation.
 * Rename ``_moduleraw`` shell function in ``_module_raw`` to use a common
   ``_module_`` prefix for all module-related internal shell functions.
-* Install: add ``--enable-append-binpath`` and ``--enable-append-binpath``
+* Install: add ``--enable-append-binpath`` and ``--enable-append-manpath``
   configure options to append rather prepend the bin or man directory when
   adding them to the relative environment variable.
 * Doc: clarify documentation for module usage on scripting language like Perl
@@ -825,6 +1504,8 @@ Modules 4.2.0 (2018-10-18)
   define shell function on sh-kind and fish shells. (fix issue#193 with
   contribution from Ben Bowers)
 
+
+.. _4.1 release notes:
 
 Modules 4.1.4 (2018-08-20)
 --------------------------
@@ -1098,6 +1779,8 @@ Modules 4.1.0 (2018-01-15)
   interpreted modulefile as the current working directory to solve the
   relative paths.
 
+
+.. _4.0 release notes:
 
 Modules 4.0.0 (2017-10-16)
 --------------------------

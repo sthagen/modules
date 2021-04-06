@@ -59,6 +59,7 @@ if {[file type "/bin/sh"] eq "link" } {
 if {$sh_kind eq "dash" || ($tcl_platform(os) ne "Linux"\
    && $tcl_platform(os) ne "Darwin"\
    && ![string match "CYGWIN*" $tcl_platform(os)]\
+   && ![string match "MINGW*" $tcl_platform(os)]\
    && ![string match "MSYS_NT*" $tcl_platform(os)])} {
    set sh_strict 1
 } else {
@@ -184,6 +185,7 @@ foreach shell [list sh bash basheu ksh zsh csh tcsh fish tcl perl python ruby cm
       send_user "\t'$shell' shell is not installed, relative tests will be skipped\n"
    }
 }
+unset shell
 
 # where to find module tcl script to call for autoinit command
 set autoinit_script "$install_libexecdir/modulecmd.tcl"
@@ -193,7 +195,7 @@ set contrib_modpath "$env(TESTSUITEDIR)/../contrib/modulefiles"
 set testsuite_modpath "$env(TESTSUITEDIR)/modulefiles"
 
 # basic messages
-set type_help "Try 'module --help' for more information."
+set type_help "  Try 'module --help' for more information."
 set cur_loaded "Currently Loaded Modulefiles:"
 set no_loaded "No Modulefiles Currently Loaded."
 
@@ -236,11 +238,11 @@ proc siteconfig_isStderrTty {} {
    set is_stderr_tty [interp eval _siteconfig {
       set is_stderr_tty 0
       if {[file readable $::siteconfig_file]} {
-         # evaluate siteconfig file to check isStderrTty procedure
+         # evaluate siteconfig file to check initStateIsStderrTty procedure
          catch {
             source $::siteconfig_file
-            if {[info procs isStderrTty] eq "isStderrTty"} {
-               set is_stderr_tty [isStderrTty]
+            if {[info procs initStateIsStderrTty] eq "initStateIsStderrTty"} {
+               set is_stderr_tty [initStateIsStderrTty]
             }
          } errorMsg
       }
@@ -275,5 +277,22 @@ proc is_set_shell_startup_enabled {} {
 proc is_config_locked {option} {
     return [expr {[lsearch -exact $::install_lockedconfigs $option] != -1}]
 }
+
+# grab fish shell version to check if greater or equal to 3.1
+if {[info exists shell_path(fish)]} {
+   regexp {version (.+)$} [exec $shell_path(fish) --version] match fish_version
+   set fish_version_ge31 [expr {[lindex [lsort -dictionary [list $fish_version 3.1.0]] 0] eq {3.1.0}}]
+   set fish_version_ge32 [expr {[lindex [lsort -dictionary [list $fish_version 3.2.0]] 0] eq {3.2.0}}]
+   set fish_version_is31 [string match 3.1.* $fish_version]
+}
+
+# find ksh flavor
+if {[set kshbin [lindex [auto_execok ksh] 0]] ne {}} {
+   set ksh_is_mksh [expr {[string first MIRBSD [exec $kshbin -c "echo \$KSH_VERSION"]] != -1}]
+}
+
+# check if symbolic link registered in git repository have been effectively
+# created as symbolic link to determine if they are supported on filesystem
+set is_symlink_supported [file isdirectory $env(TESTSUITEDIR)/modulefiles/symlink]
 
 # vim:set tabstop=3 shiftwidth=3 expandtab autoindent:

@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "mpirun (openmpi/3.1, intel/2018)"

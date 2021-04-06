@@ -22,6 +22,9 @@
 #
 ##############################################################################
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set modpath1 "$modpath.path1"
 set modpath1re "$modpathre.path1"
 set modpath2 "$modpath.path2"
@@ -31,37 +34,37 @@ set modpath3re "$modpathre.path3"
 
 set modsym_1 "cross/1"
 set module_1 "cross/1.0"
-set modalt_1 $module_1&cross/1
+set modalt_1 $module_1&al|cross/1
 set modulepath_1 "$modpath2"
 set modulepathre_1 "$modpath2re"
 
 set modsym_2 "cross/2"
 set module_2 "cross/2.0"
-set modalt_2 $module_2&cross/2
+set modalt_2 $module_2&al|cross/2
 set modulepath_2 "$modpath3"
 set modulepathre_2 "$modpath3re"
 
 set modsym_3 "cross/3"
 set module_3 "cross/3.0"
-set modalt_3 $module_3&cross/3&cross/bef
+set modalt_3 $module_3&cross/bef&al|cross/3
 set modulepath_3 "$modpath1"
 set modulepathre_3 "$modpath1re"
 
 set modsym_4 "cross/4"
 set module_4 "cross/4.0"
-set modalt_4 $module_4&cross/4
+set modalt_4 $module_4&al|cross/4
 set modulepath_4 "$modpath1"
 set modulepathre_4 "$modpath1re"
 
 set modsym_5 "cross/5"
 set module_5 "cross/5.0"
-set modalt_5 $module_5&cross/5&cross/aft
+set modalt_5 $module_5&cross/aft&al|cross/5
 set modulepath_5 "$modpath3"
 set modulepathre_5 "$modpath3re"
 
 set modsym_6 "cross/6"
 set module_6 "cross/6.0"
-set modalt_6 $module_6&cross/6
+set modalt_6 $module_6&al|cross/6
 set modulepath_6 "$modpath2"
 set modulepathre_6 "$modpath2re"
 
@@ -79,13 +82,13 @@ set modulepathre_8 "$modpath3re"
 
 set modsym_9 "cross/othbef"
 set module_9 "othcross/1.0"
-set modalt_9 $module_9&othcross/bef&cross/othbef
+set modalt_9 $module_9&othcross/bef&al|cross/othbef
 set modulepath_9 "$modpath1"
 set modulepathre_9 "$modpath1re"
 
 set modsym_10 "cross/othaft"
 set module_10 "othcross/2.0"
-set modalt_10 $module_10&othcross/aft&cross/othaft
+set modalt_10 $module_10&othcross/aft&al|cross/othaft
 set modulepath_10 "$modpath3"
 set modulepathre_10 "$modpath3re"
 
@@ -99,14 +102,14 @@ set nodefault_11 "$err_nodefault'$modsym_11'"
 # alias set from top (MODULERCFILE)
 set modsym_12 "cross/top"
 set module_12 "$module_1"
-set modalt_12 $module_1&cross/top&cross/1
+set modalt_12 $module_1&al|cross/top&al|cross/1
 set modulepath_12 "$modulepath_1"
 set modulepathre_12 "$modulepathre_1"
 
 # alias set from top (MODULERCFILE)
 set modsym_13 "cross/othtop"
 set module_13 "$module_9"
-set modalt_13 $module_9&othcross/bef&cross/othbef&cross/othtop&othcross/othtop
+set modalt_13 $module_9&othcross/bef&cross/othtop&othcross/othtop&al|cross/othbef
 set modulepath_12 "$modulepath_1"
 set modulepath_13 "$modulepath_9"
 set modulepathre_13 "$modulepathre_9"
@@ -114,7 +117,7 @@ set modulepathre_13 "$modulepathre_9"
 # default set from top (MODULERCFILE)
 set modsym_14 "cross"
 set module_14 "$module_2"
-set modalt_14 $module_2&cross/default&cross&cross/2
+set modalt_14 $module_2&cross/default&cross&al|cross/2
 set modulepath_12 "$modulepath_1"
 set modulepath_14 "$modulepath_2"
 set modulepathre_14 "$modulepathre_2"
@@ -179,7 +182,7 @@ set nodefault_22 "$err_nodefault'$modsym_22'"
 
 set modsym_23 "dcross/d31"
 set module_23 "dcross/dir3/1.0"
-set modalt_23 $module_23&$modsym_23
+set modalt_23 $module_23&al|$modsym_23
 set modulepath_23 "$modpath3"
 set modulepathre_23 "$modpath3re"
 
@@ -205,19 +208,19 @@ set modulepathre_26 "$modpath3re"
 
 set modsym_27 "dcross/dir1/first"
 set module_27 "dcross/4.0"
-set modalt_27 $module_27&$modsym_27
+set modalt_27 $module_27&al|$modsym_27
 set modulepath_27 "$modpath1"
 set modulepathre_27 "$modpath1re"
 
 set modsym_28 "dcross/dir1/last"
 set module_28 "dcross/5.0"
-set modalt_28 $module_28&$modsym_28
+set modalt_28 $module_28&al|$modsym_28
 set modulepath_28 "$modpath3"
 set modulepathre_28 "$modpath3re"
 
 set modsym_29 "dcross/d11"
 set module_29 "dcross/dir1/1.0"
-set modalt_29 $modalt_25&$modsym_29
+set modalt_29 $modalt_25&al|$modsym_29
 set modulepath_29 "$modpath1"
 set modulepathre_29 "$modpath1re"
 
@@ -235,42 +238,42 @@ set modulepathre_31 "$modpath1re"
 # working with virtual modules
 set modsym_32 "vcross/1"
 set module_32 "vcross/1.0"
-set modalt_32 $module_32&$modsym_32
+set modalt_32 $module_32&al|$modsym_32
 set modulefile_32 "$modpath2/vcross/.base"
 set modulefilere_32 "$modpath2re/vcross/.base"
 set modulepathre_32 "$modpath2re"
 
 set modsym_33 "vcross/2"
 set module_33 "vcross/2.0"
-set modalt_33 $module_33&$modsym_33
+set modalt_33 $module_33&al|$modsym_33
 set modulefile_33 "$modpath3/vcross/.base"
 set modulefilere_33 "$modpath3re/vcross/.base"
 set modulepathre_33 "$modpath3re"
 
 set modsym_34 "vcross/3"
 set module_34 "vcross/3.0"
-set modalt_34 $module_34&$modsym_34&vcross/bef
+set modalt_34 $module_34&vcross/bef&al|$modsym_34
 set modulefile_34 "$modpath1/vcross/.base"
 set modulefilere_34 "$modpath1re/vcross/.base"
 set modulepathre_34 "$modpath1re"
 
 set modsym_35 "vcross/4"
 set module_35 "vcross/4.0"
-set modalt_35 $module_35&$modsym_35
+set modalt_35 $module_35&al|$modsym_35
 set modulefile_35 "$modpath1/vcross/.base"
 set modulefilere_35 "$modpath1re/vcross/.base"
 set modulepathre_35 "$modpath1re"
 
 set modsym_36 "vcross/5"
 set module_36 "vcross/5.0"
-set modalt_36 $module_36&$modsym_36&vcross/aft
+set modalt_36 $module_36&vcross/aft&al|$modsym_36
 set modulefile_36 "$modpath3/vcross/.base"
 set modulefilere_36 "$modpath3re/vcross/.base"
 set modulepathre_36 "$modpath3re"
 
 set modsym_37 "vcross/6"
 set module_37 "vcross/6.0"
-set modalt_37 $module_37&$modsym_37
+set modalt_37 $module_37&al|$modsym_37
 set modulefile_37 "$modpath2/vcross/.base"
 set modulefilere_37 "$modpath2re/vcross/.base"
 set modulepathre_37 "$modpath2re"
@@ -307,7 +310,7 @@ set nodefault_41 "$err_nodefault'$modsym_41'"
 
 set modsym_42 "dvcross/d31"
 set module_42 "dvcross/dir3/1.0"
-set modalt_42 $module_42&$modsym_42
+set modalt_42 $module_42&al|$modsym_42
 set modulefile_42 "$modpath3/dvcross/.base"
 set modulefilere_42 "$modpath3re/dvcross/.base"
 set modulepathre_42 "$modpath3re"
@@ -335,21 +338,21 @@ set modulepathre_45 "$modpath3re"
 
 set modsym_46 "dvcross/dir1/first"
 set module_46 "dvcross/4.0"
-set modalt_46 $module_46&$modsym_46
+set modalt_46 $module_46&al|$modsym_46
 set modulefile_46 "$modpath1/dvcross/.base"
 set modulefilere_46 "$modpath1re/dvcross/.base"
 set modulepathre_46 "$modpath1re"
 
 set modsym_47 "dvcross/dir1/last"
 set module_47 "dvcross/5.0"
-set modalt_47 $module_47&$modsym_47
+set modalt_47 $module_47&al|$modsym_47
 set modulefile_47 "$modpath3/dvcross/.base"
 set modulefilere_47 "$modpath3re/dvcross/.base"
 set modulepathre_47 "$modpath3re"
 
 set modsym_48 "dvcross/d11"
 set module_48 "dvcross/dir1/1.0"
-set modalt_48 $module_48&dvcross/dir1/bef&$modsym_48
+set modalt_48 $module_48&dvcross/dir1/bef&al|$modsym_48
 set modulefile_48 "$modpath1/dvcross/.base"
 set modulefilere_48 "$modpath1re/dvcross/.base"
 set modulepathre_48 "$modpath1re"
@@ -572,60 +575,20 @@ for {set i 42} {$i <= 49} {incr i} {
     cross_test_case $i
 }
 
+
+# test default symbol targetting a modulefile version with a whitespace in the name,
+# multiple versions of the module found in several modulepaths
+setenv_var MODULES_AVAIL_INDEPTH 1
+testouterr_cmd sh {avail -t loc_dv10} OK "$modpath1:\nloc_dv10/1.1\n\n$modpath2:\nloc_dv10/1.2"
+testouterr_cmd sh {load loc_dv10} ERR "$err_path'loc_dv10/no default'"
+unsetenv_var MODULES_AVAIL_INDEPTH
+
+
 #
 #  Cleanup
 #
 
-# Clean up the environment
-unsetenv_loaded_module
-unsetenv_path_var MODULES_LMALTNAME
-setenv_path_var MODULEPATH $modpath
-
-unset help_pre
-unset help_post
-unset test_pre
-unset test_post
-unset disp_pre
-unset disp_wi
-unset disp_post
-
-for {set i 1} {$i <= 49} {incr i} {
-    unset "modsym_${i}"
-    unset "module_${i}"
-    if {[info exists "modalt_${i}"]} {
-        unset "modalt_${i}"
-    }
-    if {[info exists "modnuasked_${i}"]} {
-        unset "modnuasked_${i}"
-    }
-    if {[info exists "modprereq_${i}"]} {
-        unset "modprereq_${i}"
-    }
-    if {[info exists "::modulefile_${i}"]} {
-        unset "modulefile_${i}"
-        if {[info exists "::modulefilere_${i}"]} {
-            unset "modulefilere_${i}"
-        }
-        if {[info exists "::modulepathre_${i}"]} {
-            unset "modulepathre_${i}"
-        }
-    } else {
-        unset "modulepath_${i}"
-        unset "modulepathre_${i}"
-    }
-    if {[info exists "nodefault_${i}"]} {
-        unset "nodefault_${i}"
-    }
-}
-
-unset i
-
-unset modpath1
-unset modpath1re
-unset modpath2
-unset modpath2re
-unset modpath3
-unset modpath3re
+reset_test_env
 
 # remove procs
 rename cross_test_case {}

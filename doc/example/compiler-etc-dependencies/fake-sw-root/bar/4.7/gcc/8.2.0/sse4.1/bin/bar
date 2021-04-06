@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "bar 4.7 (gcc/8.2.0, sse4.1)"

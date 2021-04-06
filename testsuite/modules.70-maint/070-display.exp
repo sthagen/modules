@@ -71,11 +71,11 @@ module-alias\tfoo setenv/1.0
 module-version\tfoo foo bar blah
 module-whatis\t{Some checks for HELP and DISPLAY}
 $modlin"
-set out_debug_pat "(DEBUG .*)+
+set out_debug_pat "((DEBUG|Evaluate modulerc:|Evaluate modulefile:|Get modules:) .*)+
 $modlin
 $modpathre/help/2.0:
 
-(DEBUG .*)+
+((DEBUG|Evaluate modulerc:|Evaluate modulefile:|Get modules:) .*)+
 set-alias\tal-testsuite {ps -auxww | grep modulecmd}
 (DEBUG .*)+
 unset-alias\tal-testsuite
@@ -111,25 +111,25 @@ $modlin
 (DEBUG .*)+"
 
 set out_err "$err_path'$module_2'"
-set out_interr "$moderr_msgs: invalid command name \"bad-command\"\n  In '$modpathre/$module_3/.modulerc'\n$err_contact
+set out_interr "[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modpath/$module_3/.modulerc 28 {  }]]
 $modlin
 $modpathre/$module_3/before:
 
-$moderr_msgs: invalid command name \"bad-command\"\n  In '$modpathre/$module_3/before'\n$err_contact
+[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modpath/$module_3/before 26 {  }]]
 $modlin"
-set out_debug_interr "(DEBUG .*)+
-$moderr_msgs: invalid command name \"bad-command\"\n  In '$modpathre/$module_3/.modulerc'\n$err_contact
-(DEBUG .*)+
+set out_debug_interr "((DEBUG|Evaluate modulerc:|Evaluate modulefile:|Get modules:) .*)+
+[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modpath/$module_3/.modulerc 28 {  }]]
+((DEBUG|Evaluate modulerc:|Evaluate modulefile:|Get modules:) .*)+
 $modlin
 $modpathre/$module_3/before:
 
-(DEBUG .*)+
-$moderr_msgs: invalid command name \"bad-command\"\n  In '$modpathre/$module_3/before'\n$err_contact
+((DEBUG|Evaluate modulerc:|Evaluate modulefile:|Get modules:) .*)+
+[escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modpath/$module_3/before 26 {  }]]
 (DEBUG .*)+
 $modlin
 (DEBUG .*)+
 DEBUG renderSettings: 2 error\\\(s\\\) detected.
-DEBUG renderFalse: called."
+DEBUG setState: false_rendered set to '1'"
 
 set out_pat_4 "$modlin
 $modpathre/test/2.0:
@@ -141,20 +141,28 @@ append-path\ttestsuite no
 prepend-path\ttestsuite maybe
 remove-path\ttestsuite yes
 unsetenv\ttestsuite
-x-resource\tmy-prog*my-ress\ttrue
+x-resource\tmy-prog*my-ress:true
 system\t\tls
-module load\tsetenv/1.0
+module\t\tload setenv/1.0
 module-alias\tfoo setenv/1.0
 module-version\tfoo foo bar blah
 module-whatis\t{Some checks for TEST and DISPLAY}
 $modlin"
 
+
+set custom {    (procedure "ModulesDisplay" line 2)
+    invoked from within
+"ModulesDisplay"}
+if {[cmpversion $tclsh_version 8.5] == -1} {
+    append custom {<EXM>}
+}
+set custom [escre [msg_moderr "$msg_invcmdname \"bad-command\"" bad-command $modpath/$module_5/proc {} {  } {} {} $custom]]
 set out_interr_5 "$modlin
 $modpathre/$module_5/proc:
 
 setenv\t\ttestsuite yes
 module-whatis\t{erroneous module test}
-$moderr_msgs: invalid command name \"bad-command\"\n  In '$modpathre/$module_5/proc'\n$err_contact
+$custom
 $modlin"
 
 set out_err_6 "------------------------------------------------------------
@@ -264,39 +272,33 @@ setenv_var MODULES_IMPLICIT_DEFAULT 1
 
 setenv_loaded_module [list foo bar] "/path/to/foo"
 
-testouterr_cmd_re "csh" "display $module_4" "OK" "$out_pat_4"
+set out_pat_4 "$modlin
+$modpathre/test/2.0:
+
+$err_loinconsist
+  LOADEDMODULES=foo bar
+  _LMFILES_=/path/to/foo
+set-alias\tal-testsuite {ps -auxww | grep modulecmd}
+unset-alias\tal-testsuite
+setenv\t\ttestsuite yes
+append-path\ttestsuite no
+prepend-path\ttestsuite maybe
+remove-path\ttestsuite yes
+unsetenv\ttestsuite
+x-resource\tmy-prog*my-ress:true
+system\t\tls
+module\t\tload setenv/1.0
+module-alias\tfoo setenv/1.0
+module-version\tfoo foo bar blah
+module-whatis\t{Some checks for TEST and DISPLAY}
+$modlin"
+testouterr_cmd_re "csh" "display $module_4" ERR $out_pat_4
 
 
 #
 #  Cleanup
 #
 
-unsetenv_loaded_module
-unsetenv_var MODULES_IMPLICIT_DEFAULT
-
-unset test_cols
-
-unset out_err
-unset out_interr
-unset out_debug_interr
-unset out_pat
-unset out_debug_pat
-unset out_pat_4
-unset out_interr_5
-unset out_err_6
-
-unset module_1
-unset modulefile_1
-unset modulefile_1_reld
-unset modulefile_1_reldd
-unset module_2
-unset module_3
-unset module_4
-unset module_5
-unset modulefile_5
-unset modulefile_5_reld
-unset modulefile_5_reldd
-unset module_6
-unset modulefile_6
+reset_test_env
 
 }

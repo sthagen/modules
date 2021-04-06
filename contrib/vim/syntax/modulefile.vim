@@ -29,10 +29,11 @@ syn match tclCommand		"\v<(tcl_wordBreakAfter|tcl_wordBreakBefore)>"
 syn match modCommand "\v<(append|prepend|remove)-path>"
 syn match modCommand "\v<prereq>"
 syn match modCommand "\v<(module|conflict|chdir|prereq)>"
-syn match modCommand "\v<module-(alias|info|log|trace|user|verbosity|version|virtual|whatis)>"
+syn match modCommand "\v<module-(alias|forbid|hide|info|log|tag|trace|user|verbosity|version|virtual|whatis)>"
 syn match modCommand "\v<(un)?set-(alias|function)>"
 syn match modCommand "\v<(un)?setenv>"
 syn match modCommand "\v<getenv>"
+syn match modCommand "\v<source-sh>"
 syn match modCommand "\v<(system|uname|x-resource)>"
 
 syn match modCommand "\v<is-(loaded|saved|used|avail)>"
@@ -47,5 +48,8 @@ hi def link modProc tclSpecial
 
 
 syn match modVar "\v<ModulesVersion>"
+syn match modVar "\v<ModulesCurrentModulefile>"
+syn match modVar "\v<ModuleTool>"
+syn match modVar "\v<ModuleToolVersion>"
 hi def link modVar tclSpecial
 

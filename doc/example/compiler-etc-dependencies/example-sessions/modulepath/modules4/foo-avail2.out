@@ -1,0 +1,2 @@
+[mod4 (modulepath)]$ module purge
+[mod4 (modulepath)]$ module avail foo

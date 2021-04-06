@@ -23,6 +23,9 @@
 # ensure avail tests are made using in depth mode
 setenv_var MODULES_AVAIL_INDEPTH 1
 
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
 set datetime_re "\[0-9\/]{10} \[0-9:]{8}"
 
 set modsym_1 "loc_virt1/1.0"
@@ -85,8 +88,8 @@ set modulefilere_8 "$modpathre/loc_virt1"
 set modavail_8 ""
 set modwhatis_8 ""
 set modpaths_8 [list]
-# a directory can be opened on FreeBSD, so another err message is obtained
-if {$tcl_platform(os) eq "FreeBSD"} {
+# a directory can be opened on FreeBSD <= 12.1, so another err message is obtained
+if {$tcl_platform(os) eq "FreeBSD" && [cmpversion [lindex [split $tcl_platform(osVersion) -] 0] 12.1] < 1} {
     set moderr_8 "$err_magic'$modulefile_8'\n$err_contact"
     set modunerr_8 [msg_unload $module_8 "$err_magicns'$modulefile_8'\n$err_contactns"]
 } else {
@@ -101,7 +104,7 @@ set modulefilere_9 [regsub -all "\(\[.+?\]\)" $modulefile_9 {\\\1}]
 set modavail_9 ""
 set modwhatis_9 ""
 set modpaths_9 [list]
-if {$tcl_platform(os) eq "FreeBSD"} {
+if {$tcl_platform(os) eq "FreeBSD" && [cmpversion [lindex [split $tcl_platform(osVersion) -] 0] 12.1] < 1} {
     set moderr_9 "$err_magic'$modulefile_9'\n$err_contact"
     set modunerr_9 [msg_unload $module_9 "$err_magicns'$modulefile_9'\n$err_contactns"]
 } else {
@@ -669,74 +672,4 @@ testouterr_cmd_re "sh" "switch $module_12" $ans ""
 #  Cleanup
 #
 
-# Clean up the environment
-unset env(testsuite)
-unsetenv_loaded_module
-setenv_path_var MODULEPATH $modpath
-unsetenv_var MODULES_AVAIL_INDEPTH
-
-unset datetime_re
-
-unset help_pre
-unset help_post
-unset test_pre
-unset test_post
-unset disp_pre
-unset disp_wi
-unset disp_set
-unset disp_post
-unset header_long
-unset avail_pre
-unset whatis_pre
-unset listh_long
-
-unset displayerr
-unset helperr
-unset testerr
-
-for {set i 1} {$i <= 12} {incr i} {
-    unset "modsym_${i}"
-    unset "module_${i}"
-    unset "modulefile_${i}"
-    unset "modulefilere_${i}"
-    unset "modavail_${i}"
-    if {[info exists "modwhatis_${i}"]} {
-        unset "modwhatis_${i}"
-    }
-    if {[info exists "modpaths_${i}"]} {
-        unset "modpaths_${i}"
-    }
-    if {[info exists "moderr_${i}"]} {
-        unset "moderr_${i}"
-    }
-    if {[info exists "modunerr_${i}"]} {
-        unset "modunerr_${i}"
-    }
-    if {[info exists "nodefault_${i}"]} {
-        unset "nodefault_${i}"
-    }
-
-}
-
-unset module_reg
-unset modulefile_reg
-
-unset ans
-unset ansfirst
-unset anslast
-unset ans_paths
-
-unset i
-unset modsym
-unset module
-unset modulefile
-unset modulefilere
-unset modavail
-unset modwhatis
-if {[info exists moderr]} {
-    unset moderr
-}
-if {[info exists modunerr]} {
-    unset modunerr
-}
-unset nodefault
+reset_test_env

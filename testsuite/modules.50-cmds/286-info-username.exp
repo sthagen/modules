@@ -1,0 +1,207 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.50-cmds/%M%
+#   Revision:		%I%
+#   First Edition:	2020/06/05
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:
+#   Modulefiles:    module-info username
+#   Sub-Command:    *
+#
+#   Comment:	%C{
+#           Check 'module-info username' modulefile command
+#		}C%
+#
+##############################################################################
+
+# ensure auto symbolic versions are not set for these tests
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+
+set mp $modpath.2
+set mpre [regsub -all "\(\[.+?\]\)" $mp {\\\1}]
+
+# setup specific environment
+setenv_path_var MODULEPATH $mp
+
+
+# modulefile usage
+set ans [list]
+lappend ans [list set TS1 $username]
+lappend ans [list set TS2 1]
+lappend ans [list set TS3 0]
+lappend ans [list setpath LOADEDMODULES info/username]
+lappend ans [list setpath _LMFILES_ $mp/info/username]
+testouterr_cmd sh {load info/username} $ans {}
+
+set tserr "$modlin
+$mpre/info/username:
+
+setenv\t\tTS1 $username
+setenv\t\tTS2 1
+setenv\t\tTS3 0
+$modlin"
+testouterr_cmd_re sh {show info/username} OK $tserr
+
+# modulerc usage
+testouterr_cmd sh "is-avail info/$username" ERR {}
+setenv_var TESTSUITE_INFO_USER_IN_RC 1
+testouterr_cmd sh "is-avail info/$username" OK {}
+testouterr_cmd_re sh "show info/$username" OK $tserr
+unsetenv_var TESTSUITE_INFO_USER_IN_RC
+
+
+# make `id` command unavailable
+setenv_var PATH {}
+if {$install_libtclenvmodules eq {y}} {
+    testouterr_cmd sh {load info/username} $ans {}
+} else {
+    # impact on modulefile
+    set tserr [msg_load info/username "$error_msgs: Command 'id' cannot be found"]
+    testouterr_cmd sh {load info/username} ERR $tserr
+
+    # impact on modulerc
+    setenv_var TESTSUITE_INFO_USER_IN_RC 1
+    testouterr_cmd sh "is-avail info/$username" ERR {}
+
+    switch -- $tclsh_version {
+    8.4 {
+        if {[info exists env(COVERAGE)]} {
+            set extramsg "  mode \{incr ::_instrument_::log(<EXM>);
+  if \{\$more ne \{\}\} \{incr ::_instrument_::log(<EXM>...\""
+        } else {
+            set extramsg "        mode \{
+           if \{\$more ne \{\}\} \{
+              set command \[currentCommandName\]
+              return \[expr \{\$mode eq \$more || (\$...\""
+        }
+        set tserr [escre [msg_moderr {Command 'id' cannot be found} "eval \$initproclist\"
+      (procedure \"getState\" line 20)
+      invoked from within
+  \"getState username\"
+      (\"username\" arm line 8)
+      invoked from within
+  \"switch -- \$what \{
+$extramsg
+      (procedure \"module-info\" line 6)
+      invoked from within
+  \"module-info username\"
+      invoked from within
+  \"if \{\[info exists env(TESTSUITE_INFO_USER_IN_RC)\]\} \{
+      module-virtual info/\[module-info username\] ./username
+  \}" $mp/info/.modulerc 3 {  }]\n$err_path'info/$username']
+    }
+    8.5 {
+        set tserr [escre [msg_moderr {Command 'id' cannot be found} {eval $initproclist"
+      (procedure "getState" line 20)
+      invoked from within
+  "getState username"
+      (procedure "module-info" line 119)
+      invoked from within
+  "module-info username"
+      invoked from within
+  "if {[info exists env(TESTSUITE_INFO_USER_IN_RC)]} {
+      module-virtual info/[module-info username] ./username
+  }} $mp/info/.modulerc 3 {  }]\n$err_path'info/$username']
+    }
+    default {
+        set tserr [escre [msg_moderr {Command 'id' cannot be found} {eval $initproclist"
+      (procedure "getState" line 20)
+      invoked from within
+  "getState username"
+      (procedure "module-info" line 119)
+      invoked from within
+  "module-info username} $mp/info/.modulerc 4 {  }]\n$err_path'info/$username']
+    }}
+    testouterr_cmd_re sh "show info/$username" ERR $tserr
+
+    unsetenv_var TESTSUITE_INFO_USER_IN_RC
+}
+setenv_var PATH $ORIG_PATH
+
+
+# fake Windows platform if expected siteconfig file is installed
+if {[siteconfig_isStderrTty]} {
+# fake Windows platform with a cmd.exe tool to execute system commands
+setenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM 1
+
+switch -- $tclsh_version {
+8.4 {
+    if {[info exists env(COVERAGE)]} {
+        set extramsg "mode \{incr ::_instrument_::log(<EXM>);
+if \{\$more ne \{\}\} \{incr ::_instrument_::log(<EXM>...\""
+    } else {
+        set extramsg "      mode \{
+         if \{\$more ne \{\}\} \{
+            set command \[currentCommandName\]
+            return \[expr \{\$mode eq \$more || (\$...\""
+    }
+    set tserr [escre [msg_load info/username [msg_moderr {module-info username not supported on Windows platform} "switch -- \$what \{
+$extramsg
+    (procedure \"module-info\" line 6)
+    invoked from within
+\"module-info username\"
+    invoked from within
+\"set user \[module-info username\]" $mp/info/username 2 {}]]]
+}
+8.5 {
+    set tserr [escre [msg_load info/username [msg_moderr {module-info username not supported on Windows platform} {module-info username"
+    invoked from within
+"set user [module-info username]} $mp/info/username 2 {}]]]
+}
+default {
+    set tserr [escre [msg_load info/username [msg_moderr {module-info username not supported on Windows platform} {module-info username} $mp/info/username 2 {}]]]
+}}
+testouterr_cmd_re sh {load info/username} ERR $tserr
+
+setenv_var TESTSUITE_INFO_USER_IN_RC 1
+
+switch -- $tclsh_version {
+8.4 {
+    if {[info exists env(COVERAGE)]} {
+        set extramsg "  mode \{incr ::_instrument_::log(<EXM>);
+  if \{\$more ne \{\}\} \{incr ::_instrument_::log(<EXM>...\""
+    } else {
+        set extramsg "        mode \{
+           if \{\$more ne \{\}\} \{
+              set command \[currentCommandName\]
+              return \[expr \{\$mode eq \$more || (\$...\""
+    }
+    set tserr [escre [msg_moderr {module-info username not supported on Windows platform} "switch -- \$what \{
+$extramsg
+      (procedure \"module-info\" line 6)
+      invoked from within
+  \"module-info username\"
+      invoked from within
+  \"if \{\[info exists env(TESTSUITE_INFO_USER_IN_RC)\]\} \{
+      module-virtual info/\[module-info username\] ./username
+  \}" $mp/info/.modulerc 3 {  }]\n$err_path'info/$username']
+}
+8.5 {
+    set tserr [escre [msg_moderr {module-info username not supported on Windows platform} {module-info username"
+      invoked from within
+  "if {[info exists env(TESTSUITE_INFO_USER_IN_RC)]} {
+      module-virtual info/[module-info username] ./username
+  }} $mp/info/.modulerc 3 {  }]\n$err_path'info/$username']
+}
+default {
+    set tserr [escre [msg_moderr {module-info username not supported on Windows platform} {module-info username} $mp/info/.modulerc 4 {  }]\n$err_path'info/$username']
+}}
+
+testouterr_cmd_re sh "load info/$username" ERR $tserr
+unsetenv_var TESTSUITE_INFO_USER_IN_RC
+
+unsetenv_var TESTSUITE_ENABLE_SITECONFIG_WINDOWS_PLATFORM
+}
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

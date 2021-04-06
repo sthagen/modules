@@ -1,10 +1,6 @@
 /modulecmd.tcl
 /ChangeLog
 /README
-/INSTALL.txt
-/MIGRATING.txt
-/NEWS.txt
-/CONTRIBUTING.txt
 /Makefile.inc
 /version.inc
 /modules.log
@@ -12,6 +8,7 @@
 /install.log
 /install.sum
 /icdiff
+/.noicdiff
 /nagelfar*
 /tcl*
 /modulecmd-test.tcl
@@ -20,8 +17,11 @@
 /modulecmd-test.tcl_m
 /coverage
 /site.exp
+/localtest
 /contrib/rpm/environment-modules.spec
 /script/add.modules
+/script/createmodule.py
+/script/gitlog2changelog.py
 /script/modulecmd
 /contrib/modulefiles/modules
 /contrib/modulefiles/version
@@ -29,6 +29,7 @@
 /testsuite/example/modulerc
 /testsuite/example/modulerc-1
 /testsuite/example/initrc
+/testsuite/.config
 /compat
 /doc/build
 /doc/source/version.py
@@ -36,6 +37,8 @@
 /modules-*.tar
 /modules-*.tar.gz
 /modules-*.tar.bz2
+/modules-*-win
+/modules-*-win.zip
 # ignore vim swap files
 *.swp
 *.swo

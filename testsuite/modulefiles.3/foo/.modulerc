@@ -1,0 +1,11 @@
+#%Module
+
+if {[info exists env(TESTSUITE_AVAIL_OUTPUT_FOO_SYM)]} {
+    module-version foo/1.0 bar
+}
+if {[info exists env(TESTSUITE_AVAIL_OUTPUT_FOO_TAG)]} {
+    module-tag baz foo/1.0
+}
+
+module-version foo/0.2 sym
+module-tag tag foo/0.2

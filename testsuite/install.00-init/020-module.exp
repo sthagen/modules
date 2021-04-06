@@ -31,7 +31,7 @@ if {$verbose > 0} {
 }
 
 foreach shell $shell_list {
-   testall_cmd_re "$shell" "module --version" "^\$" "^Modules Release \\S+ (\\S+)\$" 0
+   testall_cmd_re "$shell" "module --version" {} "Modules Release \\S+ (\\S+)" 0
    testall_cmd "$shell" "module foo" "" "$bad_cmd\n$type_help" 1
    testall_cmd "$shell" "module use $contrib_modpath\; module purge\; module load null\; module list -t" "" "$cur_loaded\nnull" 0
    testall_cmd "$shell" "module use $contrib_modpath\; module purge\; module load null\; module unload null\; module list -t" "" "$no_loaded" 0
@@ -56,13 +56,30 @@ if {[find_bin grep] ne "" && [find_bin tr] ne "" && [find_bin awk] ne ""} {
 }
 
 foreach shell $othlang_list {
-   testall_cmd_re "$shell" "--version" "^\$" "^Modules Release \\S+ (\\S+)\$" 0
-   testall_cmd_re "$shell" "foo" "^\$" "$bad_cmd\n$type_help.*" 1
+   testall_cmd_re "$shell" "--version" {} "Modules Release \\S+ (\\S+)" 0
+   testall_cmd_re "$shell" "foo" {} "$bad_cmd\n$type_help.*" 1
    testall_cmd "$shell" "use,$contrib_modpath:purge:load,null:list,-t" "" "$cur_loaded\nnull" 0
    testall_cmd "$shell" "use,$contrib_modpath:purge:load,null:unload,null:list,-t" "" "$no_loaded" 0
-   testall_cmd_re "$shell" "is-loaded,unk" "" ".*" 1
+   switch -- $shell {
+      cmake - r {
+         testall_cmd_re "$shell" "is-loaded,unk" "" ".*" 1
+      }
+      default {
+         testall_cmd_re "$shell" "is-loaded,unk" "" "" 1
+      }
+   }
    testall_cmd "$shell" "use,$contrib_modpath:load,null:is-loaded,null" "" "" 0
-   testall_cmd_re "$shell" "info-loaded,unk" "" "" 0
+   switch -- $shell {
+      r {
+         testall_cmd "$shell" "info-loaded,unk" "\[1\] \"\"" {} 0
+      }
+      python - ruby {
+         testall_cmd "$shell" "info-loaded,unk" "\n" "" 0
+      }
+      default {
+         testall_cmd "$shell" "info-loaded,unk" "" "" 0
+      }
+   }
 
    switch -- $shell {
       {cmake} {
@@ -108,16 +125,25 @@ if {![is_config_locked implicit_default]} {
    send_user "\tSkipping advanced_version_spec tests as implicit_default config is locked\n"
 }
 
+# test modulepath and module names containing space
+if {!$is_symlink_supported} {
+    send_user "\tskipping tests over '$testsuite_modpath wspace' modulepath as symbolic links are not supported on filesystem\n"
+} else {
+
+set loadunloadout "Loading space yc/4\nUnloading space yc/4"
+foreach shell $shell_list {
+   testall_cmd $shell "module use \"$testsuite_modpath wspace\"\; module load -v \"space yc/4\"\; module unload -v \"space yc/4\"" {} $loadunloadout 0
+}
+foreach shell $othlang_list {
+   testall_cmd $shell "use,$testsuite_modpath wspace:load,-v,space yc/4:unload,-v,space yc/4" {} $loadunloadout 0
+}
+
+}
 
 #
 #  Clean up variables used in this test case
 #
 
-unset env(LOADEDMODULES)
-unset env(_LMFILES_)
-
-unset bad_cmd
-unset anstxt
-unset loadunloadout
+reset_test_env
 
 # vim:set tabstop=3 shiftwidth=3 expandtab autoindent:

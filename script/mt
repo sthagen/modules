@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # MT, run specific part of the test suite
-# Copyright (C) 2018-2020 Xavier Delaruelle
+# Copyright (C) 2018-2021 Xavier Delaruelle
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -41,7 +41,7 @@ fi
 # make target
 target=test
 testserie=modules
-setuptestfiles=(00/005 00/006 00/010 00/050 00/080)
+setuptestfiles=(00/005 00/006 00/010 00/050 00/080 00/085)
 if [ $# -gt 0 ]; then
    if [ "$1" = "cov" ]; then
       export COVERAGE=y
@@ -49,7 +49,7 @@ if [ $# -gt 0 ]; then
    elif [ "$1" = "install" ]; then
       target=testinstall
       testserie=install
-      setuptestfiles=(00/005 00/006 00/010)
+      setuptestfiles=(00/005 00/006 00/010 00/011)
       shift
    fi
 fi
@@ -87,7 +87,12 @@ if [ $# -gt 0 ]; then
    export RUNTESTFILES="${testfnames[*]}"
 fi
 
-$make icdiff
+# attempt to get enhanced diff tool but disable this retrieval if download
+# tentative fails
+if [ ! -e .noicdiff ]; then
+   $make icdiff || touch .noicdiff
+fi
+
 export RUNTESTFLAGS='-v -v >/dev/null 2>&1'
 $make $target
 ret=$?
@@ -101,16 +106,9 @@ for log in compat/$testserie.log $testserie.log; do
    fi
 done
 
-# testsuite failed but no failure found by mtreview
-if [ $ret -ne 0 ] && [ $retreview -eq 0 ]; then
-   for log in compat/$testserie.log $testserie.log; do
-      # output full log content as review did not found the issue
-      if [ -e $log ]; then
-         echo "### $log ####################################"
-         cat $log
-         echo "##############################################################"
-      fi
-   done
+# testsuite ok but mtreview failed to run
+if [ $ret -eq 0 ] && [ $retreview -ne 0 ]; then
+   ret=$retreview
 fi
 
 exit $ret

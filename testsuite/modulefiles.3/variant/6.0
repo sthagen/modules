@@ -1,0 +1,141 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        1 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            module-whatis [module-info name]
+        }
+        2 {
+            variant --default val2 foo val1 val2 val3
+            variant --default 2 bar 1 2 3
+            module-whatis [module-info name]
+        }
+        3 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            module-whatis "[module-info name] $ModuleVariant(foo)-$ModuleVariant(bar)"
+        }
+        4 {
+            variant --default val2 foo val1 val2 val3
+            variant --default 2 bar 1 2 3
+            module-whatis "[module-info name] [getvariant foo]-[getvariant bar]"
+        }
+        5 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            module-whatis "[module-info name] $ModuleVariant(baz)"
+        }
+        6 {
+            module-whatis "[module-info name] [getvariant foo]-$ModuleVariant(bar)"
+            variant --default val2 foo val1 val2 val3
+            variant --default 2 bar 1 2 3
+        }
+        7 {
+            variant foo
+            module-whatis "[module-info name] [getvariant foo]"
+        }
+        8 {
+            variant --default
+            module-whatis "[module-info name] [getvariant foo]"
+        }
+        coll30 - coll31 {
+            variant --default val1 foo val1 val2 val3
+            variant bar 1 2 3
+        }
+        10 {
+            variant baz val1 val2 val3
+        }
+        aliassym1 - aliassym2 - aliassym3 - aliassym4 - aliassym5 - aliassym6 - aliassym7 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+        }
+        aliassym8 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            setenv TS1 [module-info alias variant/6.0 bar=1 foo=val2]
+            setenv TS2 [module-info version variant/6.0 bar=1 foo=val2]
+            setenv TS3 [module-info symbols variant/6.0 bar=1 foo=val2]
+        }
+        aliassym9 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            setenv TS1 [module-info alias {variant/6.0 bar=1 foo=val2}]
+            setenv TS2 [module-info version {variant/6.0 bar=1 foo=val2}]
+            setenv TS3 [module-info symbols {variant/6.0 bar=1 foo=val2}]
+        }
+        info1 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            lappend tslist [is-loaded variant]
+            lappend tslist [is-loaded variant bar=2]
+            lappend tslist [is-loaded variant bar=1]
+            lappend tslist [is-loaded variant foo=val2]
+            lappend tslist [is-loaded variant foo=val1]
+            lappend tslist [is-loaded variant bar=1 foo=val2]
+            lappend tslist [is-loaded variant bar=2 foo=val1]
+            lappend tslist [is-loaded variant bar=2 foo=val2]
+            lappend tslist [is-loaded variant/1.0]
+            lappend tslist [is-loaded variant@1:1]
+            lappend tslist [is-loaded variant/1.0 bar=2]
+            lappend tslist [is-loaded variant/1.0 bar=2 foo=val1]
+            lappend tslist [is-loaded variant@1 bar=2 foo=val2]
+            lappend tslist [is-loaded variant@1.0 bar=2 foo=val2]
+            setenv TS1 $tslist
+        }
+        info2 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            lappend tslist [module-info loaded variant]
+            lappend tslist [module-info loaded {variant bar=2}]
+            lappend tslist [module-info loaded {variant bar=2 val=2}]
+            lappend tslist [module-info loaded variant/1.0]
+            lappend tslist [module-info loaded variant@1:2]
+            lappend tslist [module-info loaded {variant/1.0 bar=2}]
+            lappend tslist [module-info loaded {variant/1.0 bar=2 val=2}]
+            setenv TS1 [join $tslist :]
+        }
+        info3 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            lappend tslist [is-avail variant]
+            lappend tslist [is-avail variant bar=2]
+            lappend tslist [is-avail variant bar=1]
+            lappend tslist [is-avail variant foo=val2]
+            lappend tslist [is-avail variant foo=val1]
+            lappend tslist [is-avail variant bar=1 foo=val2]
+            lappend tslist [is-avail variant bar=2 foo=val1]
+            lappend tslist [is-avail variant bar=2 foo=val2]
+            lappend tslist [is-avail variant/1.0]
+            lappend tslist [is-avail variant@1:1]
+            lappend tslist [is-avail variant/1.0 bar=2]
+            lappend tslist [is-avail variant/1.0 bar=2 foo=val1]
+            lappend tslist [is-avail variant@1 bar=2 foo=val2]
+            lappend tslist [is-avail variant@1.0 bar=2 foo=val2]
+            setenv TS1 $tslist
+        }
+        info4 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            setenv TS1 [module-info tags]
+        }
+        info5 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            setenv TS1 [module-info specified]
+        }
+        info6 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+            setenv TS1 [module-info name]
+        }
+        version1 {
+            variant version 1.0 1.1 1.2
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+        }
+        coll35 {
+            variant --boolean bar
+        }
+    }
+}

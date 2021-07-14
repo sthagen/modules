@@ -88,7 +88,7 @@ task:
       image_family: freebsd-12-2
     cpu: 1
     memory: 2G
-  reqinstall_script: pkg install -y bash wget gmake dejagnu py37-sphinx tcl86 tcl-wrapper autoconf automake gettext ksh93 zsh fish perl5 python37 ruby cmake R readline
+  reqinstall_script: pkg install -y bash wget gmake dejagnu py38-sphinx tcl86 tcl-wrapper autoconf automake gettext ksh93 zsh fish perl5 python38 ruby cmake R readline
   configure_script:
     - ./configure --enable-compat-version --without-tclx --with-tcl-ver=8.6
   << : *BUILD_INSTALL_TEST_TEMPLATE
@@ -100,7 +100,9 @@ task:
     COVERAGE: y
   osx_instance:
     image: catalina-xcode
-  reqinstall_script: brew install md5sha1sum expect dejagnu grep fish r
+  reqinstall_script:
+    - brew update
+    - brew install md5sha1sum expect dejagnu grep fish r
   configure_script:
     # need to specify where to find tclConfig.sh on newer xcode release
     - ./configure --prefix=/tmp/modules --with-loadedmodules=null:dot --with-tcl=/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5
@@ -148,6 +150,8 @@ task:
     . /etc/os-release
     if [ $VERSION_ID -eq 8 ]; then
       sed -i 's|enabled=0|enabled=1|' /etc/yum.repos.d/CentOS-Linux-PowerTools.repo
+      # specific update of libarchive is required for CMake on EL8.3
+      yum update -y libarchive
     fi
     if [ $VERSION_ID -eq 8 ]; then
       PYTHON_PKG='python36'

@@ -157,6 +157,27 @@ the *modulefile* is being loaded.
  :mfcmd:`getenv` command should be preferred over the Tcl global variable
  ``env`` to query environment variables.
 
+ When modulefile is evaluated in *display* mode, :mfcmd:`getenv` returns
+ *variable* name prefixed with dollar sign (e.g., ``$variable``).
+
+ .. only:: html
+
+    .. versionadded:: 4.0
+
+.. mfcmd:: getvariant variant [value]
+
+ Returns value of designated *variant*. If *variant* is not defined, *value*
+ is returned if set, an empty string is returned otherwise. The
+ :mfcmd:`getvariant` command should be preferred over the
+ :mfvar:`ModuleVariant` Tcl array to query a variant value.
+
+ When modulefile is evaluated in *display* mode, :mfcmd:`getvariant` returns
+ *variant* name enclosed in curly braces (e.g., ``{variant}``).
+
+ .. only:: html
+
+    .. versionadded:: 4.8
+
 .. mfcmd:: is-avail modulefile...
 
  The :mfcmd:`is-avail` command returns a true value if any of the listed
@@ -227,6 +248,9 @@ the *modulefile* is being loaded.
  The ``--not-req`` option may be set for the ``load``, ``unload`` and
  ``switch`` sub-commands to inhibit the definition of an implicit prereq or
  conflict requirement onto specified modules.
+
+ On ``try-load`` sub-command, if specified *modulefile* is not found thus
+ loaded, no implicit prereq requirement is defined over this module.
 
  Command line switches :option:`--auto`, :option:`--no-auto` and
  :option:`--force` are ignored when passed to a :mfcmd:`module` command set in
@@ -423,6 +447,10 @@ the *modulefile* is being loaded.
   *modulefiles* from the directory will be returned. The parameter
   *modulefile* may also be a symbolic modulefile name or a modulefile alias.
 
+  This command only returns the name and version of designated loaded module.
+  The defined variants of the loaded module are not included in the returned
+  string.
+
   .. only:: html
 
      .. versionadded:: 4.1
@@ -441,6 +469,11 @@ the *modulefile* is being loaded.
   Return the name of the *modulefile*. This is not the full pathname for
   *modulefile*. See the `Modules Variables`_ section for information on the
   full pathname.
+
+  This command only returns the name and version of currently evaluating
+  *modulefile*. The defined variants are not included in the returned string.
+  See :mfcmd:`getvariant` command or :mfvar:`ModuleVariant` array variable to
+  get defined variant values for currently evaluating *modulefile*.
 
  **module-info shell** [shellname]
 
@@ -469,7 +502,8 @@ the *modulefile* is being loaded.
 
  **module-info specified**
 
-  Return the name of the *modulefile* specified on the command line.
+  Return the module designation (name, version and variants) specified that
+  led to current *modulefile* evaluation.
 
  **module-info symbols** modulefile
 
@@ -483,6 +517,9 @@ the *modulefile* is being loaded.
   Returns all tags assigned to currently evaluated *modulefile* as a list of
   strings if no *tag* name is given (see :ref:`Module tags` section in
   :ref:`module(1)`)
+
+  When tags are assigned to specific module variants, they are returned only
+  if this variant is the one currently evaluated.
 
   Returns ``1`` if one of the tags applying to currently evaluated
   *modulefile* is *tag*. Returns ``0`` otherwise.
@@ -790,6 +827,40 @@ the *modulefile* is being loaded.
  :mfcmd:`unsetenv` command changes the process' environment like
  :mfcmd:`setenv`.
 
+.. mfcmd:: variant [--boolean] [--default value] name value...
+
+ Declare :ref:`module variant<Module variants>` *name* with list of accepted
+ *value* and instantiate it in the :mfvar:`ModuleVariant` array variable.
+
+ Variant's value is selected through the module designation that leads to the
+ modulefile evaluation. See `Advanced module version specifiers`_ section to
+ learn how variants could be specified.
+
+ Selected variant value is transmitted to the evaluating modulefile. A value
+ must be specified for variant *name* and it must corresponds to a value in
+ the accepted value list. Otherwise an error is raised.
+
+ When the ``--default`` option is set, variant *name* is set to the *value*
+ associated with this option in case no value is specified for variant in
+ module designation.
+
+ If the ``--boolean`` option is set, variant *name* is defined as a Boolean
+ variant. No list of accepted value should be defined in this case. All values
+ recognized as Boolean value in Tcl are accepted (i.e., ``1``, ``true``,
+ ``t``, ``yes``, ``y``, ``on``, ``0``, ``false``, ``f``, ``no``, ``n`` or
+ ``off``). Boolean variants are instantiated in :mfvar:`ModuleVariant` using
+ Tcl canonical form of Boolean value (i.e., ``0`` or ``1``).
+
+ A variant which is not defined as a Boolean variant cannot define Boolean
+ values in its accepted value list, exception made for the ``0`` and ``1``
+ integers. An error is raised otherwise.
+
+ A variant cannot be named ``version``. An error is raised otherwise.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
+
 .. mfcmd:: versioncmp version1 version2
 
  Compare version string *version1* against version string *version2*. Returns
@@ -857,6 +928,23 @@ Modules Variables
  .. only:: html
 
     .. versionadded:: 4.7
+
+.. mfvar:: ModuleVariant
+
+ The :mfvar:`ModuleVariant` array variable contains an element entry for each
+ defined variant associated to the value of this variant (e.g., the
+ ``$ModuleVariant(foo)`` syntax corresponds to the value of variant ``foo`` if
+ defined). A Tcl evaluation error is obtained when accessing an undefined
+ variant in :mfvar:`ModuleVariant` array. Use preferably the
+ :mfcmd:`getvariant` command to retrieve a variant value when this variant
+ state is not known.
+
+ The list of the currently defined variants can be retrieved with
+ ``[array names ModuleVariant]`` Tcl code.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. _Locating Modulefiles:
 
@@ -1020,6 +1108,11 @@ Advanced module version specifiers
 When the advanced module version specifiers mechanism is enabled (see
 :envvar:`MODULES_ADVANCED_VERSION_SPEC` in :ref:`module(1)`), the
 specification of modulefile passed on Modules specific Tcl commands changes.
+After the module name a version constraint and variants may be added.
+
+Version specifiers
+""""""""""""""""""
+
 After the module name a version constraint prefixed by the ``@`` character may
 be added. It could be directly appended to the module name or separated from
 it with a space character.
@@ -1049,6 +1142,10 @@ instance ``10a``, ``1.2.3``, ``1.foo`` are versions valid for range
 comparison whereas ``default`` or ``foo.2`` versions are invalid for range
 comparison.
 
+Range of versions can be specified in version list, for instance
+``foo@:1.2,1.4:1.6,1.8:``. Such specification helps to exclude specific
+versions, like versions ``1.3`` and ``1.7`` in previous example.
+
 If the implicit default mechanism is also enabled (see
 :envvar:`MODULES_IMPLICIT_DEFAULT` in :ref:`module(1)`), a ``default`` and
 ``latest`` symbolic versions are automatically defined for each module name
@@ -1057,6 +1154,56 @@ symbols are defined unless a symbolic version, alias, or regular module
 version already exists for these ``default`` or ``latest`` version names.
 Using the ``mod@latest`` (or ``mod/latest``) syntax ensures highest available
 version will be selected.
+
+Variants
+""""""""
+
+After the module name, variants can be specified. :ref:`Module variants` are
+alternative evaluation of the same *modulefile*. A variant is specified by
+associating a value to its name. This specification is then transmitted to the
+evaluating *modulefile* which instantiates the variant in the
+:mfvar:`ModuleVariant` array variable when reaching the :mfcmd:`variant`
+modulefile command declaring this variant.
+
+Variant can be specified with the ``name=value`` syntax where *name* is the
+declared variant name and *value*, the value this variant is set to when
+evaluating the *modulefile*.
+
+Boolean variants can be specified with the ``+name`` syntax to set this
+variant on and with the ``-name`` or ``~name`` syntaxes to set this variant
+off. The ``-name`` syntax is not supported on :ref:`ml(1)` command as the
+minus sign already means to unload designated module. The ``~name`` and
+``+name`` syntaxes could also be defined appended to another specification
+word (e.g., the module name, version or another variant specification),
+whereas ``-name`` syntax must be the start of a new specification word.
+
+Boolean variants may also be specified with the ``name=value`` syntax. *value*
+should be set to ``1``, ``true``, ``t``, ``yes``, ``y`` or ``on`` to enable
+the variant or it should be set to ``0``, ``false``, ``f``, ``no``, ``n`` or
+``off`` to disable the variant.
+
+Shortcuts may be used to abbreviate variant specification. The
+:mconfig:`variant_shortcut` configuration option associates shortcut character
+to variant name. With a shortcut defined, variant could be specified with the
+``<shortcut>value`` syntax. For instance if character ``%`` is set as a
+shortcut for variant ``foo``, the ``%value`` syntax is equivalent to the
+``foo=value`` syntax.
+
+Specific characters used in variant specification syntax cannot be used as
+part of the name of a module. These specific characters are ``+``, ``~``,
+``=`` and all characters set as variant shortcut. Exception is made for ``+``
+character which could be set one or several consecutive times at the end of
+module name (e.g., *name+* or *name++*).
+
+.. only:: html
+
+   .. versionadded:: 4.4
+
+   .. versionchanged:: 4.8
+      Use of version range is allowed in version list
+
+   .. versionchanged:: 4.8
+      Support for module variant added
 
 
 Modulefile Specific Help

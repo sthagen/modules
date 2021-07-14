@@ -92,9 +92,9 @@ if {[info exists insmodrcdata] && [info exists exmodrcdata] && $exmodrcdata eq $
 
 set custom {module restore unk}
 if {[cmpversion $tclsh_version 8.5] == -1} {
-    set custom [escre [msg_moderr {Collection unk cannot be found} "<EXM>$custom" $modrc 13 {  }]]
+    set custom [escre [msg_moderr {Collection unk cannot be found} "<EXM>$custom" $modrc 14 {  }]]
 } else {
-    set custom [escre [msg_moderr {Collection unk cannot be found} $custom $modrc 13 {  }]]
+    set custom [escre [msg_moderr {Collection unk cannot be found} $custom $modrc 14 {  }]]
 }
 
 set tserr_initrc_exinstalled "load m1\nload m2\n\n[msg_top_load m2 {} m1 {}]\n\nunload m2\n[msg_unload m2]\nunload m1\n[msg_unload m1]\n[msg_unload mj]\nload m1\n[msg_load m1]\nload m3\n[msg_load m3]\n$err_path'unk'\n$custom"
@@ -129,7 +129,7 @@ set func_quar_zsh "\\s*unset _mlre _mlIFS;
 \\s*_mlIFS=\\\$IFS;
 \\s*fi;
 \\s*IFS=' ';
-\\s*for _mlv in \\\${=MODULES_RUN_QUARANTINE:-}; do
+\\s*for _mlv in \\\${\\^\\^=MODULES_RUN_QUARANTINE:-}; do
 $end_quar_sh\n"
 } else {
 set end_quar_sh ""
@@ -185,7 +185,7 @@ set func_modcmd_ksh "\\s*if \\\[ -n \"\\\${_mlre:-}\" \\\]; then
 \\s*eval `$tclshlocre $modulecmd_pathre ksh \"\\$\\@\"`;
 \\s*fi;"
 set func_modcmd_zsh "\\s*if \\\[ -n \"\\\${_mlre:-}\" \\\]; then
-\\s*eval `eval \\\${=_mlre} $tclshlocre $modulecmd_pathre zsh '\"\\$\\@\"'`;
+\\s*eval `eval \\\${\\^\\^=_mlre} $tclshlocre $modulecmd_pathre zsh '\"\\$\\@\"'`;
 \\s*else
 \\s*eval `$tclshlocre $modulecmd_pathre zsh \"\\$\\@\"`;
 \\s*fi;"

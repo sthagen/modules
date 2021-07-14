@@ -8,6 +8,235 @@ Modules. It provides an overview of the new features and changed behaviors
 that will be encountered when upgrading.
 
 
+From v4.7 to v4.8
+=================
+
+This new version is backward-compatible with v4.7 and primarily fixes bugs and
+adds new features. Version 4.8 introduces new functionalities that are
+described in this section. See the :ref:`4.8 release notes<4.8 release notes>`
+for a complete list of the changes between Modules v4.7 and v4.8.
+
+Editing modulefiles
+-------------------
+
+:subcmd:`edit` sub-command is introduced to give the ability to open
+modulefiles in a text editor. Modulefiles can be specified like with any other
+sub-command: using regular, symbolic or aliased names or using advanced
+version specifiers.
+
+.. parsed-literal::
+
+    :ps:`$` ml edit foo
+
+:subcmd:`edit` sub-command resolves the path toward the designated modulefile
+then call configured text editor to open this modulefile with it. Below, the
+modulefile is opened with the ``vi`` command:
+
+.. parsed-literal::
+
+    #%Module
+    module-whatis [module-info name]
+    setenv PATH /path/to/foo-1.0/bin
+    ~                                                           
+    ~                                                           
+    ~                                                           
+    "/path/to/modulefiles/foo/1.0" 3L, 42B 1,1           All
+
+The :mconfig:`editor` configuration option controls the editor command to use.
+This option can be configured at installation time with the
+:instopt:`--with-editor` installation option. If not set, :mconfig:`editor`
+configuration option is set by default to ``vi``.
+
+:mconfig:`editor` configuration option can be changed with the
+:subcmd:`config` sub-command. Which sets the :envvar:`MODULES_EDITOR`
+environment variable.
+
+The :envvar:`VISUAL` or the :envvar:`EDITOR` environment variables override
+the default value of :mconfig:`editor` configuration option but are overridden
+by the :envvar:`MODULES_EDITOR` environment variable.
+
+Using version range in version list
+-----------------------------------
+
+The :ref:`Advanced module version specifiers` mechanism has been improved to
+allow the use of version range (*@:version*, *@vers1:vers2* or *@version:*)
+within version list (*@version1,version2,...*).
+
+It is now possible to write for instance ``mod@:1.2,1.4:1.6,1.8:`` to
+designate all versions of module *mod*, except versions *1.3* and *1.7*.
+
+This improvement is available where the advanced version specifier syntax is
+supported. Thus it can be either used from the command-line or when writing
+modulefiles, for instance to hide or tag modules or to declare requirements.
+
+Try module load with no complain if not found
+---------------------------------------------
+
+Add the :subcmd:`try-load` sub-command that tries to load the modulefile
+passed as argument, like the :subcmd:`load` sub-command, but does not raise an
+error if this modulefile cannot be found.
+
+.. parsed-literal::
+
+    :ps:`$` module load unknown
+    :sgrer:`ERROR`: Unable to locate a modulefile for 'unknown'
+    :ps:`$` echo $?
+    1
+    :ps:`$` module try-load unknown
+    :ps:`$` echo $?
+    0
+    :ps:`$` module list
+    No Modulefiles Currently Loaded.
+
+This sub-command first introduced by the `Lmod`_ project is added to Modules
+to improve the compatibility between the two ``module`` implementations.
+
+:subcmd:`try-load` is also available within modulefile context to continue the
+evaluation of a modulefile in case no module is found in its attempt to load
+another modulefile
+
+.. parsed-literal::
+
+    :ps:`$` module display foo/1.0
+    -------------------------------------------------------------------
+    :sgrhi:`/path/to/modulefiles/foo/1.0`:
+    
+    :sgrcm:`module`   try-load unknown/1.0
+    -------------------------------------------------------------------
+    :ps:`$` module load foo/1.0
+    :ps:`$` module list
+    Currently Loaded Modulefiles:
+     1) foo/1.0
+
+Module variants
+---------------
+
+:ref:`Module variants` is a new mechanism that allows to pass arguments to
+evaluated modulefiles in order to achieve different environment variable or
+module requirement setup with a single modulefile.
+
+Variant specification relies on the :ref:`Advanced module version specifiers`
+mechanism, which leverages the `variant syntax`_ of the `Spack`_ package
+manager:
+
+.. _variant syntax: https://spack.readthedocs.io/en/latest/basic_usage.html#variants
+
+.. parsed-literal::
+
+    :ps:`$` module config advanced_version_spec 1
+    :ps:`$` module load -v bar/1.2 toolchain=a -debug
+    Loading :sgrhi:`bar/1.2`:sgrse:`{`:sgrva:`-debug`:sgrse:`:`:sgrva:`toolchain=a`:sgrse:`}`
+
+Variants are defined in modulefile with the :mfcmd:`variant` command, which
+defines the variant type and its accepted values:
+
+.. code-block:: tcl
+
+    #%Module4.8
+    variant toolchain a b c
+    variant --boolean --default off debug
+
+    # select software build depending on variant values
+    set suffix -[getvariant toolchain]
+    if {$ModuleVariant(debug)} {
+        append suffix -dbg
+    }
+
+    prepend-path PATH /path/to/bar-1.2$suffix/bin
+    prepend-path LD_LIBRARY_PATH /path/to/bar-1.2$suffix/lib
+
+The *bar/1.2* modulefile defines a ``toolchain`` variant, which accepts the
+``a``, ``b`` and ``c`` values, and a ``debug`` Boolean variant, which is set
+``off`` by default. Once these two variants are declared, their value
+specified on module designation are instantiated in the :mfvar:`ModuleVariant`
+array variable which could also be queried with the :mfcmd:`getvariant`
+modulefile command. Selected variant values enable to define a specific
+installation build path for the *bar/1.2* software.
+
+If a variant is not specified when designating module and if this variant is
+not declared with a default value, an error is obtained:
+
+.. parsed-literal::
+
+    :ps:`$` module purge
+    :ps:`$` module load :noparse:`bar@1.2`
+    Loading :sgrhi:`bar/1.2`
+      :sgrer:`ERROR`: No value specified for variant 'toolchain'
+        Allowed values are: a b c
+
+Once module is loaded, selected variants are reported on the :subcmd:`list`
+sub-command output:
+
+.. parsed-literal::
+
+    :ps:`$` module load :noparse:`bar@1.2` toolchain=b
+    :ps:`$` module list
+    Currently Loaded Modulefiles:
+     1) bar/1.2\ :sgrse:`{`:sgrva:`-debug`:sgrse:`:`:sgrva:`toolchain=b`:sgrse:`}`  
+
+    Key:
+    :sgrse:`{`:sgrva:`-variant`:sgrse:`}`\=\ :sgrse:`{`:sgrva:`variant=off`:sgrse:`}`  :sgrse:`{`:sgrva:`variant=value`:sgrse:`}`
+
+.. note:: The default value of the :instopt:`--with-list-output` installation
+   option has been updated to include variant information.
+
+Variant specification could be used where the :ref:`Advanced module version
+specifiers` is supported. For instance a module may express a dependency over
+a specific module variant:
+
+.. parsed-literal::
+
+    :ps:`$` module show foo/2.1 toolchain=c
+    -------------------------------------------------------------------
+    :sgrhi:`/path/to/modulfiles/foo/2.1`:
+
+    :sgrcm:`variant`         toolchain a b c
+    :sgrcm:`prereq`          :noparse:`bar@1.2 toolchain=`:sgrva:`{toolchain}`
+    :sgrcm:`prepend-path`    PATH /path/to/foo-2.1-:sgrva:`{toolchain}`/bin
+    :sgrcm:`prepend-path`    LD_LIBRARY_PATH /path/to/foo-2.1-:sgrva:`{toolchain}`/lib
+    -------------------------------------------------------------------
+
+In this example, *foo/2.1* module depends on *bar/1.2* and the same toolchain
+variant should be selected for both modules in order to load two software
+builds that are compatible between each other.
+
+.. parsed-literal::
+
+    :ps:`$` module purge
+    :ps:`$` module config auto_handling 1
+    :ps:`$` module load foo/2.1 toolchain=a
+    Loading :sgrhi:`foo/2.1`:sgrse:`{`:sgrva:`toolchain=a`:sgrse:`}`
+      :sgrin:`Loading requirement`: bar/1.2\ :sgrse:`{`:sgrva:`-debug`:sgrse:`:`:sgrva:`toolchain=a`:sgrse:`}`
+
+Variant shortcuts
+-----------------
+
+The :mconfig:`variant_shortcut` configuration option is added to define
+shortcut characters for easily specifying variants. Instead of writing the
+variant name to specify it in module designation (e.g., *name=value*), the
+shortcut associated to this variant could be used (i.e., *<shortcut>value*):
+
+.. parsed-literal::
+
+    :ps:`$` module purge
+    :ps:`$` module config variant_shortcut toolchain=%
+    :ps:`$` module load foo/2.1 %a
+    Loading :sgrhi:`foo/2.1`:sgrse:`{`:sgrva:`%a`:sgrse:`}`
+      :sgrin:`Loading requirement`: bar/1.2\ :sgrse:`{`:sgrva:`-debug`:sgrse:`:`:sgrva:`%a`:sgrse:`}`
+
+Configured shortcuts are also used to report the loaded variant on
+:subcmd:`list` sub-command output (shortcuts are explained in key section):
+
+.. parsed-literal::
+
+    :ps:`$` module list
+    Currently Loaded Modulefiles:
+     1) :sgral:`bar/1.2`\ :sgrse:`{`:sgrva:`-debug`:sgrse:`:`:sgrva:`%a`:sgrse:`}`  2) foo/2.1\ :sgrse:`{`:sgrva:`%a`:sgrse:`}`  
+
+    Key:
+    :sgral:`auto-loaded`  :sgrse:`{`:sgrva:`-variant`:sgrse:`}`\=\ :sgrse:`{`:sgrva:`variant=off`:sgrse:`}`  :sgrse:`{`:sgrva:`%value`:sgrse:`}`\=\ :sgrse:`{`:sgrva:`toolchain=value`:sgrse:`}`  :sgrse:`{`:sgrva:`variant=value`:sgrse:`}`
+
+
 From v4.6 to v4.7
 =================
 

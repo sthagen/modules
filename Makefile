@@ -75,7 +75,8 @@ endif
 
 # define rule prereq when target need to be rebuilt when git repository change
 ifeq ($(wildcard .git),.git)
-GIT_REFRESH_PREREQ := .git/index
+GIT_DIR := $(shell git rev-parse --git-dir)
+GIT_REFRESH_PREREQ := $(GIT_DIR)/index
 else
 GIT_REFRESH_PREREQ := 
 endif
@@ -314,6 +315,8 @@ sed -e 's|@prefix@|$(prefix)|g' \
 	-e 's|@availterseoutput@|$(availterseoutput)|g' \
 	-e 's|@listoutput@|$(listoutput)|g' \
 	-e 's|@listterseoutput@|$(listterseoutput)|g' \
+	-e 's|@variantshortcut@|$(variantshortcut)|g' \
+	-e 's|@editor@|$(editor)|g' \
 	-e 's|@autohandling@|$(setautohandling)|g' \
 	-e 's|@implicitrequirement@|$(setimplicitrequirement)|g' \
 	-e 's|@availindepth@|$(setavailindepth)|g' \

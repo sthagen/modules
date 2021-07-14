@@ -1,0 +1,95 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT_TAG)]} {
+    switch -- $env(TESTSUITE_VARIANT_TAG) {
+        1 {
+            module-hide --hidden-loaded variant/8.0 foo=val1
+        }
+        2 {
+            module-hide --hard --hidden-loaded variant/8.0 foo=val1 bar=2 variant/8.0 foo=val1 bar=3
+        }
+        3 {
+            module-hide --hidden-loaded variant@8.0 foo=val1 bar=1
+        }
+        4 {
+            module-hide --hard --hidden-loaded variant@7.5:8.5 foo=val1 bar=1
+        }
+        5 {
+            module-hide --hidden-loaded variant foo=val1 bar=1
+        }
+        6 {
+            module-hide --hidden-loaded variant@8.0
+        }
+        7 {
+            module-hide --hidden-loaded variant foo=val1 bar=2
+        }
+        11 {
+            module-forbid variant/8.0 foo=val1
+        }
+        12 {
+            module-forbid variant/8.0 foo=val1 bar=2 variant/8.0 foo=val1 bar=3
+        }
+        13 {
+            module-forbid --message {forbidden message} variant@8.0 foo=val1 bar=1
+        }
+        14 {
+            set tomorrow [clock format [expr {[clock seconds]+86400}] -format %Y-%m-%d]
+            module-forbid --after $tomorrow --nearly-message {nearly message} variant@7.5:8.5 foo=val1 bar=2
+        }
+        15 {
+            module-forbid variant foo=val1 bar=1
+        }
+        16 {
+            module-forbid variant@8.0
+        }
+        21 {
+            module-tag sticky variant/8.0 foo=val1
+        }
+        22 {
+            module-tag sticky variant/8.0 foo=val1 bar=2 variant/8.0 foo=val1 bar=3
+        }
+        23 {
+            module-tag sticky variant@8.0 foo=val1 bar=1
+        }
+        24 {
+            module-tag super-sticky variant@7.5:8.5 foo=val1 bar=2
+        }
+        25 {
+            module-tag super-sticky variant foo=val1 bar=1
+        }
+        26 {
+            module-tag sticky variant@8.0
+        }
+        27 {
+            module-tag sticky variant
+        }
+        28 - coll32 - coll33 {
+            module-tag super-sticky variant foo=val1 bar=2
+        }
+        shortcut1 {
+            module-tag sticky variant@1.0 %val1
+        }
+        shortcut2 {
+            module-tag sticky variant@1.0%val1
+        }
+        shortcut3 {
+            module-tag sticky variant@1.0 bar=val1
+        }
+    }
+}
+
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        info4 {
+            module-tag t1 variant foo=val1 bar=2
+            module-tag t2 variant bar=2
+            module-tag t3 variant foo=val2
+            module-tag t4 variant@6.0 foo=val1
+            module-tag t5 variant@6:7 foo=val2 bar=2
+        }
+        hidden1 {
+            module-hide variant/2.1/2
+            module-version variant/2.1 default
+            module-version variant/2.1/2 default
+        }
+    }
+}

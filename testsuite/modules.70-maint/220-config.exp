@@ -32,6 +32,7 @@ unsetenv_var MODULES_AVAIL_OUTPUT
 unsetenv_var MODULES_AVAIL_TERSE_OUTPUT
 unsetenv_var MODULES_LIST_OUTPUT
 unsetenv_var MODULES_LIST_TERSE_OUTPUT
+unsetenv_var MODULES_VARIANT_SHORTCUT
 if {[info exists env(MODULES_ICASE)]} {
     set saved_icase $env(MODULES_ICASE)
     unsetenv_var MODULES_ICASE
@@ -56,6 +57,7 @@ array set configdfl [list\
     color                     never\
     colors                    [expr {$install_termbg eq {dark} ? $valid_darkbgcolors : $valid_lightbgcolors}]\
     contact                   root@localhost\
+    editor                    "$install_editor"\
     extended_default          [expr {$install_extendeddefault eq {y}}]\
     extra_siteconfig          <undef>\
     home                      [regsub -all "\(\[.+?\]\)" $install_moduleshome {\\\1}]\
@@ -83,6 +85,7 @@ array set configdfl [list\
     term_background           $install_termbg\
     term_width                0\
     unload_match_order        $install_unloadmatchorder\
+    variant_shortcut          "$install_variantshortcut"\
     verbosity                 $install_verbosity\
     wa_277                    [expr {$install_wa277 eq {y}}]\
 ]
@@ -98,6 +101,7 @@ array set configvar [list\
     color                     MODULES_COLOR\
     colors                    MODULES_COLORS\
     contact                   MODULECONTACT\
+    editor                    MODULES_EDITOR\
     extended_default          MODULES_EXTENDED_DEFAULT\
     extra_siteconfig          MODULES_SITECONFIG\
     home                      MODULESHOME\
@@ -121,6 +125,7 @@ array set configvar [list\
     term_background           MODULES_TERM_BACKGROUND\
     term_width                MODULES_TERM_WIDTH\
     unload_match_order        MODULES_UNLOAD_MATCH_ORDER\
+    variant_shortcut          MODULES_VARIANT_SHORTCUT\
     verbosity                 MODULES_VERBOSITY\
     wa_277                    MODULES_WA_277\
 ]
@@ -137,8 +142,8 @@ array set configvalid [list\
     icase                     {never search always}\
     implicit_default          {0 1}\
     implicit_requirement      {0 1}\
-    list_output               {header idx sym tag key}\
-    list_terse_output         {header idx sym tag key}\
+    list_output               {header idx variant sym tag key}\
+    list_terse_output         {header idx variant sym tag key}\
     mcookie_version_check     {0 1}\
     ml                        {0 1}\
     nearly_forbidden_days     {0 365}\
@@ -287,6 +292,8 @@ foreach param [array names configvar] {
         set val err=31
     } elseif {$param eq {tag_abbrev}} {
         set val loaded=L
+    } elseif {$param eq {variant_shortcut}} {
+        set val foo=%
     } elseif {$param eq {pager}} {
         set val $configdfl(pager)
     } elseif {[info exists configvalid($param)]} {

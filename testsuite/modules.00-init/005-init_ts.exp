@@ -84,79 +84,83 @@ set err_evalabort "$error_msgs: Module evaluation aborted"
 set err_specmodname "$error_msgs: $msg_nomodnameinarg "
 set err_specvers "$error_msgs: $msg_invversspec "
 set err_rangevers "$error_msgs: Invalid version range "
+set err_stickyunload "$::error_msgs: Unload of sticky module skipped"
+set err_stickyunloadf "$::warn_msgs: Unload of sticky module forced"
+set err_superstickyunload "$::error_msgs: Unload of super-sticky module skipped"
 
-proc err_conflict {mod args} {
-    return "$::error_msgs: $mod cannot be loaded due to a conflict.
+
+proc err_conflict {args} {
+    return "$::error_msgs: Module cannot be loaded due to a conflict.
 HINT: Might try \"module unload [join $args { }]\" first."
 }
 
 proc err_conloi {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::error_msgs: Conflicting '[join $args {' and '}]' $is loading"
+    return "$::error_msgs: Conflicting [join $args { and }] $is loading"
 }
 
 proc err_conloif {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::warn_msgs: Conflicting '[join $args {' and '}]' $is loading"
+    return "$::warn_msgs: Conflicting [join $args { and }] $is loading"
 }
 
 proc err_conlo {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::error_msgs: Conflicting '[join $args {' and '}]' $is loaded"
+    return "$::error_msgs: Conflicting [join $args { and }] $is loaded"
 }
 
 proc err_conlof {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::warn_msgs: Conflicting '[join $args {' and '}]' $is loaded"
+    return "$::warn_msgs: Conflicting [join $args { and }] $is loaded"
 }
 
 proc err_conun {args} {
-    return "$::error_msgs: Unload of conflicting '[join $args {' and '}]' failed"
+    return "$::error_msgs: Unload of conflicting [join $args { and }] failed"
 }
 
 proc err_conunf {args} {
-    return "$::warn_msgs: Unload of conflicting '[join $args {' and '}]' failed"
+    return "$::warn_msgs: Unload of conflicting [join $args { and }] failed"
 }
 
-proc err_prereq {mod args} {
-    return "$::error_msgs: $mod cannot be loaded due to missing prereq.
-HINT: the following module must be loaded first: $args"
+proc err_prereq {args} {
+    return "$::error_msgs: Module cannot be loaded due to missing prereq.
+HINT: the following module must be loaded first: [join $args]"
 }
 
-proc err_prereqor {mod args} {
-    return "$::error_msgs: $mod cannot be loaded due to missing prereq.
+proc err_prereqor {args} {
+    return "$::error_msgs: Module cannot be loaded due to missing prereq.
 HINT: at least one of the following modules must be loaded first: $args"
 }
 
-proc err_prerequn {mod args} {
-    return "$::error_msgs: $mod cannot be unloaded due to a prereq.
+proc err_prerequn {args} {
+    return "$::error_msgs: Module cannot be unloaded due to a prereq.
 HINT: Might try \"module unload $args\" first."
 }
 
 proc err_deplo {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::error_msgs: Dependent '[join $args {' and '}]' $is loaded"
+    return "$::error_msgs: Dependent [join $args { and }] $is loaded"
 }
 
 proc err_deplof {args} {
     set is [expr {[llength $args] > 1 ? {are} : {is}}]
-    return "$::warn_msgs: Dependent '[join $args {' and '}]' $is loaded"
+    return "$::warn_msgs: Dependent [join $args { and }] $is loaded"
 }
 
 proc err_reqlo {args} {
-    return "$::error_msgs: Load of requirement '[join $args {' or '}]' failed"
+    return "$::error_msgs: Load of requirement [join $args { or }] failed"
 }
 
 proc err_reqlof {args} {
-    return "$::warn_msgs: Load of requirement '[join $args {' or '}]' failed"
+    return "$::warn_msgs: Load of requirement [join $args { or }] failed"
 }
 
 proc err_reqmis {args} {
-    return "$::error_msgs: Requirement '[join $args {' or '}]' is not loaded"
+    return "$::error_msgs: Requirement [join $args { or }] is not loaded"
 }
 
 proc err_reqmisf {args} {
-    return "$::warn_msgs: Requirement '[join $args {' or '}]' is not loaded"
+    return "$::warn_msgs: Requirement [join $args { or }] is not loaded"
 }
 
 proc err_depun {mod} {
@@ -204,7 +208,7 @@ proc moderr_minverreq {modfile minver} {
 }
 
 proc err_accessdenied {mod {extramsg {}}} {
-    set msg "$::error_msgs: Access to module '$mod' is denied"
+    set msg "$::error_msgs: Access to module $mod is denied"
     if {$extramsg ne {}} {
         append msg "\n  $extramsg"
     }
@@ -227,16 +231,32 @@ proc err_noloaded {mod} {
     return "$::error_msgs: No loaded version found for '$mod' module"
 }
 
-proc err_stickyunload {mod} {
-    return "$::error_msgs: Unload of sticky module '$mod' skipped"
+proc err_invalvarval {vrname vrvalue vrvalues {padding {}}} {
+    return "$::error_msgs: Invalid value '$vrvalue' for variant '$vrname'\n${padding}Allowed values are: $vrvalues"
 }
 
-proc err_stickyunloadf {mod} {
-    return "$::warn_msgs: Unload of sticky module '$mod' forced"
+proc err_novarval {vrname vrvalues {padding {}}} {
+    return "$::error_msgs: No value specified for variant '$vrname'\n${padding}Allowed values are: $vrvalues"
 }
 
-proc err_superstickyunload {mod} {
-    return "$::error_msgs: Unload of super-sticky module '$mod' skipped"
+proc err_varspec {vrspec} {
+    return "$::error_msgs: Invalid variant specification '$vrspec'"
+}
+
+proc err_boolvarval {vrname {padding {}}} {
+    return "No value should be defined for boolean variant '$vrname'"
+}
+
+proc err_booldflvarval {vrname {padding {}}} {
+    return "Boolean value is expected as default value for variant '$vrname'"
+}
+
+proc err_boolonnonbool {vrname {padding {}}} {
+    return "Boolean value defined on non-boolean variant '$vrname'"
+}
+
+proc err_unkvar {vrname} {
+    return "$::error_msgs: Unknown variant '$vrname' specified"
 }
 
 proc info_alreadyloaded {mod} {
@@ -245,6 +265,19 @@ proc info_alreadyloaded {mod} {
 
 proc info_notloaded {mod} {
     return "$::info_msgs: Module '$mod' is not loaded"
+}
+
+proc err_othervariantloaded {vrlist {setsgr 0}} {
+    if {$setsgr} {
+        set vrdesiglist {}
+        foreach vr $vrlist {
+            lappend vrdesiglist [sgr 93]$vr[sgr 0]
+        }
+        set vrdesig [sgr 2]\{[sgr 22][join $vrdesiglist [sgr 2]:[sgr 22]][sgr 2]\}[sgr 22]
+    } else {
+        set vrdesig "{[join $vrlist :]}"
+    }
+    return "$::error_msgs: Variant $vrdesig is already loaded"
 }
 
 proc msg_moderr {msg cmdline modfile linenum {pad {}} {procname {}} {contact {}} {custom {}}} {
@@ -375,7 +408,7 @@ proc msg_top_load {mod unlist reqlolist deprelist args} {
     if {[llength $deprelist] > 0} {
         lappend args "Reloading dependent: [join $deprelist]"
     }
-    return [eval msg_load $mod $args]
+    return [eval msg_load "{$mod}" $args]
 }
 
 proc msg_top_unload {mod depunlist urequnlist deprelist args} {
@@ -389,7 +422,7 @@ proc msg_top_unload {mod depunlist urequnlist deprelist args} {
     if {[llength $deprelist] > 0} {
         lappend args "Reloading dependent: [join $deprelist]"
     }
-    return [eval msg_unload $mod $args]
+    return [eval msg_unload "{$mod}" $args]
 }
 
 proc msg_top_switch {old new depunlist urequnlist unlist reqlolist deprelist args} {
@@ -410,7 +443,7 @@ proc msg_top_switch {old new depunlist urequnlist unlist reqlolist deprelist arg
     if {[llength $deprelist] > 0} {
         lappend args "Reloading dependent: [join $deprelist]"
     }
-    return [eval msg_switch $old $new $args]
+    return [eval msg_switch "{$old}" "{$new}" $args]
 }
 
 proc mix_depre_depun_list {deprelist depunlist} {
@@ -476,8 +509,16 @@ if {$nbcols ne {} && $nbcols ne {0}} {
     set msg_disp_cols $nbcols
     send_user "\tTerminal has $msg_disp_cols columns\n"
 } else {
-    set msg_disp_cols 80
-    send_user "\tFail to detect terminal column number. Fallback to $msg_disp_cols columns\n"
+    send_user "\tFail to detect terminal column number.\n"
+    if {[catch {exec stty rows 60 cols 120} errMsg]} {
+        send_user "\tFail to set specific terminal size: $errMsg\n"
+        set msg_disp_cols 80
+        send_user "\tFallback to $msg_disp_cols columns\n"
+    } else {
+        set term_cols 120
+        set msg_disp_cols 120
+        send_user "\tSuccessfully set terminal to 120 columns.\n"
+    }
 }
 unset nbcols
 
@@ -629,7 +670,7 @@ set userfgroup [lindex $usergroups 0]
 
 # escape regexp chars in string
 proc escre {str} {
-    return [string map {<EXM> (.*)+} [regsub -all {([.?()+\[\]$])} $str {\\\1}]]
+    return [string map {<EXM> (.*)+} [regsub -all {([.?*()+\[\]$])} $str {\\\1}]]
 }
 
 # Dictionary-style string comparison

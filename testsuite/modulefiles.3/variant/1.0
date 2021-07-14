@@ -1,0 +1,187 @@
+#%Module
+
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        1 {
+            variant foo val1
+        }
+        2 {
+            variant FOO val1 val2 val3
+        }
+        3 {
+            variant foo bar val {} { } {bar } {foo bar} { bar } {val1=val2}
+        }
+        4 {
+            variant %foo val1 val2 val3
+        }
+        5 {
+            variant foo val1
+            variant foo val2
+            variant bar val1
+            variant bar val1 val2
+        }
+        6 {
+            variant foo 0 1 2
+            variant bar
+        }
+        7 {
+            variant {} 0 1 2
+        }
+        8 {
+            variant var val
+        }
+        9 {
+            variant v?r v?l
+            variant v*r v*l
+        }
+        10 {
+            variant {foo bar} val1
+            variant {foo } val1
+        }
+        coll19 - coll27 - coll28 {
+            variant {bar } {} val1 val2
+            variant {fo o} val1 val2 {v?l1 }
+        }
+        11 {
+            variant foo val1 val2
+            variant bar val3 val4
+        }
+        12 {
+            variant foo
+        }
+        13 - shortcut1 - shortcut2 {
+            variant --default val1 foo val1
+            variant --default val2 bar val1 val2 val3
+        }
+        14 {
+            variant --default
+        }
+        15 {
+            variant foo --default val1
+        }
+        16 {
+            variant foo -val
+        }
+        17 {
+            variant foo --val
+        }
+        18 {
+            variant foo --default
+        }
+        19 {
+            variant --default val1 foo --default val2
+        }
+        20 {
+            variant --opt foo val1
+        }
+        21 {
+            variant --default val1 foo val2 val3
+        }
+        22 {
+            variant --default val1 --default val2 foo val1 val2 val3
+        }
+        23 {
+            variant
+        }
+        24 - coll34 {
+            variant foo val1 val2
+            variant --default val2 foo val1 val2 val3
+        }
+        coll20 - coll22 - coll26 {
+            variant --default {} {bar } {} val1 val2
+            variant {fo o} val1 val2 {v?l1 }
+        }
+        coll29 {
+        }
+        coll30 - coll31 {
+            variant foo val1 val2 val3
+            variant --default 2 bar 1 2 3
+        }
+        bool1 {
+            variant foo --boolean
+        }
+        bool2 {
+            variant --boolean foo 0 1
+        }
+        bool3 {
+            variant --boolean foo val1 val2 val3
+        }
+        bool4 {
+            variant --boolean --default val1 foo val1 val2 val3
+        }
+        bool5 {
+            variant --default val1 --boolean foo
+        }
+        bool6 {
+            variant foo 0 1
+            variant --boolean foo
+        }
+        bool7 {
+            variant --boolean foo
+            variant foo 0 1
+        }
+        bool8 {
+            variant --boolean foo
+        }
+        bool10 {
+            variant --default 1 --boolean foo
+        }
+        bool11 {
+            variant --default 0 --boolean foo
+        }
+        bool12 {
+            variant --default true --boolean foo
+        }
+        bool13 {
+            variant --default false --boolean foo
+        }
+        bool14 {
+            variant --default yes --boolean foo
+        }
+        bool15 {
+            variant --default no --boolean foo
+        }
+        bool16 {
+            variant --default on --boolean foo
+        }
+        bool17 {
+            variant --default off --boolean foo
+        }
+        bool18 {
+            variant --default t --boolean foo
+        }
+        bool19 {
+            variant --default f --boolean foo
+        }
+        bool20 {
+            variant --default 1 foo 0 1 2
+        }
+        bool21 {
+            variant foo false true
+        }
+        bool22 {
+            variant foo yes no y n
+        }
+        bool23 - coll35 {
+            variant --boolean foo
+            variant --boolean bar
+        }
+        coll36 - shortcut3 {
+            variant foo val1 val2 val3
+        }
+    }
+    if {![string match coll* $env(TESTSUITE_VARIANT)]} {
+        setenv TS0 [lsort [array names ModuleVariant]]
+        set ts1 {}
+        foreach name [lsort [array names ModuleVariant]] {
+            if {$ts1 ne {}} {
+                append ts1 {:}
+            }
+            append ts1 "$name=$ModuleVariant($name)"
+        }
+        setenv TS1 $ts1
+    }
+    if {[string match bool* $env(TESTSUITE_VARIANT)]} {
+        setenv TS2 [expr {$ModuleVariant(foo) ? {true} : {false}}]
+    }
+}

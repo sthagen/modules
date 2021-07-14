@@ -321,7 +321,7 @@ switches are accepted:
  *modulepath*, *alias*, *dirwsym*, *sym*, *tag* and *key*.
 
  Accepted elements in *LIST* for :subcmd:`list` sub-command are: *header*,
- *idx*, *sym*, *tag* and *key*.
+ *idx*, *variant*, *sym*, *tag* and *key*.
 
  The order of the elements in *LIST* does not matter. Module names are the
  only content reported when *LIST* is set to an empty value.
@@ -331,6 +331,9 @@ switches are accepted:
  .. only:: html
 
     .. versionadded:: 4.7
+
+    .. versionchanged:: 4.8
+       Element *variant* added for :subcmd:`list` sub-command
 
 .. option:: --paginate
 
@@ -410,7 +413,7 @@ switches are accepted:
 Module Sub-Commands
 ^^^^^^^^^^^^^^^^^^^
 
-.. subcmd:: add modulefile...
+.. subcmd:: add [--auto|--no-auto] [-f] modulefile...
 
  See :subcmd:`load`.
 
@@ -611,6 +614,15 @@ Module Sub-Commands
 
      .. versionadded:: 4.4
 
+ .. mconfig:: editor
+
+  Text editor command to open modulefile with through :subcmd:`edit`
+  sub-command. Defines :envvar:`MODULES_EDITOR`.
+
+  .. only:: html
+
+     .. versionadded:: 4.8
+
  .. mconfig:: extra_siteconfig
 
   Additional site-specific configuration script location. Defines
@@ -792,6 +804,15 @@ Module Sub-Commands
   Unload firstly loaded or lastly loaded module matching request. Defines
   :envvar:`MODULES_UNLOAD_MATCH_ORDER`.
 
+ .. mconfig:: variant_shortcut
+
+  Shortcut characters that could be used to specify or report module variants.
+  Defines :envvar:`MODULES_VARIANT_SHORTCUT`.
+
+  .. only:: html
+
+     .. versionadded:: 4.8
+
  .. mconfig:: verbosity
 
   Module command verbosity level. Defines :envvar:`MODULES_VERBOSITY`.
@@ -814,6 +835,19 @@ Module Sub-Commands
  The parameter *modulefile* may also be a symbolic modulefile name or a
  modulefile alias. It may also leverage a specific syntax to finely select
  module version (see `Advanced module version specifiers`_ section below).
+
+.. subcmd:: edit modulefile
+
+ Open *modulefile* for edition with text editor command designated by the
+ :mconfig:`editor` configuration option.
+
+ The parameter *modulefile* may also be a symbolic modulefile name or a
+ modulefile alias. It may also leverage a specific syntax to finely select
+ module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. subcmd:: help [modulefile...]
 
@@ -956,6 +990,9 @@ Module Sub-Commands
  Module tags applying to the loaded modules are reported along the module name
  they are associated to (see `Module tags`_ section).
 
+ Module variants selected on the loaded modules are reported along the module
+ name they belong to (see `Module variants`_ section).
+
  A *Key* section is added at the end of the output in case some elements are
  reported in parentheses or chevrons along module name or if some graphical
  rendition is made over some outputed elements. This *Key* section gives hints
@@ -975,6 +1012,9 @@ Module Sub-Commands
     .. versionchanged:: 4.7
        Option :option:`--output`/:option:`-o` added, compatible with regular
        and terse output modes.
+
+    .. versionchanged:: 4.8
+       Report if enabled the variants selected on loaded modules
 
 .. subcmd:: load [--auto|--no-auto] [-f] modulefile...
 
@@ -1094,7 +1134,7 @@ Module Sub-Commands
 
     .. versionadded:: 4.0
 
-.. subcmd:: rm modulefile...
+.. subcmd:: rm [--auto|--no-auto] [-f] modulefile...
 
  See :subcmd:`unload`.
 
@@ -1216,7 +1256,7 @@ Module Sub-Commands
 
     .. versionadded:: 4.0
 
-.. subcmd:: swap [modulefile1] modulefile2
+.. subcmd:: swap [--auto|--no-auto] [-f] [modulefile1] modulefile2
 
  See :subcmd:`switch`.
 
@@ -1236,6 +1276,14 @@ Module Sub-Commands
        Options :option:`--auto`, :option:`--no-auto`,
        :option:`--force`/:option:`-f` added
 
+.. subcmd:: try-add [--auto|--no-auto] [-f] modulefile...
+
+ See :subcmd:`try-load`.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
+
 .. subcmd:: test modulefile...
 
  Execute and display results of the Module-specific tests for the
@@ -1248,6 +1296,24 @@ Module Sub-Commands
  .. only:: html
 
     .. versionadded:: 4.0
+
+.. subcmd:: try-load [--auto|--no-auto] [-f] modulefile...
+
+ Like :subcmd:`load` sub-command, load *modulefile* into the shell
+ environment, but do not complain if *modulefile* cannot be found. If
+ *modulefile* is found but its evaluation fails, error is still reported.
+
+ Once loaded, the ``loaded`` module tag is associated to the loaded module. If
+ module has been automatically loaded by another module, the ``auto-loaded``
+ tag is associated instead (see `Module tags`_ section).
+
+ The parameter *modulefile* may also be a symbolic modulefile name or a
+ modulefile alias. It may also leverage a specific syntax to finely select
+ module version (see `Advanced module version specifiers`_ section below).
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. subcmd:: unload [--auto|--no-auto] [-f] modulefile...
 
@@ -1319,14 +1385,22 @@ possible to :subcmd:`load` a *modulefile* and then :subcmd:`unload` it without
 having the environment variables return to their prior state.
 
 
+.. _Advanced module version specifiers:
+
 Advanced module version specifiers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the advanced module version specifiers mechanism is enabled (see
 :envvar:`MODULES_ADVANCED_VERSION_SPEC`), the specification of modulefile
 passed on Modules sub-commands changes. After the module name a version
-constraint prefixed by the ``@`` character may be added. It could be directly
-appended to the module name or separated from it with a space character.
+constraint and variants may be added.
+
+Version specifiers
+""""""""""""""""""
+
+After the module name a version constraint prefixed by the ``@`` character may
+be added. It could be directly appended to the module name or separated from
+it with a space character.
 
 Constraints can be expressed to refine the selection of module version to:
 
@@ -1353,6 +1427,10 @@ instance ``10a``, ``1.2.3``, ``1.foo`` are versions valid for range
 comparison whereas ``default`` or ``foo.2`` versions are invalid for range
 comparison.
 
+Range of versions can be specified in version list, for instance
+``foo@:1.2,1.4:1.6,1.8:``. Such specification helps to exclude specific
+versions, like versions ``1.3`` and ``1.7`` in previous example.
+
 If the implicit default mechanism is also enabled (see
 :envvar:`MODULES_IMPLICIT_DEFAULT`), a ``default`` and ``latest`` symbolic
 versions are automatically defined for each module name (also at each
@@ -1363,9 +1441,60 @@ exists for these ``default`` or ``latest`` version names. Using the
 will be selected.
 
 The symbolic version ``loaded`` may be used over loaded module name to
-designate the loaded version of the module. This version symbol should be
-specified using the ``@`` prefix notation (e.g. ``foo@loaded``). An error is
-returned if no version of designated module is currently loaded.
+designate the loaded version of the module with associated selected variants.
+This version symbol should be specified using the ``@`` prefix notation (e.g.,
+``foo@loaded``). An error is returned if no version of designated module is
+currently loaded.
+
+Variants
+""""""""
+
+After the module name, variants can be specified. :ref:`Module variants` are
+alternative evaluation of the same *modulefile*. A variant is specified by
+associating a value to its name. This specification is then transmitted to the
+evaluating *modulefile* which instantiates the variant in the
+:mfvar:`ModuleVariant` array variable when reaching the :mfcmd:`variant`
+modulefile command declaring this variant.
+
+Variant can be specified with the ``name=value`` syntax where *name* is the
+declared variant name and *value*, the value this variant is set to when
+evaluating the *modulefile*.
+
+Boolean variants can be specified with the ``+name`` syntax to set this
+variant on and with the ``-name`` or ``~name`` syntaxes to set this variant
+off. The ``-name`` syntax is not supported on :ref:`ml(1)` command as the
+minus sign already means to unload designated module. The ``~name`` and
+``+name`` syntaxes could also be defined appended to another specification
+word (e.g., the module name, version or another variant specification),
+whereas ``-name`` syntax must be the start of a new specification word.
+
+Boolean variants may also be specified with the ``name=value`` syntax. *value*
+should be set to ``1``, ``true``, ``t``, ``yes``, ``y`` or ``on`` to enable
+the variant or it should be set to ``0``, ``false``, ``f``, ``no``, ``n`` or
+``off`` to disable the variant.
+
+Shortcuts may be used to abbreviate variant specification. The
+:mconfig:`variant_shortcut` configuration option associates shortcut character
+to variant name. With a shortcut defined, variant could be specified with the
+``<shortcut>value`` syntax. For instance if character ``%`` is set as a
+shortcut for variant ``foo``, the ``%value`` syntax is equivalent to the
+``foo=value`` syntax.
+
+Specific characters used in variant specification syntax cannot be used as
+part of the name of a module. These specific characters are ``+``, ``~``,
+``=`` and all characters set as variant shortcut. Exception is made for ``+``
+character which could be set one or several consecutive times at the end of
+module name (e.g., *name+* or *name++*).
+
+.. only:: html
+
+   .. versionadded:: 4.4
+
+   .. versionchanged:: 4.8
+      Use of version range is allowed in version list
+
+   .. versionchanged:: 4.8
+      Support for module variant added
 
 
 .. _Module tags:
@@ -1439,6 +1568,10 @@ color rendering do not apply on JSON output.
 
 Module tags cannot be used in search query to designate a modulefile.
 
+.. only:: html
+
+   .. versionadded:: 4.7
+
 
 .. _Sticky modules:
 
@@ -1465,6 +1598,66 @@ if the ``sticky`` tag is defined over *foo* module, loaded module *foo/1.2*
 can be swapped by *foo/2.0*. Such stickyness definition means one version of
 module should stay loaded whatever version it is.
 
+.. only:: html
+
+   .. versionadded:: 4.7
+
+
+.. _Module variants:
+
+Module variants
+^^^^^^^^^^^^^^^
+
+Module variants are alternative evaluation of the same *modulefile*. A variant
+is specified by associating a value to its name when designating module.
+Variant specification relies on the :ref:`Advanced module version specifiers`
+mechanism.
+
+Once specified, variant's value is transmitted to the evaluating *modulefile*
+which instantiates the variant in the :mfvar:`ModuleVariant` array variable
+when reaching the :mfcmd:`variant` modulefile command declaring this variant.
+For instance the ``module load foo/1.2 bar=value1`` command leads to the
+evaluation of *foo/1.2* modulefile with *bar=value1* variant specification.
+When reaching the ``variant bar value1 value2 value3`` command in modulefile
+during its evaluation, the ``ModuleVariant(bar)`` array element is set to
+the ``value1`` string.
+
+Once variants are instantiated, modulefile's code could check the variant
+values to adapt the evaluation and define for instance different module
+requirements or produce different environment variable setup.
+
+Variants are interpreted in contexts where *modulefiles* are evaluated. Thus
+the variants specified on module designation are ignored by the
+:subcmd:`avail`, :subcmd:`whatis`, :subcmd:`is-avail`, :subcmd:`path` or
+:subcmd:`paths` sub-commands.
+
+When modulefile is evaluated a value should be specified for each variant this
+modulefile declares. When reaching the :mfcmd:`variant` modulefile command
+declaring a variant, an error is raised if no value is specified for this
+variant and if no default value is declared. Specified variant value should
+match a value from the declared accepted value list otherwise an error is
+raised. Additionally if a variant is specified but does not correspond to a
+variant declared in modulefile, an error is raised.
+
+Module variants are reported along the module they are associated to on
+:subcmd:`list` sub-command results. Variants are reported within curly braces
+next to module name, each variant definition separated from the others with a
+colon character (e.g., ``foo/1.2{variant1=value:+variant2}``). Boolean
+variants are reported with the ``+name`` or ``-name`` syntaxes. When a
+shortcut character is defined for a variant (see
+:envvar:`MODULES_VARIANT_SHORTCUT`) it is reported with the
+``<shortcut>value`` syntax. For instance if ``%`` character is defined as a
+shortcut for *variant1*: ``foo/1.2{%value:+variant2}``.
+
+When the JSON output mode is enabled (with :option:`--json`), variants are
+reported under the ``variants`` JSON object as name/value pairs. Values of
+Boolean variant are set as JSON Boolean. Other values are set as JSON strings.
+Variant shortcut and color rendering do not apply on JSON output.
+
+.. only:: html
+
+   .. versionadded:: 4.8
+
 
 Collections
 ^^^^^^^^^^^
@@ -1484,6 +1677,10 @@ Collections may be valid for a given target if they are suffixed. In this
 case these collections can only be restored if their suffix correspond to
 the current value of the :envvar:`MODULES_COLLECTION_TARGET` environment
 variable (see the dedicated section of this topic below).
+
+.. only:: html
+
+   .. versionadded:: 4.0
 
 
 EXIT STATUS
@@ -1777,8 +1974,9 @@ ENVIRONMENT
  highlighted element (``hi``), debug information (``db``), trace information
  (``tr``), tag separator (``se``); Error (``er``), warning (``wa``), module
  error (``me``) and info (``in``) message prefixes; Modulepath (``mp``),
- directory (``di``), module alias (``al``), module symbolic version (``sy``),
- module ``default`` version (``de``) and modulefile command (``cm``).
+ directory (``di``), module alias (``al``), module variant (``va``), module
+ symbolic version (``sy``), module ``default`` version (``de``) and modulefile
+ command (``cm``).
 
  `Module tags`_ can also be colorized. The key to set in the color palette to
  get a graphical rendering of a tag is the tag name or the tag abbreviation if
@@ -1819,6 +2017,25 @@ ENVIRONMENT
        Output items for module tags auto-loaded (``aL``), forbidden (``F``),
        hidden and hidden-loaded (``H``), loaded (``L``), nearly-forbidden
        (``nF``), sticky (``S``) and super-sticky (``sS``) added
+
+    .. versionchanged:: 4.8
+       Output item for module variant (``va``) added
+
+.. envvar:: MODULES_EDITOR
+
+ Text editor command name or path for use to open modulefile through the
+ :subcmd:`edit` sub-command.
+
+ Editor command is defined for Modules in the following order of preference:
+ :envvar:`MODULES_EDITOR`, or :envvar:`VISUAL` or :envvar:`EDITOR` environment
+ variables, then the default set in :file:`modulecmd.tcl` script
+ configuration. Which means :envvar:`MODULES_EDITOR` overrides
+ :envvar:`VISUAL` or :envvar:`EDITOR` environment variables and default
+ configuration.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. envvar:: MODULES_EXTENDED_DEFAULT
 
@@ -1927,6 +2144,7 @@ ENVIRONMENT
    that no modules are loaded currently.
  * ``idx``: index position of each loaded module.
  * ``key``: legend appended at the end of the output to explain it.
+ * ``variant``: variant values selected for loaded modules.
  * ``sym``: symbolic versions associated with loaded modules.
  * ``tag``: tags associated with loaded modules.
 
@@ -1944,6 +2162,9 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.7
+
+    .. versionchanged:: 4.8
+       Element ``variant`` added
 
 .. envvar:: MODULES_LIST_TERSE_OUTPUT
 
@@ -2087,6 +2308,30 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.7
+
+.. envvar:: MODULES_LMVARIANT
+
+ A colon separated list of the variant instantiated through :mfcmd:`variant`
+ statements by all loaded *modulefiles* (see :ref:`Module variants` section).
+ Each element in this list starts by the name of the loaded *modulefile*
+ followed by all the variant definitions set during the load of this module.
+ The loaded modulefile and each of its variant definition are separated by the
+ ampersand character. Each variant definition starts with the variant name,
+ followed by the variant value set, then a flag to know if variant is of the
+ Boolean type and last element in this definition is a flag to know if the
+ chosen value is the default one for this variant and if it has been
+ automatically set or not. These four elements composing the variant
+ definition are separated by the pipe character.
+
+ This environment variable is intended for :command:`module` command internal
+ use to get knowledge of the variant value defined by the loaded *modulefiles*
+ in order to keep environment consistent when requirements are set over a
+ specific variant value or just to report these variant values when listing
+ loaded modules.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. envvar:: MODULES_MCOOKIE_VERSION_CHECK
 
@@ -2337,6 +2582,27 @@ ENVIRONMENT
  .. only:: html
 
     .. versionadded:: 4.0
+
+.. envvar:: MODULES_VARIANT_SHORTCUT
+
+ Specifies the shortcut characters that could be used to specify and report
+ module variants (see :ref:`Module variants` section). Its value is a
+ colon-separated list of variant names associated to a shortcut character
+ (e.g., *variantname=shortcutchar*).
+
+ A variant shortcut must be of one character length and must avoid characters
+ used for other concerns or in module names (i.e., *[-+~/@=a-zA-Z0-9]*).
+
+ If a shortcut is associated to an empty string or an invalid character, this
+ shortcut definition will be ignored.
+
+ The variant shortcut definition set in :envvar:`MODULES_VARIANT_SHORTCUT`
+ environment variable supersedes the default configuration set in
+ :file:`modulecmd.tcl` script.
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. envvar:: MODULES_VERBOSITY
 

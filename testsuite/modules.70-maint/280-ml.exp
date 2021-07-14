@@ -157,7 +157,7 @@ testouterr_cmd_re sh {ml foo @1 -bar@2 baz -qux @1:3} $ans {}
 unsetenv_loaded_module
 
 # badly written adv version spec
-testouterr_cmd sh {ml foo -@1.2} ERR "$err_specmodname'@1.2'"
+testouterr_cmd sh {ml foo -@1.2} ERR "$err_specmodname'-@1.2'"
 testouterr_cmd sh {ml foo@3:2} ERR "$err_rangevers'3:2'"
 testouterr_cmd sh {ml @3} ERR "$err_specmodname'@3'"
 testouterr_cmd sh {ml @3 foo} ERR "$err_specmodname'@3'"
@@ -278,17 +278,18 @@ testouterr_cmd sh {ml -foo/1 bar/0.2} ERR [msg_load bar/0.2 $tserr]
 # test clear sub-command
 testinouterr_cmd sh {ml clear} no {} "$info_msgs: Modules runtime information were not cleared"
 set ans [list]
-lappend ans [list unset _LMFILES__modshare]
-lappend ans [list unset LOADEDMODULES_modshare]
 lappend ans [list unset MODULES_LMPREREQ]
-lappend ans [list unset MODULEPATH_modshare]
-lappend ans [list unset MODULES_LMTAG]
-lappend ans [list unset MODULES_LMSOURCESH]
-lappend ans [list unset _LMFILES_]
 lappend ans [list unset LOADEDMODULES]
-lappend ans [list unset MODULES_LMNOTUASKED]
-lappend ans [list unset MODULES_LMCONFLICT]
+lappend ans [list unset _LMFILES_]
 lappend ans [list unset MODULES_LMALTNAME]
+lappend ans [list unset MODULES_LMCONFLICT]
+lappend ans [list unset MODULES_LMNOTUASKED]
+lappend ans [list unset LOADEDMODULES_modshare]
+lappend ans [list unset _LMFILES__modshare]
+lappend ans [list unset MODULES_LMSOURCESH]
+lappend ans [list unset MODULES_LMTAG]
+lappend ans [list unset MODULEPATH_modshare]
+lappend ans [list unset MODULES_LMVARIANT]
 testinouterr_cmd sh {clear} y $ans {}
 
 

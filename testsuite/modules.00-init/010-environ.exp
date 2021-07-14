@@ -26,7 +26,8 @@ if { $verbose > 0 } {
 }
 
 # clear testsuite-related variables
-foreach var [array names env -glob TESTSUITE_*] {
+foreach var [concat [array names env -glob TESTSUITE_*]\
+    [list TESTSUITE TS0 TS1 TS2 TS3 TS4 TS4 TS6 TS7 TS8 TS9]] {
     # preserve variable externally set to configure testsuite run
     if {$var ne {TESTSUITE_ENABLE_SITECONFIG}} {
         unsetenv_var $var
@@ -42,6 +43,7 @@ catch {unset env(MODULES_LMPREREQ)}
 catch {unset env(MODULES_LMNOTUASKED)}
 catch {unset env(MODULES_LMALTNAME)}
 catch {unset env(MODULES_LMTAG)}
+catch {unset env(MODULES_LMVARIANT)}
 
 catch {unset env(MODULECONTACT)}
 
@@ -110,8 +112,16 @@ setenv_var MODULES_MCOOKIE_VERSION_CHECK 1
 # ensure expected default output
 setenv_var MODULES_AVAIL_OUTPUT {modulepath:alias:dirwsym:sym:tag:key}
 setenv_var MODULES_AVAIL_TERSE_OUTPUT {modulepath:alias:dirwsym:sym:tag}
-setenv_var MODULES_LIST_OUTPUT {header:idx:sym:tag:key}
+setenv_var MODULES_LIST_OUTPUT {header:idx:variant:sym:tag:key}
 setenv_var MODULES_LIST_TERSE_OUTPUT {header}
+
+# clean any variant config
+setenv_var MODULES_VARIANT_SHORTCUT {}
+
+# clean any editor config
+unsetenv_var MODULES_EDITOR
+unsetenv_var VISUAL
+unsetenv_var EDITOR
 
 # clean any additional siteconfig set
 catch {unset env(MODULES_SITECONFIG)}

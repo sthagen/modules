@@ -1,0 +1,114 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        1 - 2 - 3 - 13 - 14 - 15 - 16 {
+            prereq vrreq1@1.0 foo=val1
+            variant foo val1 val2 val3
+        }
+        4 - 5 - 6 {
+            prereq vrreq1@:1 foo=val1
+            variant foo val1 val2 val3
+        }
+        7 - 8 - 9 {
+            prereq vrreq1 foo=val1
+            variant foo val1 val2 val3
+        }
+        10 - 11 - 12 {
+            module load vrreq1@:1 foo=val1
+            variant foo val1 val2 val3
+        }
+        17 - 18 {
+            prereq vrreq1@1: foo=val1
+            variant foo val1 val2 val3
+        }
+        19 - 22 {
+            module switch vrreq1@2: foo=val1
+            variant foo val1 val2 val3
+        }
+        20 - 21 {
+            module load vrreq1@1: foo=val1
+            variant foo val1 val2 val3
+        }
+        23 {
+            prereq vrreq1@1: foo=val1
+            variant foo val1 val2 val3
+        }
+        24 {
+            prereq vrreq1@1: foo=val1 baz=1
+            variant foo val1 val2 val3
+        }
+        25 {
+            prereq vrreq1@1: foo=val4
+            variant foo val1 val2 val3
+        }
+        26 {
+            module load vrreq1@1: foo=val1
+            variant foo val1 val2 val3
+        }
+        27 {
+            module load vrreq1@1: foo=val1 baz=1
+            variant foo val1 val2 val3
+        }
+        28 {
+            module load vrreq1@1: foo=val4
+            variant foo val1 val2 val3
+        }
+        29 - 30 {
+            prereq vrreq1@1: foo=val2 foo=val1
+            variant foo val1 val2 val3
+        }
+        31 {
+            prereq vrreq1@2 foo=val2 vrreq2@2 foo=val2
+            variant foo val1 val2 val3
+        }
+        32 {
+            prereq vrreq1/1.0 foo=VAL2 bAr=2
+        }
+        33 {
+            prereq vrreq1/1 foo=VAL2 bAr=2
+        }
+        34 {
+            prereq vrreq1/1 foo=val2 bar=2
+        }
+        35 {
+            prereq alvrreq11 foo=VAL2 bAr=2
+        }
+        36 {
+            prereq vrreq1/sym foo=VAL2 bAr=2
+        }
+        37 {
+            prereq vrreq1/99 foo=val2 bar=2
+        }
+        38 {
+            prereq vrreq1@3:4 foo=VAL2 bAr=2
+        }
+        39 {
+            prereq vrreq1@3:4 foo=VAL2 bAr=2
+        }
+        40 {
+            prereq vrreq1@3:4 foo=val2 bar=2
+        }
+        41 {
+            prereq vrreq1@4:5 foo=val2 bar=2
+        }
+        42 {
+            prereq vrreq2@4:5 foo=val2 bar=2
+        }
+        bool23 {
+            prereq variant@1.0 +foo bar=false
+        }
+        shortcut1 {
+            prereq variant@1.0 %val1
+        }
+        shortcut2 {
+            prereq variant@1.0%val1 bar=val2
+        }
+    }
+}
+if {[info exists env(TESTSUITE_VARIANT_TAG)]} {
+    switch -- $env(TESTSUITE_VARIANT_TAG) {
+        1 {
+            module load variant/8.0 foo=val1
+        }
+    }
+}

@@ -1,0 +1,72 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10 - 11 - 12 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        13 {
+            conflict vrreq1@1.0
+            variant foo val1 val2 val3
+        }
+        14 {
+            conflict vrreq1@1:
+            variant foo val1 val2 val3
+        }
+        15 {
+            variant foo val1 val2 val3
+            conflict vrreq1/sym
+        }
+        16 {
+            module unload vrreq1@1.0
+            variant foo val1 val2 val3
+        }
+        17 - 18 - 19 {
+            variant foo val1 val2 val3
+            prereq vrreq2@:2.0 bar=1 vrreq3@1.0: foo=val1
+            conflict vrreq1
+        }
+        20 - 21 - 22 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2.0 bar=1
+            conflict vrreq1
+        }
+        23 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            prereq vrreq2@:2.0 bar=1
+            conflict vrreq1
+        }
+        24 - 25 {
+            variant foo val1 val2 val3
+            prereq vrreq2@:2.0 bar=1
+            conflict vrreq1
+        }
+        26 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            module load vrreq2@:2.0 bar=1
+            conflict vrreq1
+        }
+        27 - 28 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2.0 bar=1
+            conflict vrreq1
+        }
+        29 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2.0 bar=2 bar=1
+            conflict vrreq1
+        }
+        30 {
+            variant foo val1 val2 val3
+            prereq vrreq2@:2.0 bar=1 vrreq2@:2.0 bar=2
+            conflict vrreq1
+        }
+        31 {
+            variant --default val2 foo val1 val2 val3
+            variant bar 1 2 3
+        }
+    }
+}

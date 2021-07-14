@@ -1,0 +1,523 @@
+##############################################################################
+#   Modules Revision 3.0
+#   Providing a flexible user environment
+#
+#   File:		modules.50-cmds/%M%
+#   Revision:		%I%
+#   First Edition:	2021/03/04
+#   Last Mod.:		%U%, %G%
+#
+#   Authors:		Xavier Delaruelle, xavier.delaruelle@cea.fr
+#
+#   Description:	Testuite testsequence
+#   Command:		load, display, help, test
+#   Modulefiles:    variant
+#   Sub-Command:
+#
+#   Comment:	%C{
+#           Test 'variant' modulefile command
+#		}C%
+#
+##############################################################################
+
+set mp $modpath.3
+set mpre $modpathre.3
+setenv_path_var MODULEPATH $mp
+
+
+setenv_var MODULES_ADVANCED_VERSION_SPEC 1
+
+
+#
+# basic variant definition and cmd-line specification
+#
+
+setenv_var TESTSUITE_VARIANT 1
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {val1}]]
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0]
+testouterr_cmd sh {load variant/1.0 foo=val1} $ans {}
+
+testouterr_cmd sh {load variant/1.0 foo=val2} ERR [msg_load variant/1.0{foo=val2} [err_invalvarval foo val2 {val1}]]
+
+setenv_var TESTSUITE_VARIANT 2
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval FOO {val1 val2 val3}]]
+
+set ans [list]
+lappend ans [list set TS0 {FOO}]
+lappend ans [list set TS1 {FOO=val2}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&FOO|val2|0|0]
+testouterr_cmd sh {load variant/1.0 FOO=val2} $ans {}
+
+testouterr_cmd sh {load variant/1.0 FOO=val4} ERR [msg_load variant/1.0{FOO=val4} [err_invalvarval FOO val4 {val1 val2 val3}]]
+
+setenv_var TESTSUITE_VARIANT 3
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {bar val {} { } {bar } {foo bar} { bar } val1=val2}]]
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=bar}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|bar|0|0]
+testouterr_cmd sh {load variant/1.0 foo=bar} $ans {}
+testouterr_cmd sh {load variant/1.0 foo=val foo=bar} $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo||0|0]
+testouterr_cmd sh {load variant/1.0 foo=} $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo= }]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT {variant/1.0&foo| |0|0}]
+testouterr_cmd sh {load variant/1.0 foo=\ } $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=bar }]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT {variant/1.0&foo|bar |0|0}]
+testouterr_cmd sh {load variant/1.0 foo=bar\ } $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=foo bar}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT {variant/1.0&foo|foo bar|0|0}]
+testouterr_cmd sh {load variant/1.0 foo=foo\ bar} $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo= bar }]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT {variant/1.0&foo| bar |0|0}]
+testouterr_cmd sh {load variant/1.0 foo=\ bar\ } $ans {}
+
+testouterr_cmd sh {load variant/1.0 foo=val1=val2} ERR [err_varspec foo=val1=val2]
+
+setenv_var TESTSUITE_VARIANT 4
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {15}}]
+testouterr_cmd_re sh {load variant/1.0} ERR [escre [msg_load variant/1.0 [msg_moderr {Invalid variant name '%foo'} {variant %foo val1 val2 val3<EXM>} $mp/variant/1.0 $ln]]]
+testouterr_cmd_re sh {load variant/1.0 %foo=val1} ERR [escre [msg_load variant/1.0{%foo=val1} [msg_moderr {Invalid variant name '%foo'} {variant %foo val1 val2 val3<EXM>} $mp/variant/1.0 $ln]]]
+
+setenv_var TESTSUITE_VARIANT 5
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {val1}]]
+testouterr_cmd sh {load variant/1.0 foo=val1} ERR [msg_load variant/1.0{foo=val1} [err_invalvarval foo val1 {val2}]]
+testouterr_cmd sh {load variant/1.0 bar=val1} ERR [msg_load variant/1.0{bar=val1} [err_novarval foo {val1}]]
+
+setenv_var TESTSUITE_VARIANT 6
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {25}}]
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {0 1 2}]]
+testouterr_cmd sh {load variant/1.0 foo=val2 bar=val} ERR [msg_load variant/1.0{bar=val:foo=val2} [err_invalvarval foo val2 {0 1 2}]]
+testouterr_cmd_re sh {load variant/1.0 foo=0 bar=val} ERR [escre [msg_load variant/1.0{bar=val:foo=0} [msg_moderr {No allowed value list defined for variant 'bar'} {variant bar<EXM>} $mp/variant/1.0 $ln]]]
+
+setenv_var TESTSUITE_VARIANT 7
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {28}}]
+testouterr_cmd_re sh {load variant/1.0} ERR [escre [msg_load variant/1.0 [msg_moderr {Invalid variant name ''} {variant {} 0 1 2<EXM>} $mp/variant/1.0 $ln]]]
+testouterr_cmd sh {load variant/1.0 =foo} ERR "$error_msgs: No variant name defined in argument '=foo'"
+testouterr_cmd sh {load =foo} ERR "$error_msgs: No variant name defined in argument '=foo'"
+
+# test successive evaluation of modulefiles (variants should be cleared between evaluation)
+setenv_var TESTSUITE_VARIANT 1
+set ans [list]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list ERR]
+testouterr_cmd_re sh {load variant/1.0 foo=val1 variant/2.0} $ans [msg_load variant/2.0 [err_novarval foo {val1}]]
+
+# test successive eval of same modulefiles with different variant values
+set ans [list]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list ERR]
+testouterr_cmd sh {load variant/1.0 foo=val1 variant/1.0 foo=val2} $ans [msg_load variant/1.0{foo=val2} [err_othervariantloaded {foo=val1}]]
+testouterr_cmd sh {load variant/1.0 foo=val1 variant/1.0 bar=val2} $ans [msg_load variant/1.0{bar=val2} [err_othervariantloaded {foo=val1}]]
+
+setenv_loaded_module [list variant/1.0] [list $mp/variant/1.0]
+testouterr_cmd sh {load variant/1.0 bar=val2} ERR [msg_load variant/1.0{bar=val2} [err_othervariantloaded {}]]
+unsetenv_loaded_module
+
+# test @loaded version specifier
+setenv_var TESTSUITE_VARIANT 13
+setenv_loaded_module [list variant/1.0] [list $mp/variant/1.0]
+setenv_path_var MODULES_LMVARIANT variant/1.0&foo|val1|0|1&bar|val2|0|2
+testouterr_cmd sh {load variant@loaded} OK {}
+testouterr_cmd sh {load variant@loaded bar=val1} OK {}
+unsetenv_loaded_module
+unsetenv_path_var MODULES_LMVARIANT
+
+# test when advanced_version_spec is disabled
+setenv_var TESTSUITE_VARIANT 1
+setenv_var MODULES_ADVANCED_VERSION_SPEC 0
+set tserr [msg_load variant/1.0 [err_novarval foo {val1}]]\n\n$err_path'foo=val1'
+testouterr_cmd sh {load variant/1.0 foo=val1} ERR $tserr
+testouterr_cmd sh {ml variant/1.0 foo=val1} ERR $tserr
+
+# modulefile named var=val
+setenv_var TESTSUITE_VARIANT 8
+set ans [list]
+lappend ans [list setpath LOADEDMODULES var=val]
+lappend ans [list setpath _LMFILES_ $mp/var=val]
+lappend ans [list ERR]
+testouterr_cmd_re sh {load variant/1.0 var=val} $ans [msg_load variant/1.0 [err_novarval var {val}]]
+setenv_var MODULES_ADVANCED_VERSION_SPEC 1
+set ans [list]
+lappend ans [list set TS0 {var}]
+lappend ans [list set TS1 {var=val}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&var|val|0|0]
+testouterr_cmd_re sh {load variant/1.0 var=val} $ans {}
+
+# special characters like ? or * are used in variant name or value
+setenv_var TESTSUITE_VARIANT 9
+set ans [list]
+lappend ans [list set TS0 {v*r v?r}]
+lappend ans [list set TS1 {v*r=v*l:v?r=v?l}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&v?r|v?l|0|0&v*r|v*l|0|0]
+testouterr_cmd sh {load variant/1.0 v?r=v?l v*r=v*l} $ans {}
+
+# ml test
+setenv_var TESTSUITE_VARIANT 1
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0]
+testouterr_cmd sh {ml variant/1.0 foo=val1} $ans {}
+
+# space in variant name
+setenv_var TESTSUITE_VARIANT 10
+set ans [list]
+lappend ans [list set TS0 {{foo } {foo bar}}]
+lappend ans [list set TS1 {foo =val1:foo bar=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT {variant/1.0&foo bar|val1|0|0&foo |val1|0|0}]
+testouterr_cmd sh {load variant/1.0 foo\ bar=val1 foo\ =val1} $ans {}
+
+# erroneous variant specification
+testouterr_cmd sh {load foo=bar} ERR $err_specmodname'foo=bar'
+testouterr_cmd sh {load @1.0 foo=bar} ERR "$err_specmodname'@1.0 foo=bar'"
+testouterr_cmd sh {load foo=bar @1.0} ERR "$err_specmodname'foo=bar @1.0'"
+testouterr_cmd sh {load foo=bar@1.0} ERR "$err_specmodname'foo=bar@1.0'"
+testouterr_cmd sh {load @foo=bar} ERR "$err_specmodname'@foo=bar'"
+testouterr_cmd sh {load variant @foo=bar} ERR "$err_path'variant @foo=bar'"
+testouterr_cmd sh {load variant @1.0 @foo=bar} ERR "$err_path'variant @1.0 @foo=bar'"
+testouterr_cmd sh {ml foo=bar} ERR $err_specmodname'foo=bar'
+testouterr_cmd sh {ml foo=bar@1.0} ERR "$err_specmodname'foo=bar@1.0'"
+testouterr_cmd sh {ml variant @foo=bar} ERR "$err_path'variant @foo=bar'"
+
+# specification of an unknown variant
+setenv_var TESTSUITE_VARIANT 1
+testouterr_cmd sh {load variant/1.0 bar=val} ERR [msg_load variant/1.0{bar=val} [err_novarval foo {val1}]]
+testouterr_cmd sh {load variant/1.0 bar=val foo=val1} ERR [msg_load variant/1.0{bar=val:foo=val1} [err_unkvar bar]]
+testouterr_cmd sh {load variant/1.0 bar=val foo=val1 baz=val} ERR [msg_load variant/1.0{bar=val:baz=val:foo=val1} [err_unkvar bar] [err_unkvar baz]]
+testouterr_cmd sh {load variant/1.0 foo=val1 bar=val variant/1.0 baz=val foo=val1} ERR [msg_load variant/1.0{bar=val:foo=val1} [err_unkvar bar]]\n\n[msg_load variant/1.0{baz=val:foo=val1} [err_unkvar baz]]
+testouterr_cmd sh {load variant/1.0 bar=val foo=val1 baz=val} ERR [msg_load variant/1.0{bar=val:baz=val:foo=val1} [err_unkvar bar] [err_unkvar baz]]
+testouterr_cmd sh {load variant/1.0 bar=val foo=val2 baz=val} ERR [msg_load variant/1.0{bar=val:baz=val:foo=val2} [err_invalvarval foo val2 {val1}]]
+
+# test argument mixing variant and version specifier
+setenv_var TESTSUITE_VARIANT 1
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0]
+testouterr_cmd sh {load variant foo=val1@1.0} $ans {}
+testouterr_cmd sh {load variant foo=val1@2.0@1.0} $ans {}
+testouterr_cmd sh {load variant foo=val@1.0} ERR [msg_load variant/1.0{foo=val} [err_invalvarval foo val {val1}]]
+testouterr_cmd sh {load variant foo=@1.0} ERR [msg_load variant/1.0{foo=} [err_invalvarval foo {} {val1}]]
+testouterr_cmd sh {load variant =val@1.0} ERR "$error_msgs: No variant name defined in argument '=val'"
+testouterr_cmd sh {load variant =val@} ERR "$error_msgs: No variant name defined in argument '=val'"
+testouterr_cmd sh {load variant foo=val@} ERR [if_implicitdefault [msg_load {'variant/w s'{foo=val}} [err_unkvar foo]] $err_nodefault'variant']
+testouterr_cmd sh {load foo=val@1.0} ERR $err_specmodname'foo=val@1.0'
+
+# test empty entry in MODULES_LMVARIANT
+setenv_path_var MODULES_LMVARIANT :variant/1.0&foo|val1|0|0
+setenv_loaded_module [list variant/1.0] [list $mp/variant/1.0]
+setenv_var TESTSUITE_VARIANT 1
+testouterr_cmd sh {load variant/1.0 foo=val1} OK {}
+unsetenv_loaded_module
+unsetenv_path_var MODULES_LMVARIANT
+
+# variant with no value defined
+setenv_var TESTSUITE_VARIANT 12
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {50}}]
+testouterr_cmd_re sh {load variant/1.0 foo=val1} ERR [escre [msg_load variant/1.0{foo=val1} [msg_moderr {No allowed value list defined for variant 'foo'} {variant foo<EXM>} $mp/variant/1.0 $ln]]]
+
+# force load whereas another variant of module is already loaded
+setenv_path_var MODULES_LMVARIANT variant/3.0&bar|val1|0|0
+setenv_loaded_module [list variant/3.0] [list $mp/variant/3.0]
+testouterr_cmd sh {load -f variant/3.0 bar=val2} ERR [msg_load variant/3.0{bar=val2} [err_othervariantloaded bar=val1]]
+unsetenv_loaded_module
+unsetenv_path_var MODULES_LMVARIANT
+
+# variant keyword without name, value and option
+setenv_var TESTSUITE_VARIANT 23
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {84}}]
+testouterr_cmd_re sh {load variant/1.0 foo=val1} ERR [escre [msg_load variant/1.0{foo=val1} [msg_moderr {No variant name specified} variant<EXM> $mp/variant/1.0 $ln]]]
+
+# duplicate definition of variant
+setenv_var TESTSUITE_VARIANT 24
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0&foo|val1|0|0]
+testouterr_cmd sh {load variant/1.0 foo=val1} $ans {}
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val2}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val2|0|0&foo|val2|0|1]
+testouterr_cmd sh {load variant/1.0 foo=val2} $ans {}
+
+
+#
+# --default tests
+#
+
+setenv_var TESTSUITE_VARIANT 13
+
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val2:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|2&bar|val2|0|2]
+testouterr_cmd sh {load variant/1.0} $ans {}
+testouterr_cmd sh {load -vv variant/1.0} $ans [msg_load variant/1.0{bar=val2:foo=val1}]
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val2:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|2&bar|val2|0|1]
+testouterr_cmd sh {load variant/1.0 bar=val2} $ans {}
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val2:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|1&bar|val2|0|1]
+testouterr_cmd sh {load variant/1.0 foo=val1 bar=val2} $ans {}
+
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val1:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|2&bar|val1|0|0]
+testouterr_cmd sh {load variant/1.0 bar=val1} $ans {}
+testouterr_cmd sh {load -vv variant/1.0 bar=val1} $ans [msg_load variant/1.0{bar=val1:foo=val1}]
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val1:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|1&bar|val1|0|0]
+testouterr_cmd sh {load variant/1.0 foo=val1 bar=val1} $ans {}
+
+# bad default specification
+
+
+setenv_var TESTSUITE_VARIANT 14
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {57}}]
+testouterr_cmd_re sh {load variant/1.0} ERR [escre [msg_load variant/1.0 [msg_moderr {Missing value for '--default' option} {variant --default<EXM>} $mp/variant/1.0 $ln]]]
+testouterr_cmd_re sh {load variant/1.0 foo=val1} ERR [escre [msg_load variant/1.0{foo=val1} [msg_moderr {Missing value for '--default' option} {variant --default<EXM>} $mp/variant/1.0 $ln]]]
+
+setenv_var TESTSUITE_VARIANT 15
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {--default val1}]]
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=--default}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|--default|0|0]
+testouterr_cmd sh {load variant/1.0 foo=--default} $ans {}
+
+setenv_var TESTSUITE_VARIANT 16
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {-val}]]
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=-val}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|-val|0|0]
+testouterr_cmd sh {load variant/1.0 foo=-val} $ans {}
+
+setenv_var TESTSUITE_VARIANT 17
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=--val}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|--val|0|0]
+testouterr_cmd sh {load variant/1.0 foo=--val} $ans {}
+
+setenv_var TESTSUITE_VARIANT 18
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_novarval foo {--default}]]
+
+setenv_var TESTSUITE_VARIANT 19
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_invalvarval foo val1 {--default val2}]]
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=--default}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|--default|0|0]
+testouterr_cmd sh {load variant/1.0 foo=--default} $ans {}
+
+setenv_var TESTSUITE_VARIANT 20
+set ln [expr {[cmpversion $tclsh_version 8.5] < 1 ? {3} : {75}}]
+testouterr_cmd_re sh {load variant/1.0} ERR [escre [msg_load variant/1.0 [msg_moderr {Invalid option '--opt'} {variant --opt foo val1<EXM>} $mp/variant/1.0 $ln]]]
+
+setenv_var TESTSUITE_VARIANT 21
+testouterr_cmd sh {load variant/1.0} ERR [msg_load variant/1.0 [err_invalvarval foo val1 {val2 val3}]]
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val2}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val2|0|0]
+testouterr_cmd sh {load variant/1.0 foo=val2} $ans {}
+
+setenv_var TESTSUITE_VARIANT 22
+set ans [list]
+lappend ans [list set TS0 {foo}]
+lappend ans [list set TS1 {foo=val2}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val2|0|2]
+testouterr_cmd sh {load variant/1.0} $ans {}
+
+
+#
+# icase & extended_default test
+#
+
+setenv_var TESTSUITE_VARIANT 11
+setenv_var MODULES_IMPLICIT_DEFAULT 1
+
+# icase on & extended_default off
+setenv_var MODULES_EXTENDED_DEFAULT 0
+set ans [list]
+lappend ans [list set TS0 {bar foo}]
+lappend ans [list set TS1 {bar=val3:foo=val1}]
+lappend ans [list setpath LOADEDMODULES variant/1.0]
+lappend ans [list setpath _LMFILES_ $mp/variant/1.0]
+lappend ans [list setpath MODULES_LMVARIANT variant/1.0&foo|val1|0|0&bar|val3|0|0]
+testouterr_cmd sh {load -i variant/1.0 foo=val1 bar=val3} $ans {}
+# FIXME: no icase support currently on variant name and value
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_novarval foo {val1 val2}]]
+testouterr_cmd sh {load -i variant/1.0 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_invalvarval bar VaL3 {val3 val4}]]
+testouterr_cmd sh {load -i variant/1.0 foo=val1 bar=VaL3} ERR $tserr
+
+# icase on & extended_default on
+setenv_var MODULES_EXTENDED_DEFAULT 1
+testouterr_cmd sh {load -i variant/1 foo=val1 bar=val3} $ans {}
+# FIXME: no icase support currently on variant name and value
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_novarval foo {val1 val2}]]
+testouterr_cmd sh {load -i variant/1 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_invalvarval bar VaL3 {val3 val4}]]
+testouterr_cmd sh {load -i variant/1 foo=val1 bar=VaL3} ERR $tserr
+
+# icase off & extended_default on
+testouterr_cmd sh {load variant/1 foo=val1 bar=val3} $ans {}
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_novarval foo {val1 val2}]]
+testouterr_cmd sh {load variant/1 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_invalvarval bar VaL3 {val3 val4}]]
+testouterr_cmd sh {load variant/1 foo=val1 bar=VaL3} ERR $tserr
+
+# replay the above tests with corresponding module loaded
+setenv_loaded_module [list variant/1.0] [list $mp/variant/1.0]
+setenv_path_var MODULES_LMVARIANT variant/1.0&foo|val1|0|0&bar|val3|0|0
+
+# icase on & extended_default off
+setenv_var MODULES_EXTENDED_DEFAULT 0
+testouterr_cmd sh {load -i variant/1.0 foo=val1 bar=val3} OK {}
+# FIXME: no icase support currently on variant name and value
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load -i variant/1.0 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load -i variant/1.0 foo=val1 bar=VaL3} ERR $tserr
+
+# icase on & extended_default on
+setenv_var MODULES_EXTENDED_DEFAULT 1
+testouterr_cmd sh {load -i variant/1 foo=val1 bar=val3} OK {}
+# FIXME: no icase support currently on variant name and value
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load -i variant/1 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load -i variant/1 foo=val1 bar=VaL3} ERR $tserr
+
+# icase off & extended_default on
+testouterr_cmd sh {load variant/1 foo=val1 bar=val3} OK {}
+set tserr [msg_load variant/1.0{bar=VaL3:FoO=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load variant/1 FoO=val1 bar=VaL3} ERR $tserr
+set tserr [msg_load variant/1.0{bar=VaL3:foo=val1} [err_othervariantloaded {bar=val3 foo=val1}]]
+testouterr_cmd sh {load variant/1 foo=val1 bar=VaL3} ERR $tserr
+
+unsetenv_loaded_module
+unsetenv_path_var MODULES_LMVARIANT
+unsetenv_var MODULES_EXTENDED_DEFAULT
+unsetenv_var MODULES_IMPLICIT_DEFAULT
+
+
+#
+# implicit_default error test
+#
+
+if {![is_config_locked implicit_default]} {
+
+setenv_var MODULES_EXTENDED_DEFAULT 1
+setenv_var MODULES_IMPLICIT_DEFAULT 0
+set tserr "$err_nodefault'variant/1 foo=val1 bar=val3'"
+testouterr_cmd sh {load -i variant/1 foo=val1 bar=val3} ERR $tserr
+unsetenv_var MODULES_EXTENDED_DEFAULT
+unsetenv_var MODULES_IMPLICIT_DEFAULT
+
+}
+
+
+# test transmission of specified variant when module resolution goes through a hidden directory
+setenv_var TESTSUITE_VARIANT hidden1
+testouterr_cmd sh {load variant foo=val1} ERR "$err_path'variant/2.1/2 foo=val1'"
+
+
+#
+#  Cleanup
+#
+
+reset_test_env

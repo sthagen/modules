@@ -631,8 +631,8 @@ instance :instopt:`--without-modulepath<--with-modulepath>`):
  information (``db``), trace information (``tr``) tag separator (``se``);
  Error (``er``), warning (``wa``), module error (``me``) and info (``in``)
  message prefixes; Modulepath (``mp``), directory (``di``), module alias
- (``al``), module symbolic version (``sy``) and module ``default`` version
- (``de``).
+ (``al``), module variant (``va``), module symbolic version (``sy``) and
+ module ``default`` version (``de``).
 
  :ref:`Module tags` can also be colorized. The key to set in the color palette
  to get a graphical rendering of a tag is the tag name or the tag abbreviation
@@ -645,7 +645,7 @@ instance :instopt:`--without-modulepath<--with-modulepath>`):
 
  For a complete SGR code reference, see
  https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters.
- (default=\ ``hi=1:db=2:tr=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:sy=95:de=4:cm=92:aL=100:L=90;47:H=2:F=41:nF=43:S=46:sS=44``)
+ (default=\ ``hi=1:db=2:tr=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:va=93:sy=95:de=4:cm=92:aL=100:L=90;47:H=2:F=41:nF=43:S=46:sS=44``)
 
  .. only:: html
 
@@ -658,13 +658,16 @@ instance :instopt:`--without-modulepath<--with-modulepath>`):
        Output items for module tags auto-loaded (``aL``), forbidden (``F``),
        hidden and hidden-loaded (``H``), loaded (``L``), nearly-forbidden
        (``nF``), sticky (``S``) and super-sticky (``sS``) added
+
+    .. versionchanged:: 4.8
+       Output item for module variant (``va``) added
 
 .. instopt:: --with-light-background-colors=SGRLIST
 
  Default color set to apply if terminal background color is defined to
  ``light``. Expect the same syntax than described for
  :instopt:`--with-dark-background-colors`.
- (default=\ ``hi=1:db=2:tr=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:sy=35:de=4:cm=32:aL=107:L=47:H=2:F=101:nF=103:S=106:sS=104``)
+ (default=\ ``hi=1:db=2:tr=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:va=33:sy=35:de=4:cm=32:aL=107:L=47:H=2:F=101:nF=103:S=106:sS=104``)
 
  .. only:: html
 
@@ -677,6 +680,9 @@ instance :instopt:`--without-modulepath<--with-modulepath>`):
        Output items for module tags auto-loaded (``aL``), forbidden (``F``),
        hidden and hidden-loaded (``H``), loaded (``L``), nearly-forbidden
        (``nF``), sticky (``S``) and super-sticky (``sS``) added
+
+    .. versionchanged:: 4.8
+       Output item for module variant (``va``) added
 
 .. instopt:: --with-terminal-background=VALUE
 
@@ -792,25 +798,53 @@ instance :instopt:`--without-modulepath<--with-modulepath>`):
 
  Specify the content to report on list sub-command regular output in addition
  to the loaded module names. Elements accepted in LIST are: ``header``,
- ``idx``, ``sym``, ``tag`` and ``key`` (elements in LIST are separated by
- ``:``). The order of the elements in LIST does not matter.
- (default=\ ``header:idx:sym:tag:key``)
+ ``idx``, ``variant``, ``sym``, ``tag`` and ``key`` (elements in LIST are
+ separated by ``:``). The order of the elements in LIST does not matter.
+ (default=\ ``header:idx:variant:sym:tag:key``)
 
  .. only:: html
 
     .. versionadded:: 4.7
+
+    .. versionchanged:: 4.8
+       Element ``variant`` added and set by default
 
 .. instopt:: --with-list-terse-output=LIST
 
  Specify the content to report on list sub-command terse output in addition
  to the loaded module names. Elements accepted in LIST are: ``header``,
- ``idx``, ``sym``, ``tag`` and ``key`` (elements in LIST are separated by
- ``:``). The order of the elements in LIST does not matter.
+ ``idx``, ``variant``, ``sym``, ``tag`` and ``key`` (elements in LIST are
+ separated by ``:``). The order of the elements in LIST does not matter.
  (default=\ ``header``)
 
  .. only:: html
 
     .. versionadded:: 4.7
+
+    .. versionchanged:: 4.8
+       Element ``variant`` added
+
+.. instopt:: --with-variant-shortcut=SHORTCUTLIST
+
+ Define the shortcut characters that could be used to specify variant names.
+ Each element in SHORTCUTLIST is a variant name associated to a shortcut
+ character (e.g., ``foo=%``). Shortcuts cannot exceed a length of 1 character
+ and cannot be alphanumeric characters ([A-Za-z0-9]) or characters with
+ already a special meaning ([+~/@=-]). Elements in SHORTCUTLIST are separated
+ by ``:``. (default=)
+
+ .. only:: html
+
+    .. versionadded:: 4.8
+
+.. instopt:: --with-editor=BIN
+
+ Name or full path of default editor program to use to open modulefile through
+ the :subcmd:`edit` sub-command. (default=\ ``vi``)
+
+ .. only:: html
+
+    .. versionadded:: 4.8
 
 .. instopt:: --with-modulepath=PATHLIST
 

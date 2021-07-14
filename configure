@@ -38,7 +38,7 @@ pageropts verbosity color darkbgcolors lightbgcolors termbg lockedconfigs \
 icase unloadmatchorder searchmatch modulepath loadedmodules quarantinevars \
 wa277 advversspec ml windowssupport nearlyforbiddendays implicitrequirement \
 tagabbrev tagcolorname mcookieversioncheck availoutput availterseoutput \
-listoutput listterseoutput"
+listoutput listterseoutput editor variantshortcut"
 compatarglist=
 libarglist=
 
@@ -99,8 +99,8 @@ pager=less
 pageropts='-eFKRX'
 verbosity=normal
 color=n
-darkbgcolors='hi=1:db=2:tr=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:sy=95:de=4:cm=92:aL=100:L=90;47:H=2:F=41:nF=43:S=46:sS=44'
-lightbgcolors='hi=1:db=2:tr=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:sy=35:de=4:cm=32:aL=107:L=47:H=2:F=101:nF=103:S=106:sS=104'
+darkbgcolors='hi=1:db=2:tr=2:se=2:er=91:wa=93:me=95:in=94:mp=1;94:di=94:al=96:va=93:sy=95:de=4:cm=92:aL=100:L=90;47:H=2:F=41:nF=43:S=46:sS=44'
+lightbgcolors='hi=1:db=2:tr=2:se=2:er=31:wa=33:me=35:in=34:mp=1;34:di=34:al=36:va=33:sy=35:de=4:cm=32:aL=107:L=47:H=2:F=101:nF=103:S=106:sS=104'
 termbg=dark
 lockedconfigs=
 unloadmatchorder=returnlast
@@ -127,8 +127,10 @@ tagcolorname=
 mcookieversioncheck=y
 availoutput='modulepath:alias:dirwsym:sym:tag:key'
 availterseoutput='modulepath:alias:dirwsym:sym:tag'
-listoutput='header:idx:sym:tag:key'
+listoutput='header:idx:variant:sym:tag:key'
 listterseoutput='header'
+editor='vi'
+variantshortcut=
 
 # git branch to use to build compat version
 compatbranch='c-3.2'
@@ -384,14 +386,22 @@ Optional Packages:
   --with-list-output=LIST
                           specify content to report on list sub-command
                           regular output. elements accepted in LIST are:
-                          \`header', \`idx', \`sym', \`tag' and \`key'
-                          (elements in LIST are separated by \`:')
+                          \`header', \`idx', \`variant', \`sym', \`tag' and
+                          \`key' (elements in LIST are separated by \`:')
                           [$listoutput]
   --with-list-terse-output=LIST
                           specify content to report on list sub-command terse
                           output. elements accepted in LIST are: \`header',
-                          \`idx', \`sym', \`tag' and \`key' (elements in LIST
-                          are separated by \`:') [$listterseoutput]
+                          \`idx', \`variant', \`sym', \`tag' and \`key'
+                          (elements in LIST are separated by \`:')
+                          [$listterseoutput]
+  --with-variant-shortcut=SHORTCUTLIST
+                          define shortcut characters to specify variant names.
+                          Each element in SHORTCUTLIST is a variant name
+                          associated to a shortcut character (elements in
+                          SHORTCUTLIST are separated by \`:') [$variantshortcut]
+  --with-editor=BIN       name or full path of default editor program to use to
+                          edit modulefiles [$editor]
   --with-modulepath=PATHLIST
                           default modulepaths to set in default configuration
                           file to be enabled (each path in PATHLIST should
@@ -738,7 +748,7 @@ for arg in "$@"; do
       IFS=$ORIG_IFS ;;
    --with-list-output*|--without-list-output)
       listoutput=$(get_package_value "$arg" "$listoutput") ;
-      allowedval=" header idx sym tag key " ;
+      allowedval=" header idx variant sym tag key " ;
       ORIG_IFS=$IFS ;
       IFS=: ;
       for val in $listoutput; do
@@ -750,7 +760,7 @@ for arg in "$@"; do
       IFS=$ORIG_IFS ;;
    --with-list-terse-output*|--without-list-terse-output)
       listterseoutput=$(get_package_value "$arg" "$listterseoutput") ;
-      allowedval=" header idx sym tag key " ;
+      allowedval=" header idx variant sym tag key " ;
       ORIG_IFS=$IFS ;
       IFS=: ;
       for val in $listterseoutput; do
@@ -760,6 +770,10 @@ for arg in "$@"; do
          fi ;
       done ;
       IFS=$ORIG_IFS ;;
+   --with-variant-shortcut=*|--without-variant-shortcut)
+      variantshortcut=$(get_package_value "$arg") ;;
+   --with-editor=*|--without-editor)
+      editor=$(get_package_value "$arg") ;;
    --with-modulepath=*|--without-modulepath)
       modulepath=$(get_package_value "$arg") ;;
    --with-loadedmodules=*|--without-loadedmodules)
@@ -839,7 +853,7 @@ done
 
 # disable compat version build if not explicitely enabled, compat source not
 # available and not working from git repository
-if [ ! -d '.git' -a ! -d 'compat' -a $defcompatversion -eq 1 ]; then
+if [ ! -e '.git' -a ! -d 'compat' -a $defcompatversion -eq 1 ]; then
    echo_warning "\`compat' directory cannot be found, disabling compatibility \
 version build"
    compatversion=n
@@ -877,7 +891,7 @@ if [ "$(echo foo | $SED_ERE 's|foo|bar|' 2>/dev/null)" != 'bar' ]; then
 fi
 
 # if we install from git repository, must have git to fetch current release number
-if [ -d '.git' ]; then
+if [ -e '.git' ]; then
    check_requirement git
 fi
 
@@ -910,7 +924,7 @@ fi
 TCLSH=$reqpath
 
 # python is mandatory if installing from git repository to build ChangeLog
-if [ -d '.git' ]; then
+if [ -e '.git' ]; then
    missmsg=''
 elif [ -n "$pythonbin" ]; then
    missmsg="Specified Python command \`$pythonbin' cannot be found"
@@ -970,7 +984,7 @@ else
 fi
 
 # refine build number if working from git repository
-if [ -d '.git' ]; then
+if [ -e '.git' ]; then
   gitcurtag=$(git describe --tags --abbrev=0)
   gitcurdesc=$(git describe --tags)
   gitcurbranch=$(git rev-parse --abbrev-ref HEAD)
@@ -1070,7 +1084,7 @@ fi
 if [ "$compatversion" = 'y' ]; then
    if [ ! -d 'compat' ]; then
       # extract sources from a git branch and prepare sources
-      if [ -d '.git' ]; then
+      if [ -e '.git' ]; then
          if [ $checkedautoreconf -eq 1 ]; then
             check_requirement autoreconf
          fi
@@ -1111,7 +1125,8 @@ if [ "$compatversion" = 'y' ]; then
             else
                gitworktree=n
                # clone branch if no worktree command supported
-               git clone --branch=$compatbranch .git compat || exit 1
+               gitdir=$(git rev-parse --git-dir)
+               git clone --branch=$compatbranch $gitdir compat || exit 1
             fi
          fi
 

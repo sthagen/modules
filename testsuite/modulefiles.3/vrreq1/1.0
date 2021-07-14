@@ -1,0 +1,134 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        1 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        2 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            prereq vrreq4@1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        3 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1
+            break
+        }
+        4 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            conflict vrreq1
+        }
+        5 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            prereq vrreq4@:1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        6 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            conflict vrreq1
+            break
+        }
+        7 {
+            variant foo val1 val2 val3
+            prereq alvrreq2 bar=1 foo=val1 alvrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        8 {
+            variant foo val1 val2 val3
+            prereq alvrreq2 bar=1 foo=val1 alvrreq3@1.0 bar=1 foo=val1
+            prereq alvrreq41 bar=1 foo=val1
+            conflict vrreq1
+        }
+        9 {
+            variant foo val1 val2 val3
+            prereq alvrreq2 bar=1 foo=val1 alvrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1
+            break
+        }
+        10 {
+            variant foo val1 val2 val3
+            module load vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            conflict vrreq1
+        }
+        11 {
+            variant foo val1 val2 val3
+            module load vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            module load vrreq4@:1.0 bar=1 foo=val1
+            conflict vrreq1
+        }
+        12 {
+            variant foo val1 val2 val3
+            module load vrreq2@1:2 bar=1 foo=val1 vrreq3 bar=1 foo=val1
+            conflict vrreq1
+            break
+        }
+        13 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1@2.0
+        }
+        14 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            conflict vrreq1@:2.0
+        }
+        15 {
+            conflict alvrreq12
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+        }
+        16 {
+            variant foo val1 val2 val3
+            prereq vrreq2@1.0 bar=1 foo=val1 vrreq3@1.0 bar=1 foo=val1
+            module unload vrreq1@2.0
+        }
+        17 - 18 - 19 {
+            variant foo val1 val2 val3
+            prereq vrreq2@:2 bar=1 vrreq3@1.0: foo=val1
+            conflict vrreq1
+        }
+        20 - 21 - 22 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2 bar=1
+            conflict vrreq1
+        }
+        23 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            prereq vrreq2@:2 bar=1
+            conflict vrreq1
+        }
+        24 - 25 {
+            variant foo val1 val2 val3
+            prereq vrreq2@:2 bar=1
+            conflict vrreq1
+        }
+        26 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+            module load vrreq2@:2 bar=1
+            conflict vrreq1
+        }
+        27 - 28 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2 bar=1
+            conflict vrreq1
+        }
+        29 {
+            variant foo val1 val2 val3
+            module load vrreq2@:2 bar=2 bar=1
+            conflict vrreq1
+        }
+        32 - 33 - 34 {
+            variant foo val1 val2 val3
+            variant bar 1 2 3
+        }
+    }
+}

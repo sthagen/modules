@@ -79,7 +79,7 @@ def get_version_release_from_git():
             else:
                 return version, version + '+' + branch + '-' + tags
     else:
-        return '4.7.1', ''
+        return '4.8.0', ''
 
 # The short X.Y version.
 # The full version, including alpha/beta/rc tags.
@@ -268,6 +268,7 @@ rst_epilog += """.. role:: noparse
 .. role:: sgrmp
 .. role:: sgrdi
 .. role:: sgrali
+.. role:: sgrva
 .. role:: sgrsy
 .. role:: sgrde
 .. role:: sgrh

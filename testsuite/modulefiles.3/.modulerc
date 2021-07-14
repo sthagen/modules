@@ -1,0 +1,57 @@
+#%Module
+if {[info exists env(TESTSUITE_VARIANT)]} {
+    switch -- $env(TESTSUITE_VARIANT) {
+        7 - 8 - 9 {
+            module-alias alvrreq2 vrreq2
+            module-version vrreq2/1.0 default
+            module-alias alvrreq3/1.0 vrreq3/1.0
+            module-alias alvrreq3/2.0 vrreq3/2.0
+            module-alias alvrreq41 vrreq4/1.0
+            module-alias alvrreq42 vrreq4/2.0
+        }
+        35 {
+            module-alias alvrreq11 vrreq1/1.0
+        }
+        36 {
+            module-version vrreq1/1.0 sym
+        }
+        37 {
+            module-alias alvrreq11 vrreq1/1.0
+            module-version vrreq1/1.0 99.9
+        }
+        38 - 39 - 40 - 41 - 42 {
+            module-version vrreq1/2.0 3.0
+            module-alias vrreq1/3.2 vrreq1/1.0
+        }
+        coll31 {
+            module-version variant/1.0 default
+        }
+        aliassym1 {
+            module-alias alvariant60 variant/6.0
+            module-alias variant/al60 variant/6.0
+            module-version variant/6.0 sym
+        }
+        aliassym2 {
+            module-alias alvariantbar variant/6.0 bar=1
+        }
+        aliassym3 {
+            module-version variant/6.0 bar=1 sym
+        }
+        aliassym4 {
+            module-virtual variant/virt bar=1 ./6.0
+        }
+        aliassym5 {
+            module-alias alvariantbar {variant/6.0 bar=1}
+        }
+        aliassym6 {
+            module-version {variant/6.0 bar=1} sym
+        }
+        aliassym7 {
+            module-virtual {variant/virt bar=1} ./6.0
+        }
+        aliassym8 - aliassym9 {
+            module-alias alvariant60 variant/6.0
+            module-version variant/6.0 sym
+        }
+    }
+}

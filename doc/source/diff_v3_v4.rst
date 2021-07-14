@@ -107,7 +107,7 @@ On compatibility version, paths composing the :envvar:`MODULEPATH` environment v
  
  When an already loaded *modulefiles* is asked for load again, compatibility version will refresh the shell alias definition this modulefile hold if any, whereas Modules 4 will ignore the new load order.
  
- In case of *modulefile* loading another modulefile, if sub-modulefile load fails calling modulefile will still be loaded on compatibility version whereas Modules 4 will also abort calling modulefile load.
+ In case of *modulefile* loading another modulefile, if sub-modulefile load fails calling modulefile will still be loaded on compatibility version whereas Modules 4 will also abort calling modulefile load. Compatibility version behavior could be restored by enclosing ``module load`` command and arguments within ``catch`` Tcl command.
 
  Starting with version ``4.1``, content sent to the ``stdout`` channel during a *modulefile* interpretation is spooled to effectively transmit this content to stdout after rendering the environment changes made by this modulefile.
 
@@ -243,6 +243,9 @@ On version 4 the characters that have a special meaning when rendered in shells 
  
  Whereas compatibility version sets a shell function when variables are in use in alias value on Bourne shell derivatives, Modules 4 always defines a shell alias never a shell function.
 
+:mfcmd:`setenv`
+ 
+ On compatibility version the :mfcmd:`setenv` modulefile command accepts any number of argument, but ignores all arguments after the first two. An error is raised on Modules 4 when more than two arguments are passed to the :mfcmd:`setenv` modulefile command.
 
 Locating Modulefiles
 ^^^^^^^^^^^^^^^^^^^^
@@ -332,6 +335,8 @@ The following module sub-commands appeared on new version of Modules are not sup
 +------------+-----------------------------------------------------------------+
 | 4.6        | :subcmd:`sh-to-mod`                                             |
 +------------+-----------------------------------------------------------------+
+| 4.8        | :subcmd:`edit`, :subcmd:`try-load`                              |
++------------+-----------------------------------------------------------------+
 
 All module sub-commands will return a non-zero exit code in case of error whereas on compatibility version issues that occurred do not lead to an exit of the :command:`module` command with a non-zero code.
 
@@ -401,6 +406,9 @@ The following environment variables appeared on new version of Modules are not s
 |            | :envvar:`MODULES_LIST_TERSE_OUTPUT`,                            |
 |            | :envvar:`MODULES_TERM_WIDTH`                                    |
 +------------+-----------------------------------------------------------------+
+| 4.8        | :envvar:`MODULES_EDITOR`, :envvar:`MODULES_VARIANT_SHORTCUT`,   |
+|            | :envvar:`MODULES_LMVARIANT`                                     |
++------------+-----------------------------------------------------------------+
 
 
 Modules Specific Tcl Commands
@@ -412,7 +420,7 @@ The following modulefile Tcl commands appeared on new version of Modules are not
 | Introduced | New modulefile Tcl commands                                     |
 | in version |                                                                 |
 +============+=================================================================+
-| 4.0        | :mfcmd:`module-info command<module-info>`                       |
+| 4.0        | :mfcmd:`module-info command<module-info>`, :mfcmd:`getenv`      |
 +------------+-----------------------------------------------------------------+
 | 4.1        | :mfcmd:`module-info loaded<module-info>`, :mfcmd:`is-saved`,    |
 |            | :mfcmd:`is-used`, :mfcmd:`is-avail`, :mfcmd:`module-virtual`    |
@@ -426,6 +434,8 @@ The following modulefile Tcl commands appeared on new version of Modules are not
 +------------+-----------------------------------------------------------------+
 | 4.7        | :mfcmd:`versioncmp`, :mfcmd:`module-tag`,                       |
 |            | :mfcmd:`module-info tags<module-info>`                          |
++------------+-----------------------------------------------------------------+
+| 4.8        | :mfcmd:`variant`, :mfcmd:`getvariant`                           |
 +------------+-----------------------------------------------------------------+
 
 :mfcmd:`conflict` and :mfcmd:`prereq`
@@ -465,4 +475,6 @@ The following Modules-specific Tcl variables appeared on new version of Modules 
 | in version |                                                                 |
 +============+=================================================================+
 | 4.7        | :mfvar:`ModuleTool`, :mfvar:`ModuleToolVersion`                 |
++------------+-----------------------------------------------------------------+
+| 4.8        | :mfvar:`ModuleVariant`                                          |
 +------------+-----------------------------------------------------------------+
